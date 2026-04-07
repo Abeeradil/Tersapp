@@ -1,5 +1,5 @@
 # اختيار صورة جافا
-FROM openjdk:23-jdk-slim
+FROM openjdk:21-jdk-slim
 
 # تعيين مجلد العمل
 WORKDIR /app
