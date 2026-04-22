@@ -1,0 +1,9 @@
+package org.example.tears.Repository;
+
+import org.example.tears.Model.RequestStatusHistory;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface RequestStatusHistoryRepository extends JpaRepository<RequestStatusHistory , Integer> {
+}

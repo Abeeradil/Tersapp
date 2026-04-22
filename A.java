@@ -1,0 +1,1 @@
+git ls-files | findstr -i docker
