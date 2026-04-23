@@ -42,12 +42,5 @@ public class ApiResponse {
         this.token = token;
     }
 
-    // للخطأ برسالة فقط
-    public static ApiResponse fail(String message) {
-        ApiResponse res = new ApiResponse();
-        res.success = false;
-        res.message = message;
-        return res;
-    }
 
 }

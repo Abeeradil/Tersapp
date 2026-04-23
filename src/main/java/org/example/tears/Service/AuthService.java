@@ -316,6 +316,9 @@ public class AuthService {
 
         } catch (Exception e) {
 
+            // 👇 مهم جداً تضيفي هذا
+            System.out.println("ERROR IN /auth/me: " + e.getMessage());
+
             return new ApiResponse(
                     false,
                     new AuthStatusDto(
@@ -326,5 +329,6 @@ public class AuthService {
                     )
             );
         }
+
     }
 }

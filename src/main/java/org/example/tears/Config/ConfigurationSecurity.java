@@ -10,38 +10,78 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class ConfigurationSecurity {
 
-        @Bean
-        public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-            http
-                    .csrf(csrf -> csrf.disable())
-                    .authorizeHttpRequests(auth -> auth
+        http
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(auth -> auth
 
-                            // Swagger
-                            .requestMatchers(
-                                    "/v3/api-docs/**",
-                                    "/swagger-ui/**",
-                                    "/swagger-ui.html"
-                            ).permitAll()
+                        // ================= SWAGGER =================
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
 
-                            // Auth endpoints
-                            .requestMatchers(
-                                    "/api/v1/tears/auth/**"
-                            ).permitAll()
+                        // ================= AUTH (OPEN) =================
+                        .requestMatchers("/api/v1/tears/auth/**").permitAll()
 
-                            // Content عام
-                            .requestMatchers(
-                                    "/api/v1/tears/content/**"
-                            ).permitAll()
+                        // ================= CONTENT (OPEN) =================
+                        .requestMatchers("/api/v1/tears/content/**").permitAll()
 
-                            // باقي النظام يحتاج تسجيل دخول
-                            .anyRequest().authenticated()
-                    );
+                        // ================= PUBLIC CAR DATA (OPEN) =================
+                        .requestMatchers(
+                                "/api/v1/tears/cars/brands",
+                                "/api/v1/tears/cars/brands/**",
+                                "/api/v1/tears/cars/search-brand",
+                                "/api/v1/tears/cars/search-model",
+                                "/api/v1/tears/cars/filter"
+                        ).permitAll()
 
-            return http.build();
-        }
+                        // ================= USER PROFILE =================
+                        .requestMatchers(
+                                "/api/v1/tears/users/profile",
+                                "/api/v1/tears/users/update",
+                                "/api/v1/tears/users/notifications"
+                        ).authenticated()
 
+                        // ================= CUSTOMER ONLY =================
+                        .requestMatchers("/api/v1/tears/customer/**").hasAuthority("CUSTOMER")
 
+                        .requestMatchers("/api/v1/tears/cars/my-car")
+                        .hasAuthority("CUSTOMER")
+
+                        .requestMatchers("/api/v1/tears/cars/register/**")
+                        .hasAuthority("CUSTOMER")
+
+                        .requestMatchers("/api/v1/tears/service-request/**")
+                        .hasAuthority("CUSTOMER")
+
+                        // ================= EMPLOYEE =================
+                        .requestMatchers("/api/v1/tears/employee/**")
+                        .hasAuthority("EMPLOYEE")
+
+                        // ================= PRICING ROLE =================
+                        .requestMatchers("/api/v1/tears/pricing/**")
+                        .hasAuthority("PRICING")
+
+                        // ================= ADMIN =================
+                        .requestMatchers("/api/v1/tears/admin/**").hasAuthority("ADMIN")
+
+                        .requestMatchers("/api/v1/tears/dashboard/admin/**")
+                        .hasAuthority("ADMIN")
+
+                        // ================= PAYMENT SETTINGS =================
+                        .requestMatchers("/admin/payment-settings/**")
+                        .hasAuthority("ADMIN")
+
+                        // ================= DEFAULT =================
+                        .anyRequest().authenticated()
+                );
+
+        return http.build();
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

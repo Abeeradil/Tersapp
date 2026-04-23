@@ -10,17 +10,8 @@ import org.example.tears.DTO.VerifyChangePasswordDTO;
 import org.example.tears.DTO.VerifyOtpDTO;
 import org.example.tears.InpDTO.ChangePasswordDTO;
 import org.example.tears.InpDTO.CustomerRegisterDTO;
-import org.example.tears.InpDTO.EmployeeRegisterDTO;
 import org.example.tears.InpDTO.LoginDTO;
-import org.example.tears.Model.Customer;
-import org.example.tears.Model.Employee;
-import org.example.tears.Model.User;
-import org.example.tears.Model.VerifyOtpRequest;
-import org.example.tears.OutDTO.AuthStatusDto;
-import org.example.tears.OutDTO.LoginResponse;
-import org.example.tears.Repository.UserRepository;
 import org.example.tears.Service.AuthService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
