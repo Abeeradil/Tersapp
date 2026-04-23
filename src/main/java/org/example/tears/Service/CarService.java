@@ -68,7 +68,6 @@ public class CarService {
         }
 
 
-
         String rawText = info.get("rawText");
         if (rawText == null || rawText.trim().length() < 10)
             throw new ApiException("❌ الصورة غير واضحة");
@@ -77,7 +76,7 @@ public class CarService {
 
         if (plate == null || plate.isBlank())
             throw new ApiException("❌ لم يتم استخراج رقم اللوحة");
-
+        validatePlate(plate);
         if (carRepository.existsByPlateNumberArabic(plate))
             throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
 
@@ -217,7 +216,8 @@ public class CarService {
 
         if (carRepository.existsByPlateNumberArabic(car.getPlateNumberArabic()))
             throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
-
+        
+        validatePlate(inpCarDto.getPlateNumberArabic());
         carRepository.save(car);
 
         return buildResponse(car, user.getFullName());
@@ -497,5 +497,25 @@ public class CarService {
         }
 
         return result.toString().trim();
+    }
+    private void validatePlate(String plate) {
+
+        if (plate == null || plate.isBlank())
+            throw new ApiException("❌ رقم اللوحة مطلوب");
+
+        // مثال: ع ب ع 8513
+        boolean valid = plate.matches("^[\\u0621-\\u064A]{1,3}\\s?\\d{1,4}$");
+
+        if (!valid)
+            throw new ApiException("❌ صيغة اللوحة غير صحيحة");
+    }
+    private boolean isSameOwner(String ocrName, String userName) {
+
+        if (ocrName == null || userName == null) return false;
+
+        String n1 = normalizeText(ocrName);
+        String n2 = normalizeText(userName);
+
+        return n1.contains(n2) || n2.contains(n1);
     }
 }
