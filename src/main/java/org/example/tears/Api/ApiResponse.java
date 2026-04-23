@@ -9,38 +9,36 @@ import org.example.tears.OutDTO.AuthStatusDto;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor
 public class ApiResponse {
+
     private boolean success;
     private String message;
     private Object data;
     private String token;
-
     private boolean authenticated;
-    private AuthStatusDto user;
+    private Object user;
 
-    public ApiResponse(boolean authenticated, AuthStatusDto user) {
-        this.authenticated = authenticated;
-        this.user = user;
+    // success + data
+    public ApiResponse(boolean success, Object data) {
+        this.success = success;
+        this.data = data;
+
+        if (data instanceof AuthStatusDto auth) {
+            this.authenticated = auth.isAuthenticated();
+            this.user = auth;
+        }
     }
 
-    // للنجاح برسالة فقط
+    // message فقط
     public ApiResponse(String message) {
         this.success = true;
         this.message = message;
     }
 
-    // للنجاح برسالة + بيانات
-    public ApiResponse(String message, Object data) {
-        this.success = true;
-        this.message = message;
-        this.data = data;
-    }
-
-    // للنجاح برسالة + توكن (مثل تسجيل الدخول)
+    // message + token
     public ApiResponse(String message, String token) {
         this.success = true;
         this.message = message;
         this.token = token;
+        this.authenticated = true;
     }
-
-
 }
