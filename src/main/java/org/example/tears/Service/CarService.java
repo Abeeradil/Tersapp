@@ -52,29 +52,31 @@ public class CarService {
         // =========================================================
         // AUTO REGISTER
         // =========================================================
-        public Map<String, String> registerCarAuto(HttpServletRequest request, MultipartFile formImage, Integer mileage) {
+        public Map<String, String> registerCarAuto(HttpServletRequest request,
+                                                   MultipartFile formImage,
+                                                   Integer mileage) {
 
             User user = authService.getAuthenticatedUser(request);
 
-            if (formImage == null || formImage.isEmpty())
-                throw new ApiException("❌ يجب رفع صورة الاستمارة");
-
             Map<String, String> info = extractCarInfo(formImage);
 
-            String rawText = info.get("rawText");
-            if (rawText == null || rawText.trim().length() < 10)
-                throw new ApiException("❌ الصورة غير واضحة أو النص غير مقروء");
+            String extractedName = info.get("ownerName");
 
-            CarBrand brand = detectBrandFromText(rawText);
-            CarModel model = detectModelFromText(rawText, brand);
+            if (extractedName == null)
+                throw new ApiException("❌ لم يتم استخراج اسم المالك");
 
+            // 🔥 المقارنة الأساسية
+            if (!normalizeText(extractedName)
+                    .equalsIgnoreCase(normalizeText(user.getFullName()))) {
+
+                throw new ApiException("❌ اسم المالك في الاستمارة لا يطابق حسابك");
+            }
+
+            // إذا مطابق → نكمل التسجيل
             Car car = new Car();
             car.setCustomer(user.getCustomer());
             car.setPlateNumberArabic(info.get("plateNumberArabic"));
             car.setPlateNumberEnglish(convertPlateToEnglish(info.get("plateNumberArabic")));
-            car.setBrand(brand);
-            car.setModel(model);
-            car.setMileage(mileage);
             car.setCarYear(parseYear(info.get("carYear")));
 
             carRepository.save(car);
@@ -345,6 +347,7 @@ public class CarService {
                     .orElseThrow(() -> new ApiException("❌ لم يتم التعرف على موديل السيارة"));
         }
 
+
         public String convertPlateToEnglish(String arabicPlate) {
             arabicPlate = arabicPlate.replace("أ","A").replace("ب","B").replace("ح","J")
                     .replace("د","D").replace("ر","R").replace("س","S")
@@ -361,5 +364,38 @@ public class CarService {
             }
             return english.toString();
         }
+
+    public Map<String, String> extractOwnerName(MultipartFile formImage) {
+
+        if (formImage == null || formImage.isEmpty())
+            throw new ApiException("❌ يجب رفع صورة الاستمارة");
+
+        try {
+            BufferedImage image = ImageIO.read(formImage.getInputStream());
+
+            if (image == null)
+                throw new ApiException("❌ الصورة غير صالحة");
+
+            BufferedImage processed = enhanceImage(image);
+
+            String text = tesseract.doOCR(processed);
+
+            log.info("OCR TEXT => {}", text);
+
+            String ownerName = extractUserNameFromText(text);
+
+            if (ownerName == null || ownerName.isBlank())
+                throw new ApiException("❌ لم يتم العثور على اسم المالك");
+
+            Map<String, String> response = new LinkedHashMap<>();
+            response.put("ownerName", ownerName);
+            response.put("rawText", text);
+
+            return response;
+
+        } catch (Exception e) {
+            throw new ApiException("❌ فشل استخراج الاسم: " + e.getMessage());
+        }
+    }
 
     }

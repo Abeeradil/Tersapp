@@ -59,7 +59,9 @@ public class ConfigurationSecurity {
                         .requestMatchers("/api/v1/tears/customer/**",
                                 "/api/v1/tears/cars/my-car",
                                 "/api/v1/tears/cars/register/**",
-                                "/api/v1/tears/service-request/**")
+                                "/api/v1/tears/service-request/**",
+                        "/api/v1/tears/cars/extract-owner",
+                                "api/v1/tears/cars/extract-user-name")
                         .hasRole("CUSTOMER")
 
                         // ================= EMPLOYEE =================
@@ -77,6 +79,7 @@ public class ConfigurationSecurity {
                         .hasRole("ADMIN")
 
                         // ================= DEFAULT =================
+                        .requestMatchers("/uploads/**", "/carimage/**").permitAll()
                         .anyRequest().authenticated()
                 ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

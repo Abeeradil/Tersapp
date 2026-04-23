@@ -125,4 +125,11 @@ public class CarController {
         return carModelService.searchModels(brandId, nameAr,nameEn);
     }
 
+    @PostMapping("/extract-owner")
+    public ResponseEntity<?> extractOwner(
+            @RequestParam MultipartFile formImage) {
+
+        return ResponseEntity.ok(carService.extractOwnerName(formImage));
+    }
+
 }
