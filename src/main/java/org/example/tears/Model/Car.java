@@ -24,7 +24,7 @@ public class Car {
 
 
     @NotBlank(message = "Plate number in Arabic is required")
-    @Column(nullable = false)
+    @Column(unique = true ,nullable = false)
     private String plateNumberArabic;
 
     @Column(nullable = false)
