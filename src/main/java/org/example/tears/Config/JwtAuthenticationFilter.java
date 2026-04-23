@@ -46,8 +46,7 @@ import java.util.List;
                 User user = userRepository.findByPhoneNumber(phone)
                         .orElse(null);
 
-                if (user != null) {
-
+                if (user != null && role != null) {
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(
                                     user,

@@ -1,5 +1,8 @@
 package org.example.tears.Config;
 
+
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,6 +12,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class ConfigurationSecurity {
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    public ConfigurationSecurity(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -47,15 +55,10 @@ public class ConfigurationSecurity {
                         ).authenticated()
 
                         // ================= CUSTOMER ONLY =================
-                        .requestMatchers("/api/v1/tears/customer/**").hasRole("CUSTOMER")
-
-                        .requestMatchers("/api/v1/tears/cars/my-car")
-                        .hasRole("CUSTOMER")
-
-                        .requestMatchers("/api/v1/tears/cars/register/**")
-                        .hasRole("CUSTOMER")
-
-                        .requestMatchers("/api/v1/tears/service-request/**")
+                        .requestMatchers("/api/v1/tears/customer/**",
+                                "/api/v1/tears/cars/my-car",
+                                "/api/v1/tears/cars/register/**",
+                                "/api/v1/tears/service-request/**")
                         .hasRole("CUSTOMER")
 
                         // ================= EMPLOYEE =================
@@ -67,18 +70,14 @@ public class ConfigurationSecurity {
                         .hasRole("PRICING")
 
                         // ================= ADMIN =================
-                        .requestMatchers("/api/v1/tears/admin/**").hasRole("ADMIN")
-
-                        .requestMatchers("/api/v1/tears/dashboard/admin/**")
-                        .hasRole("ADMIN")
-
-                        // ================= PAYMENT SETTINGS =================
-                        .requestMatchers("/admin/payment-settings/**")
+                        .requestMatchers("/api/v1/tears/admin/**",
+                                "/api/v1/tears/dashboard/admin/**",
+                                "/admin/payment-settings/**")
                         .hasRole("ADMIN")
 
                         // ================= DEFAULT =================
                         .anyRequest().authenticated()
-                );
+                ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
