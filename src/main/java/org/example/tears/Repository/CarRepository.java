@@ -11,5 +11,6 @@ import java.util.List;
 public interface CarRepository extends JpaRepository<Car,Integer> {
 
     List<Car> findByCustomerId(Integer customerId);
+    boolean existsByPlateNumberArabic(String plateNumberArabic);
 
 }

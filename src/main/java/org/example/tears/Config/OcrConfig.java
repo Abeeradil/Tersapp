@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OcrConfig {
 
-    @Value("${tesseract.datapath}")
+    @Value("${tesseract.datapath:/app/tessdata}")
     private String dataPath;
 
 

@@ -95,20 +95,20 @@ public class CarController {
 //        return ResponseEntity.ok(response);
 //    }
 
-    @PostMapping("/extract-user-name")
-    public ResponseEntity<Map<String, String>> testExtractUserName(
-            @RequestParam MultipartFile authorizationDoc) {
-
-        try {
-            Map<String, String> response = carService.extractUserNameFromAuthorization(authorizationDoc);
-            return ResponseEntity.ok(response);
-
-        } catch (RuntimeException e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
+//    @PostMapping("/extract-user-name")
+//    public ResponseEntity<Map<String, String>> testExtractUserName(
+//            @RequestParam MultipartFile authorizationDoc) {
+//
+//        try {
+//            Map<String, String> response = carService.extractUserNameFromAuthorization(authorizationDoc);
+//            return ResponseEntity.ok(response);
+//
+//        } catch (RuntimeException e) {
+//            return ResponseEntity
+//                    .badRequest()
+//                    .body(Map.of("error", e.getMessage()));
+//        }
+//    }
 
     // جلب كل سيارات المستخدم
     @GetMapping("/my-car")
