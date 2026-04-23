@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
     @RequestMapping("/api/v1/tears/customer/requests")
     @RequiredArgsConstructor
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasRole(\"CUSTOMER\")")
     public class CustomerRequestController {
 
         private final CarServiceRequestService requestService;

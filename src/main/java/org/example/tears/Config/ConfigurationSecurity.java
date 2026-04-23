@@ -47,34 +47,34 @@ public class ConfigurationSecurity {
                         ).authenticated()
 
                         // ================= CUSTOMER ONLY =================
-                        .requestMatchers("/api/v1/tears/customer/**").hasAuthority("CUSTOMER")
+                        .requestMatchers("/api/v1/tears/customer/**").hasRole("CUSTOMER")
 
                         .requestMatchers("/api/v1/tears/cars/my-car")
-                        .hasAuthority("CUSTOMER")
+                        .hasRole("CUSTOMER")
 
                         .requestMatchers("/api/v1/tears/cars/register/**")
-                        .hasAuthority("CUSTOMER")
+                        .hasRole("CUSTOMER")
 
                         .requestMatchers("/api/v1/tears/service-request/**")
-                        .hasAuthority("CUSTOMER")
+                        .hasRole("CUSTOMER")
 
                         // ================= EMPLOYEE =================
                         .requestMatchers("/api/v1/tears/employee/**")
-                        .hasAuthority("EMPLOYEE")
+                        .hasRole("EMPLOYEE")
 
                         // ================= PRICING ROLE =================
                         .requestMatchers("/api/v1/tears/pricing/**")
-                        .hasAuthority("PRICING")
+                        .hasRole("PRICING")
 
                         // ================= ADMIN =================
-                        .requestMatchers("/api/v1/tears/admin/**").hasAuthority("ADMIN")
+                        .requestMatchers("/api/v1/tears/admin/**").hasRole("ADMIN")
 
                         .requestMatchers("/api/v1/tears/dashboard/admin/**")
-                        .hasAuthority("ADMIN")
+                        .hasRole("ADMIN")
 
                         // ================= PAYMENT SETTINGS =================
                         .requestMatchers("/admin/payment-settings/**")
-                        .hasAuthority("ADMIN")
+                        .hasRole("ADMIN")
 
                         // ================= DEFAULT =================
                         .anyRequest().authenticated()

@@ -15,18 +15,22 @@ import java.util.Date;
 
 @Component
 public class JwtUtil {
+
     private final SecretKey key;
     private final long expirationMillis;
     private final UserRepository userRepository;
 
     public JwtUtil(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expirationMillis, UserRepository userRepository) {
+            @Value("${jwt.expiration}") long expirationMillis,
+            UserRepository userRepository) {
+
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMillis = expirationMillis;
         this.userRepository = userRepository;
     }
 
+    // ================= TOKEN GENERATION =================
     public String generateToken(String phone, String role) {
         return Jwts.builder()
                 .setSubject(phone)
@@ -37,21 +41,28 @@ public class JwtUtil {
                 .compact();
     }
 
+    // ================= PARSE =================
     public Jws<Claims> parseToken(String token) throws JwtException {
-        return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token);
     }
-    public Integer getUserIdFromAuthHeader(String authHeader) {
-        String phone = getPhoneFromToken(authHeader.substring(7));
-        User user = userRepository.findByPhoneNumber(phone)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return user.getId();
-    }
-
 
     public String getPhoneFromToken(String token) {
         return parseToken(token).getBody().getSubject();
     }
+
     public String getRoleFromToken(String token) {
         return (String) parseToken(token).getBody().get("role");
+    }
+
+    public Integer getUserIdFromAuthHeader(String authHeader) {
+        String phone = getPhoneFromToken(authHeader.substring(7));
+
+        User user = userRepository.findByPhoneNumber(phone)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return user.getId();
     }
 }
