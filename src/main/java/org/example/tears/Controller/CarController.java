@@ -66,16 +66,17 @@ public class CarController {
     /*--------------------------------------------------------------
      🧩 2) التسجيل اليدوي
     --------------------------------------------------------------*/
-    @PostMapping(value = "/register/manual", consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    @PostMapping(
+            value = "/register/manual",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<?> registerCarManual(
             HttpServletRequest request,
-            @RequestParam("car") String carJson,
-            @RequestParam(value = "formImage", required = false) MultipartFile formImage
-    ) throws Exception {
 
-        ObjectMapper mapper = new ObjectMapper();
-        InpCarDto inpCarDto = mapper.readValue(carJson, InpCarDto.class);
+            @RequestPart("car") InpCarDto inpCarDto,
+
+            @RequestPart(value = "formImage", required = false) MultipartFile formImage
+    ) {
 
         return ResponseEntity.ok(
                 carService.registerCarManual(request, inpCarDto, formImage)
