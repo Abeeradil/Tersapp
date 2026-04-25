@@ -50,7 +50,7 @@ public class UserService {
 
             userRepository.save(user);
 
-            return new ApiResponse("Profile updated successfully");
+            return new ApiResponse(true,"Profile updated successfully");
         }
 
         // ================= Update Notifications =================
@@ -62,6 +62,6 @@ public class UserService {
 
             userRepository.save(user);
 
-            return new ApiResponse("Notifications updated successfully");
+            return new ApiResponse(true,"Notifications updated successfully");
         }
     }

@@ -1,8 +1,6 @@
 package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.PhoneNumberDTO;
@@ -64,7 +62,6 @@ public class AuthController {
 
     // ================= Change Password =================
     // تغيير كلمة المرور بعد تسجيل الدخول
-
     @PostMapping("/change-password")
     public ApiResponse changePassword(HttpServletRequest request,
                                       @RequestBody ChangePasswordDTO dto) {
@@ -99,6 +96,6 @@ public class AuthController {
     @DeleteMapping("/dev/delete/{phone}")
     public ApiResponse deleteByPhone(@PathVariable String phone) {
         authService.deleteByPhone(phone);
-        return new ApiResponse("Deleted");
+        return new ApiResponse(true,"Deleted");
     }
 }

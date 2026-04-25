@@ -22,7 +22,7 @@ public class AdminAssignmentController {
                     @PathVariable Integer employeeId) {
 
                 assignmentService.assign(requestId, employeeId);
-                return new ApiResponse("تم إسناد الطلب بنجاح");
+                return new ApiResponse(true,"تم إسناد الطلب بنجاح");
             }
 
 
@@ -32,5 +32,5 @@ public class AdminAssignmentController {
                     @PathVariable Integer employeeId) {
 
                 assignmentService.assign(requestId, employeeId);
-                return new ApiResponse("تم إسناد الطلب بنجاح (Test Mode)");
+                return new ApiResponse(true,"تم إسناد الطلب بنجاح (Test Mode)");
             }}

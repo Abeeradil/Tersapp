@@ -43,7 +43,7 @@ import java.util.List;
 
             approvalService.approve(id,note);
 
-            return new ApiResponse("تمت الموافقة على التقرير");
+            return new ApiResponse(true,"تمت الموافقة على التقرير");
         }
 
 
@@ -56,7 +56,7 @@ import java.util.List;
 
             approvalService.updateParts(id, dto);
 
-            return new ApiResponse("تم تحديث القطع");
+            return new ApiResponse(true,"تم تحديث القطع");
         }
     }
 

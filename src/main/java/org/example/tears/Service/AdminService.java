@@ -112,6 +112,6 @@ public class AdminService {
         employee.getUser().setStatus(UserStatus.INACTIVE);
         employeeRepository.save(employee);
 
-        return new ApiResponse("Employee deactivated");
+        return new ApiResponse(true,"Employee deactivated");
     }
 }

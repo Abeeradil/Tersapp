@@ -35,6 +35,6 @@ public class NotificationController {
 
         notificationService.markAsRead(id);
 
-        return new ApiResponse("تم التحديث");
+        return new ApiResponse(true,"تم التحديث");
     }
 }

@@ -73,7 +73,7 @@ import java.util.Map;
                 dto.getNote()
         );
 
-        return new ApiResponse("تم تحديث الحالة بنجاح");
+        return new ApiResponse(true,"تم تحديث الحالة بنجاح");
     }
 
     // 👇 نسخة مؤقتة لتجربة تغيير الحالة بدون توكن
@@ -94,7 +94,7 @@ import java.util.Map;
                 dto.getNote()
         );
 
-        return new ApiResponse("تم تحديث الحالة بنجاح (Test)");
+        return new ApiResponse(true,"تم تحديث الحالة بنجاح (Test)");
     }
 
     @PostMapping("/{id}/receive")
@@ -111,7 +111,7 @@ import java.util.Map;
                 note,
                 imageUrl
         );
-        return new ApiResponse("تم استلام السيارة ورفع الصورة بنجاح");
+        return new ApiResponse(true,"تم استلام السيارة ورفع الصورة بنجاح");
     }
 
     @PostMapping("/test/{id}/receive")
@@ -131,7 +131,7 @@ import java.util.Map;
                 imageUrl
         );
 
-        return new ApiResponse("تم استلام السيارة ورفع الصورة بنجاح (Test)");
+        return new ApiResponse(true,"تم استلام السيارة ورفع الصورة بنجاح (Test)");
     }
 
 
@@ -144,7 +144,7 @@ import java.util.Map;
 
         partsService.addPart(id, dto);
 
-        return new ApiResponse("تمت إضافة القطعة");
+        return new ApiResponse(true,"تمت إضافة القطعة");
     }
 
 

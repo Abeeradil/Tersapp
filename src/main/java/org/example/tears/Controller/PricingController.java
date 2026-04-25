@@ -30,7 +30,7 @@ public class PricingController {
 
         );
 
-        return new ApiResponse("تم استلام الطلب للتسعير");
+        return new ApiResponse(true,"تم استلام الطلب للتسعير");
     }
 
 
@@ -43,7 +43,7 @@ public class PricingController {
 
         pricingService.setFinalPrice(id, price);
 
-        return new ApiResponse("تم تحديث السعر");
+        return new ApiResponse(true,"تم تحديث السعر");
     }
 
 
@@ -53,6 +53,6 @@ public class PricingController {
 
         pricingService.finishPricing(id);
 
-        return new ApiResponse("تم إنهاء التسعير");
+        return new ApiResponse(true,"تم إنهاء التسعير");
     }
 }

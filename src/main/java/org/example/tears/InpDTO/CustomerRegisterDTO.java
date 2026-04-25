@@ -11,8 +11,10 @@ public class CustomerRegisterDTO {
 
     @NotBlank
     private String fullName;
+
     @NotBlank
     private String phoneNumber;
+
     @Past
     private LocalDate dateOfBirth;
 }
