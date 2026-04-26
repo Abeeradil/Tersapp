@@ -51,7 +51,8 @@ public class ConfigurationSecurity {
 
                         // ================= USER =================
                         .requestMatchers(
-                                "/api/v1/tears/users/profile",
+                                "/api/v1/tears/users/customer/profile",
+                                "/api/v1/tears/users/employee/profile",
                                 "/api/v1/tears/users/update",
                                 "/api/v1/tears/users/notifications"
                         ).authenticated()
