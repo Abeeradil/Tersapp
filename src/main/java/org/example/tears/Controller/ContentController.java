@@ -13,17 +13,50 @@ import java.util.Map;
 
 public class ContentController {
 
-    @GetMapping("/terms")
-    public Map<String, Object> getTerms() throws Exception {
+
+        @GetMapping("/terms")
+        public Map<String, Object> getTerms() throws Exception {
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            InputStream is = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("content/terms.json");
+
+            if (is == null) {
+                throw new RuntimeException("terms.json not found");
+            }
+
+            return mapper.readValue(is, Map.class);
+        }
+
+        @GetMapping("/privacy")
+        public Map<String, Object> getPrivacyPolicy() throws Exception {
+
+            ObjectMapper mapper = new ObjectMapper();
+
+            InputStream is = getClass()
+                    .getClassLoader()
+                    .getResourceAsStream("content/privacy.json");
+
+            if (is == null) {
+                throw new RuntimeException("privacy.json not found");
+            }
+
+            return mapper.readValue(is, Map.class);
+        }
+
+    @GetMapping("/faqs")
+    public Map<String, Object> getFaqs() throws Exception {
 
         ObjectMapper mapper = new ObjectMapper();
 
         InputStream is = getClass()
                 .getClassLoader()
-                .getResourceAsStream("content/terms.json");
+                .getResourceAsStream("content/faqs.json");
 
         if (is == null) {
-            throw new RuntimeException("terms.json not found");
+            throw new RuntimeException("faqs.json not found");
         }
 
         return mapper.readValue(is, Map.class);

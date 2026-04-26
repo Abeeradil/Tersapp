@@ -2,6 +2,7 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.User;
 import org.example.tears.Service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -28,8 +29,9 @@ public class UserController {
     @PutMapping("/update")
     public ResponseEntity<ApiResponse> updateProfile(
             HttpServletRequest request,
-            @RequestBody User updatedUser) {
-        ApiResponse response = userService.updateProfile(request, updatedUser);
+            @RequestBody UpdateProfileDTO dto) {
+
+        ApiResponse response = userService.updateProfile(request, dto);
         return ResponseEntity.ok(response);
     }
 
@@ -40,5 +42,10 @@ public class UserController {
         Boolean enabled = body.get("enabled");
         ApiResponse response = userService.updateNotifications(request, enabled);
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/dev/make-admin/{userId}")
+    public ResponseEntity<ApiResponse> makeAdmin(@PathVariable Integer userId) {
+        return ResponseEntity.ok(userService.makeOneAdmin(userId));
     }
 }

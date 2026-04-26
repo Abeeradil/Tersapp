@@ -113,8 +113,8 @@ public class AuthService {
         if (user.getRole() != UserRole.CUSTOMER)
             throw new ApiException("Not a customer");
 
-        if (user.getStatus() == UserStatus.ACTIVE)
-            throw new ApiException("Account already verified");
+//        if (user.getStatus() == UserStatus.ACTIVE)
+//            throw new ApiException("Account already verified");
 
         // ================= DEV =================
         System.out.println("OTP resent = 123456");

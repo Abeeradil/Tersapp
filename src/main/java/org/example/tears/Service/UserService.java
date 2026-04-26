@@ -2,13 +2,16 @@ package org.example.tears.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Enums.UserRole;
+import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,20 +41,27 @@ public class UserService {
 
 
     // ================= Update Profile =================
-        public ApiResponse updateProfile(HttpServletRequest request, User updatedUser) {
+    public ApiResponse updateProfile(HttpServletRequest request, UpdateProfileDTO dto) {
 
-            User user = authService.getAuthenticatedUser(request);
+        User user = authService.getAuthenticatedUser(request);
 
-            if (updatedUser.getFullName() != null)
-                user.setFullName(updatedUser.getFullName());
+        // 🔥 دمج الاسم
+        String fullName = String.join(" ",
+                Optional.ofNullable(dto.getFirstName()).orElse(""),
+                Optional.ofNullable(dto.getMiddleName()).orElse(""),
+                Optional.ofNullable(dto.getLastName()).orElse("")
+        ).trim();
 
-            if (updatedUser.getPhoneNumber() != null)
-                user.setPhoneNumber(updatedUser.getPhoneNumber());
+        if (!fullName.isBlank())
+            user.setFullName(fullName);
 
-            userRepository.save(user);
+        if (dto.getPhoneNumber() != null)
+            user.setPhoneNumber(dto.getPhoneNumber());
 
-            return new ApiResponse(true,"Profile updated successfully");
-        }
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Profile updated successfully");
+    }
 
         // ================= Update Notifications =================
         public ApiResponse updateNotifications(HttpServletRequest request, Boolean enabled) {
@@ -64,4 +74,15 @@ public class UserService {
 
             return new ApiResponse(true,"Notifications updated successfully");
         }
+    public ApiResponse makeOneAdmin(Integer userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException("User not found"));
+
+        user.setRole(UserRole.ADMIN);
+
+        userRepository.save(user);
+
+        return new ApiResponse(true, "User promoted to ADMIN");
     }
+}
