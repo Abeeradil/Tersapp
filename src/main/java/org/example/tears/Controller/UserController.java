@@ -20,9 +20,14 @@ public class UserController {
     private final UserService userService;
 
     // view profile
-    @GetMapping("/profile")
-    public ResponseEntity<Map<String, Object>> getProfile(HttpServletRequest request) {
-        return ResponseEntity.ok(userService.getProfile(request));
+    @GetMapping("/customer/profile")
+    public ResponseEntity<ApiResponse> getCustomerProfile(HttpServletRequest request) {
+        return ResponseEntity.ok(userService.getCusProfile(request));
+    }
+
+    @GetMapping("/employee/profile")
+    public ResponseEntity<ApiResponse> getEmployeeProfile(HttpServletRequest request) {
+        return ResponseEntity.ok(userService.getEmProfile(request));
     }
 
     // update profile

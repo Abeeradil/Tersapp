@@ -6,10 +6,13 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.InpDTO.UpdateProfileDTO;
+import org.example.tears.Model.Customer;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -21,23 +24,53 @@ public class UserService {
     private final AuthService authService;
 
         // ================= Get Profile =================
-        public Map<String, Object> getProfile(HttpServletRequest request) {
+        public ApiResponse getEmProfile(HttpServletRequest request) {
+
             User user = authService.getAuthenticatedUser(request);
 
-            String fullName = user.getFullName();
-
-            String dateOfBirth = null;
-            if (user.getRole() == UserRole.CUSTOMER && user.getCustomer() != null) {
-                dateOfBirth = user.getCustomer().getDateOfBirth().toString(); // أو حسب نوع البيانات
+            // 🔐 السماح فقط للموظف أو الأدمن
+            if (user.getRole() != UserRole.EMPLOYEE && user.getRole() != UserRole.ADMIN) {
+                throw new ApiException("Unauthorized access");
             }
 
-            return Map.of(
-                    "fullName", fullName,
-                    "phoneNumber", user.getPhoneNumber(),
-                    "dateOfBirth", dateOfBirth,
-                    "notificationsEnabled", user.getNotificationsEnabled()
-            );
+            Map<String, Object> data = new HashMap<>();
+
+            // 👤 بيانات مشتركة للجميع
+            data.put("fullName", user.getFullName());
+            data.put("email", user.getEmail());
+            data.put("role", user.getRole());
+
+            // 👨‍💼 بيانات الموظف فقط
+            if (user.getRole() == UserRole.EMPLOYEE && user.getEmployee() != null) {
+                data.put("mustChangePassword", user.getEmployee().getMustChangePassword());
+            } else {
+                data.put("mustChangePassword", null);
+            }
+
+            // 🧑‍💼 بيانات الأدمن (إذا تبغين تضيفين لاحقًا)
+            if (user.getRole() == UserRole.ADMIN) {
+                data.put("adminAccess", true);
+            }
+
+            return new ApiResponse(true, data);
         }
+
+    public ApiResponse getCusProfile(HttpServletRequest request) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if (user.getRole() != UserRole.CUSTOMER)
+            throw new ApiException("Unauthorized access");
+
+        Customer customer = user.getCustomer();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("fullName", user.getFullName());
+        data.put("phoneNumber", user.getPhoneNumber());
+        data.put("dateOfBirth", customer != null ? customer.getDateOfBirth() : null);
+
+        return new ApiResponse(true, data);
+    }
 
 
     // ================= Update Profile =================
