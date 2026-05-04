@@ -83,7 +83,7 @@ public class ConfigurationSecurity {
                         ).hasRole("ADMIN")
 
                         // ================= STATIC =================
-                        .requestMatchers("/uploads/**", "/carimage/**").permitAll()
+                        .requestMatchers("/uploads/**","brands/**", "/carimage/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

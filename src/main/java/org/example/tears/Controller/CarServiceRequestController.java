@@ -3,6 +3,8 @@ package org.example.tears.Controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiResponse;
+import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -38,6 +40,15 @@ public class CarServiceRequestController {
 
             return ResponseEntity.ok(requestService.createRequest(request, dto));
         }
+
+    @GetMapping("/services")
+    public ApiResponse getServices() {
+
+        return new ApiResponse(
+                true,
+                ServiceOption.values()
+        );
+    }
 
         // Get my requests
 //        @GetMapping("/my")

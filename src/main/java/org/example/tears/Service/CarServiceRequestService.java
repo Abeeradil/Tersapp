@@ -3,6 +3,7 @@ package org.example.tears.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.RequestMapper;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PaymentMethod;
@@ -71,7 +72,7 @@ public class CarServiceRequestService {
         boolean owns = carRepository.findByCustomerId(user.getCustomer().getId())
                 .stream().anyMatch(c -> c.getId().equals(dto.getCarId()));
         if (!owns)
-            throw new RuntimeException("السيارة المختارة لا تنتمي لهذا المستخدم");
+            throw new ApiException("السيارة المختارة لا تنتمي لهذا المستخدم");
 
         // 3️⃣ وصف المشكلة
         if (dto.getProblemDescription() == null || dto.getProblemDescription().isBlank())
