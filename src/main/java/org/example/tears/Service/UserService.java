@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Enums.UserRole;
+import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.Customer;
 import org.example.tears.Model.Employee;
@@ -77,36 +78,111 @@ public class UserService {
     public ApiResponse updateProfile(HttpServletRequest request, UpdateProfileDTO dto) {
 
         User user = authService.getAuthenticatedUser(request);
+        Customer customer = user.getCustomer();
 
-        // 🔥 دمج الاسم
-        String fullName = String.join(" ",
-                Optional.ofNullable(dto.getFirstName()).orElse(""),
-                Optional.ofNullable(dto.getMiddleName()).orElse(""),
-                Optional.ofNullable(dto.getLastName()).orElse("")
-        ).trim();
+        // 🟢 الاسم (partial update)
+        if (dto.getFirstName() != null ||
+                dto.getMiddleName() != null ||
+                dto.getLastName() != null) {
 
-        if (!fullName.isBlank())
-            user.setFullName(fullName);
+            String[] parts = user.getFullName() != null
+                    ? user.getFullName().split(" ")
+                    : new String[]{"", "", ""};
 
-        if (dto.getPhoneNumber() != null)
-            user.setPhoneNumber(dto.getPhoneNumber());
+            String first = dto.getFirstName() != null ? dto.getFirstName() : parts[0];
+            String middle = dto.getMiddleName() != null ? dto.getMiddleName() : (parts.length > 1 ? parts[1] : "");
+            String last = dto.getLastName() != null ? dto.getLastName() : (parts.length > 2 ? parts[2] : "");
+
+            user.setFullName((first + " " + middle + " " + last).trim());
+        }
+
+        // 🟢 تاريخ الميلاد
+        if (dto.getDateOfBirth() != null) {
+            customer.setDateOfBirth(dto.getDateOfBirth());
+        }
 
         userRepository.save(user);
 
         return new ApiResponse(true, "Profile updated successfully");
     }
+    // ================= Change Phone (Step 1) =================
+    public ApiResponse requestChangePhone(HttpServletRequest request, String newPhone) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        // تحقق أن الرقم غير مستخدم
+        if (userRepository.existsByPhoneNumber(newPhone)) {
+            throw new ApiException("رقم الجوال مستخدم");
+        }
+
+        // خزّن الرقم مؤقت
+        user.setPendingPhoneNumber(newPhone);
+        user.setStatus(UserStatus.PENDING_VERIFICATION);
+
+        userRepository.save(user);
+
+        // ================= DEV =================
+        System.out.println("OTP = 123456");
+
+        // ================= PRODUCTION =================
+        // Verification.creator(
+        //     twilioConfig.getServiceSid(),
+        //     newPhone,
+        //     "sms"
+        // ).create();
+
+        return new ApiResponse(true, "OTP sent to new phone");
+    }
+    // ================= Change Phone (Step 2) =================
+    public ApiResponse confirmChangePhone(HttpServletRequest request, String otp) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if (user.getPendingPhoneNumber() == null) {
+            throw new ApiException("No phone change request found");
+        }
+
+        // ================= DEV =================
+        if (!otp.equals("123456")) {
+            throw new ApiException("Invalid OTP");
+        }
+
+        // ================= PRODUCTION =================
+        // VerificationCheck check = VerificationCheck.creator(twilioConfig.getServiceSid())
+        //        .setTo(user.getPendingPhoneNumber())
+        //        .setCode(otp)
+        //        .create();
+        //
+        // if (!"approved".equalsIgnoreCase(check.getStatus()))
+        //     throw new ApiException("Invalid or expired OTP");
+
+        // تحديث الرقم
+        user.setPhoneNumber(user.getPendingPhoneNumber());
+        user.setPendingPhoneNumber(null);
+        user.setStatus(UserStatus.ACTIVE);
+
+        userRepository.save(user);
+
+        return new ApiResponse(true, "Phone updated successfully");
+    }
+
+
 
         // ================= Update Notifications =================
         public ApiResponse updateNotifications(HttpServletRequest request, Boolean enabled) {
 
             User user = authService.getAuthenticatedUser(request);
 
-            user.setNotificationsEnabled(enabled);
+            if (enabled == null) {
+                throw new ApiException("قيمة الإشعارات مطلوبة");
+            }
 
+            user.setNotificationsEnabled(enabled);
             userRepository.save(user);
 
-            return new ApiResponse(true,"Notifications updated successfully");
+            return new ApiResponse(true, "Notifications updated successfully", enabled);
         }
+
     public ApiResponse makeOneAdmin(Integer userId) {
 
         User user = userRepository.findById(userId)

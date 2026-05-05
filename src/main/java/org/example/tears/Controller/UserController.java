@@ -32,13 +32,35 @@ public class UserController {
     }
 
     // update profile
-    @PutMapping("/update")
+    @PatchMapping("/update")
     public ResponseEntity<ApiResponse> updateProfile(
             HttpServletRequest request,
             @RequestBody UpdateProfileDTO dto) {
 
         ApiResponse response = userService.updateProfile(request, dto);
         return ResponseEntity.ok(response);
+    }
+
+    // ================= Step 1 =================
+    @PostMapping("/change-phone/request")
+    public ResponseEntity<ApiResponse> requestChangePhone(
+            HttpServletRequest request,
+            @RequestParam String newPhone
+    ) {
+        return ResponseEntity.ok(
+                userService.requestChangePhone(request, newPhone)
+        );
+    }
+
+    // ================= Step 2 =================
+    @PostMapping("/change-phone/confirm")
+    public ResponseEntity<ApiResponse> confirmChangePhone(
+            HttpServletRequest request,
+            @RequestParam String otp
+    ) {
+        return ResponseEntity.ok(
+                userService.confirmChangePhone(request, otp)
+        );
     }
 
     @PostMapping("/notifications")

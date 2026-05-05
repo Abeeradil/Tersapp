@@ -23,8 +23,8 @@ public class User {
     private Integer id;
 
     @NotBlank(message = "Full name is required")
-        @Size(min = 3, max = 70, message = "First name must be between 3 and 20 characters")
-    @Column(unique = true ,nullable = false)
+    @Size(min = 3, max = 70, message = "First name must be between 3 and 20 characters")
+    @Column(nullable = false)
     private String fullName;
     @Email
     @Column(nullable = true, unique = true)
@@ -35,12 +35,14 @@ public class User {
     private String password;
 
     @Column(unique = true, nullable = false)
+    @Pattern(regexp = "\\+\\d{12}", message = "Phone number must start with the country code followed by 9 digits.")
     private String phoneNumber;
 
-    private String refreshToken;
-    private boolean active;
+    //private String refreshToken;
+    //private boolean active;
 
     private Boolean notificationsEnabled = false;
+    private String pendingPhoneNumber;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
