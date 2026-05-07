@@ -35,13 +35,15 @@ public class User {
     private String password;
 
     @Column(unique = true, nullable = false)
-    @Pattern(regexp = "\\+\\d{12}", message = "Phone number must start with the country code followed by 9 digits.")
+    @Pattern(regexp = "\\+\\d{13}", message = "Phone number must start with the country code followed by 9 digits.")
     private String phoneNumber;
 
     //private String refreshToken;
     //private boolean active;
 
     private Boolean notificationsEnabled = false;
+
+    @Pattern(regexp = "\\+\\d{13}", message = "Phone number must start with the country code followed by 9 digits.")
     private String pendingPhoneNumber;
 
     @Enumerated(EnumType.STRING)
