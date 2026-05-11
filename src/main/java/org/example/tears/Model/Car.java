@@ -28,6 +28,7 @@ public class Car {
     private String plateNumberArabic;
 
     @Column(nullable = false)
+    @NotBlank(message = "Plate number in English is required")
     private String plateNumberEnglish;
 
     @Min(value = 0, message = "Mileage must be positive")

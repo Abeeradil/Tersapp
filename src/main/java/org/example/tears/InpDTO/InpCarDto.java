@@ -6,6 +6,7 @@ import lombok.Data;
 public class InpCarDto {
     private Integer carYear;
     private String plateNumberArabic;
+    private String plateNumberEnglish;
     private Integer mileage;
     private Integer brandId;
     private Integer modelId;

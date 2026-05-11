@@ -44,6 +44,7 @@ public class User {
     private Boolean notificationsEnabled = false;
 
     @Pattern(regexp = "\\+\\d{13}", message = "Phone number must start with the country code followed by 9 digits.")
+    @Column(unique = true)
     private String pendingPhoneNumber;
 
     @Enumerated(EnumType.STRING)
