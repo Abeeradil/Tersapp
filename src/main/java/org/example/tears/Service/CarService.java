@@ -161,16 +161,6 @@ public class CarService {
 
         return result;
     }
-    private void validateEnglishPlate(String plate) {
-
-        if (plate == null || plate.isBlank())
-            throw new ApiException("❌ English plate required");
-
-        boolean valid = plate.matches("^[A-Z]{1,3}\\d{1,4}$");
-
-        if (!valid)
-            throw new ApiException("❌ Invalid English plate format");
-    }
 
     private String saveFile(MultipartFile file, String folder) {
 
@@ -421,8 +411,24 @@ public class CarService {
     // VALIDATION
     // =========================================================
     private void validatePlate(String plate) {
-        if (!plate.matches("^[\\u0621-\\u064A]{1,3}\\s?\\d{1,4}$"))
-            throw new ApiException("❌ صيغة اللوحة غير صحيحة");
+
+        if (plate == null || plate.isBlank())
+            throw new ApiException("❌ رقم اللوحة مطلوب");
+
+        boolean valid = plate.matches("^\\d{1,4}\\s?[\\u0621-\\u064A]{1,3}(\\s?[\\u0621-\\u064A]){0,2}$");
+
+        if (!valid)
+            throw new ApiException("❌ صيغة اللوحة العربية غير صحيحة");
+    }
+    private void validateEnglishPlate(String plate) {
+
+        if (plate == null || plate.isBlank())
+            throw new ApiException("❌ English plate required");
+
+        boolean valid = plate.matches("^\\d{1,4}\\s?[A-Z]{1,3}$");
+
+        if (!valid)
+            throw new ApiException("❌ Invalid English plate format");
     }
 
     // =========================================================
@@ -448,7 +454,11 @@ public class CarService {
     }
 
     private String normalizePlate(String p) {
-        return p == null ? null : p.replaceAll("\\s+", "").trim();
+
+        if (p == null)
+            return null;
+
+        return p.trim().replaceAll("\\s+", " ");
     }
 
     private String normalizeText(String t) {
