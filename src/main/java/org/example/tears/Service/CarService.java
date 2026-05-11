@@ -129,9 +129,8 @@ public class CarService {
         car.setModel(model);
 
         return car;
-
-
     }
+
     public List<OutMyCarDTO> getMyCars(HttpServletRequest request) {
 
         User user = authService.getAuthenticatedUser(request);

@@ -10,5 +10,4 @@ public class UpdateProfileDTO {
     private String middleName;
     private String lastName;
     private LocalDate dateOfBirth;
-    private String phoneNumber;
 }
