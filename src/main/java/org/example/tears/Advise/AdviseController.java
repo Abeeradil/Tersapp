@@ -18,6 +18,8 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.validation.ConstraintViolationException;
 
+import java.util.Map;
+
 @ControllerAdvice
 public class AdviseController {
 
@@ -86,6 +88,7 @@ public class AdviseController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse(false, "❌ Null reference error"));
     }
+
 
     // ✅ Any Other Error
     @ExceptionHandler(Exception.class)

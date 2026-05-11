@@ -59,7 +59,14 @@ public class CarService {
             InpCarDto inpCarDto,
             MultipartFile formImage
     ) {
+
         User user = authService.getAuthenticatedUser(request);
+
+        if (inpCarDto == null)
+            throw new ApiException("❌ البيانات مطلوبة");
+
+        if (inpCarDto.getBrandId() == null || inpCarDto.getModelId() == null)
+            throw new ApiException("❌ البراند والموديل مطلوبين");
 
         Car car = buildCar(inpCarDto, formImage, user);
 
@@ -67,6 +74,7 @@ public class CarService {
 
         return buildResponse(car, user.getFullName());
     }
+
     private Car buildCar(
             InpCarDto inpCarDto,
             MultipartFile formImage,
@@ -490,12 +498,17 @@ public class CarService {
     // RESPONSE
     // =========================================================
     private Map<String, String> buildResponse(Car car, String owner) {
+
         Map<String, String> m = new LinkedHashMap<>();
+
         m.put("status", "success");
         m.put("carId", car.getId().toString());
         m.put("ownerName", owner);
+
+        // ✅ المهم هنا
         m.put("plateArabic", car.getPlateNumberArabic());
         m.put("plateEnglish", car.getPlateNumberEnglish());
+
         return m;
     }
 }
