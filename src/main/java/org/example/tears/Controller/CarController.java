@@ -73,9 +73,9 @@ public class CarController {
     public ResponseEntity<?> registerCarManual(
             HttpServletRequest request,
 
-            @RequestPart("car") InpCarDto inpCarDto,
+            @RequestParam("car") InpCarDto inpCarDto,
 
-            @RequestPart(value = "formImage", required = false) MultipartFile formImage
+            @RequestParam(value = "formImage", required = false) MultipartFile formImage
     ) {
 
         return ResponseEntity.ok(
