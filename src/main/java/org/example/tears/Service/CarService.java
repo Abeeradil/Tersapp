@@ -54,7 +54,157 @@ public class CarService {
             Map.entry("Z", "م"), Map.entry("N", "ن"), Map.entry("H", "ه"),
             Map.entry("U", "و"), Map.entry("V", "ى")
     );
+    public Map<String, String> registerCarManual(
+            HttpServletRequest request,
+            InpCarDto inpCarDto,
+            MultipartFile formImage
+    ) {
+        User user = authService.getAuthenticatedUser(request);
 
+        Car car = buildCar(inpCarDto, formImage, user);
+
+        carRepository.save(car);
+
+        return buildResponse(car, user.getFullName());
+    }
+    private Car buildCar(
+            InpCarDto inpCarDto,
+            MultipartFile formImage,
+            User user
+    ) {
+
+        Car car = new Car();
+
+        car.setCarYear(inpCarDto.getCarYear());
+
+        String arabicPlate =
+                normalizePlate(inpCarDto.getPlateNumberArabic());
+
+        String englishPlate =
+                normalizePlate(inpCarDto.getPlateNumberEnglish());
+
+        if (arabicPlate != null && !arabicPlate.isBlank()) {
+
+            validatePlate(arabicPlate);
+
+            if (englishPlate == null || englishPlate.isBlank()) {
+                englishPlate = convertPlateToEnglish(arabicPlate);
+            }
+
+        } else if (englishPlate != null && !englishPlate.isBlank()) {
+
+            validateEnglishPlate(englishPlate);
+
+            arabicPlate = convertPlateToArabic(englishPlate);
+
+        } else {
+            throw new ApiException("❌ رقم اللوحة مطلوب");
+        }
+
+        car.setPlateNumberArabic(arabicPlate);
+        car.setPlateNumberEnglish(englishPlate);
+
+        car.setMileage(inpCarDto.getMileage());
+        car.setCustomer(user.getCustomer());
+
+        if (formImage != null && !formImage.isEmpty()) {
+            car.setFormImagePath(saveFile(formImage, "forms"));
+        }
+
+        CarBrand brand = carBrandRepository.findById(inpCarDto.getBrandId())
+                .orElseThrow(() -> new ApiException("❌ البراند غير موجود"));
+
+        CarModel model = carModelRepository.findById(inpCarDto.getModelId())
+                .orElseThrow(() -> new ApiException("❌ الموديل غير موجود"));
+
+        car.setBrand(brand);
+        car.setModel(model);
+
+        return car;
+
+
+    }
+    public List<OutMyCarDTO> getMyCars(HttpServletRequest request) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        List<Car> cars = carRepository.findByCustomerId(user.getCustomer().getId());
+
+        List<OutMyCarDTO> result = new ArrayList<>();
+
+        for (Car car : cars) {
+
+            OutMyCarDTO dto = new OutMyCarDTO();
+
+            dto.setCarId(car.getId());
+            dto.setPlateNumberArabic(car.getPlateNumberArabic());
+            dto.setBrandNameAr(car.getBrand().getNameAr());
+            dto.setModelNameAr(car.getModel().getNameAr());
+            dto.setCarYear(car.getCarYear());
+
+            dto.setCarImage(
+                    car.getModel().getImagePath() != null
+                            ? car.getModel().getImagePath()
+                            : "/carimage/default_car.png"
+            );
+
+            result.add(dto);
+        }
+
+        return result;
+    }
+    private void validateEnglishPlate(String plate) {
+
+        if (plate == null || plate.isBlank())
+            throw new ApiException("❌ English plate required");
+
+        boolean valid = plate.matches("^[A-Z]{1,3}\\d{1,4}$");
+
+        if (!valid)
+            throw new ApiException("❌ Invalid English plate format");
+    }
+
+    private String saveFile(MultipartFile file, String folder) {
+
+        try {
+
+            if (file == null || file.isEmpty())
+                return null;
+
+            Path uploadPath = Paths.get("uploads/" + folder);
+
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            Path filePath = uploadPath.resolve(fileName);
+
+            Files.copy(
+                    file.getInputStream(),
+                    filePath,
+                    StandardCopyOption.REPLACE_EXISTING
+            );
+
+            return "/uploads/" + folder + "/" + fileName;
+
+        } catch (Exception e) {
+            throw new ApiException("❌ فشل حفظ الملف: " + e.getMessage());
+        }
+    }
+
+    public Map<String, String> extractOwnerName(MultipartFile formImage) {
+
+        Map<String, String> result = extractCarInfo(formImage);
+
+        Map<String, String> response = new LinkedHashMap<>();
+
+        response.put("ownerName", result.get("ownerName"));
+        response.put("rawText", result.get("rawText"));
+
+        return response;
+    }
     // ================= INIT OCR =================
     @PostConstruct
     public void init() {
