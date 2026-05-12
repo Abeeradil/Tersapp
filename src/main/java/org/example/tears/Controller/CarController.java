@@ -38,6 +38,7 @@ public class CarController {
         return ResponseEntity.ok(carModelService.getModelsByBrand(brandId));
     }
 
+
     @GetMapping("/brands/search")
     public ResponseEntity<List<OutCarBrandDTO>> searchBrands(
 
@@ -73,14 +74,15 @@ public class CarController {
       🧩 1) التسجيل التلقائي من الاستمارة (OCR)
      --------------------------------------------------------------*/
     @PostMapping("/register/auto")
-    public ResponseEntity<Map<String, String>> registerCarAuto(
+    public ResponseEntity<Map<String, Object>> registerCarAuto(
             HttpServletRequest request,
             @RequestParam(value = "formImage", required = false) MultipartFile formImage ,
             @RequestParam(value = "mileage", required = false) Integer mileage
     ) {
-        Map<String, String> response = carService.registerCarAuto(request, formImage, mileage);
+        Map<String, Object> response = carService.registerCarAuto(request, formImage, mileage);
         return ResponseEntity.ok(response);
     }
+
 
     /*--------------------------------------------------------------
      🧩 2) التسجيل اليدوي

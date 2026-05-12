@@ -54,7 +54,7 @@ public class CarService {
             Map.entry("Z", "م"), Map.entry("N", "ن"), Map.entry("H", "ه"),
             Map.entry("U", "و"), Map.entry("V", "ى")
     );
-    public Map<String, String> registerCarManual(
+    public Map<String, Object> registerCarManual(
             HttpServletRequest request,
             InpCarDto inpCarDto,
             MultipartFile formImage
@@ -65,10 +65,31 @@ public class CarService {
         if (inpCarDto == null)
             throw new ApiException("❌ البيانات مطلوبة");
 
-        if (inpCarDto.getBrandId() == null || inpCarDto.getModelId() == null)
-            throw new ApiException("❌ البراند والموديل مطلوبين");
+        if (formImage == null || formImage.isEmpty())
+            throw new ApiException("❌ يجب رفع صورة الاستمارة");
+
+        // ✅ OCR CHECK
+        Map<String, String> info = extractCarInfo(formImage);
+
+        String extractedName = info.get("ownerName");
+
+        if (isEnglish(extractedName)) {
+            extractedName = normalizeNameSmart(extractedName);
+        }
+
+        if (!isNameMatching(user.getFullName(), extractedName)) {
+            throw new ApiException("❌ اسم صاحب الاستمارة لا يطابق حسابك");
+        }
 
         Car car = buildCar(inpCarDto, formImage, user);
+
+        // ✅ duplicate check
+        if (carRepository.existsByPlateNumberArabic(
+                car.getPlateNumberArabic()
+        )) {
+
+            throw new ApiException("❌ السيارة مسجلة مسبقًا");
+        }
 
         carRepository.save(car);
 
@@ -215,7 +236,7 @@ public class CarService {
     // =========================================================
     // AUTO REGISTER
     // =========================================================
-    public Map<String, String> registerCarAuto(
+    public Map<String, Object> registerCarAuto(
             HttpServletRequest request,
             MultipartFile formImage,
             Integer mileage
@@ -506,17 +527,30 @@ public class CarService {
     // =========================================================
     // RESPONSE
     // =========================================================
-    private Map<String, String> buildResponse(Car car, String owner) {
+    private Map<String, Object> buildResponse(Car car, String owner) {
 
-        Map<String, String> m = new LinkedHashMap<>();
+        Map<String, Object> m = new LinkedHashMap<>();
 
         m.put("status", "success");
-        m.put("carId", car.getId().toString());
+        m.put("carId", car.getId());
+
         m.put("ownerName", owner);
 
-        // ✅ المهم هنا
+        m.put("brandName", car.getBrand().getName());
+        m.put("brandNameAr", car.getBrand().getNameAr());
+
+        m.put("modelName", car.getModel().getName());
+        m.put("modelNameAr", car.getModel().getNameAr());
+
         m.put("plateArabic", car.getPlateNumberArabic());
         m.put("plateEnglish", car.getPlateNumberEnglish());
+
+        m.put(
+                "carImage",
+                car.getModel().getImagePath() != null
+                        ? car.getModel().getImagePath()
+                        : "/carimage/default_car.png"
+        );
 
         return m;
     }

@@ -42,11 +42,12 @@ public class ConfigurationSecurity {
 
                         // ================= PUBLIC CAR DATA =================
                         .requestMatchers(
-                                "/api/v1/tears/cars/brands",
-                                "/api/v1/tears/cars/brands/**",
-                                "/api/v1/tears/cars/brands/search",
-                                "/api/v1/tears/cars/models/search",
-                                "/api/v1/tears/cars/filter"
+                                        "/api/v1/tears/cars/brands",
+                                        "/api/v1/tears/cars/brands/**",
+
+                                        "/api/v1/tears/cars/brands/search",
+                                        "/api/v1/tears/cars/models/search",
+                                        "/api/v1/tears/cars/filter"
                         ).permitAll()
 
                         // ================= USER =================

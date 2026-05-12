@@ -27,6 +27,7 @@ public class CarModelService {
                             model.getId(),
                             model.getNameAr(),
                             model.getName()
+
                     ))
                     .toList();
         }
@@ -47,12 +48,8 @@ public class CarModelService {
 
             models = models.stream()
                     .filter(m ->
-
                             m.getName().toLowerCase().contains(k)
-
-                                    ||
-
-                                    m.getNameAr().contains(keyword)
+                                    || m.getNameAr().contains(keyword)
                     )
                     .toList();
         }
