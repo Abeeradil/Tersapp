@@ -71,15 +71,31 @@ public class CarController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public ResponseEntity<?> registerCarManual(
+
             HttpServletRequest request,
 
-            @RequestParam("car") InpCarDto inpCarDto,
+            @RequestParam Integer carYear,
+            @RequestParam String plateNumberArabic,
+            @RequestParam(required = false) String plateNumberEnglish,
+            @RequestParam Integer mileage,
+            @RequestParam Integer brandId,
+            @RequestParam Integer modelId,
 
-            @RequestParam(value = "formImage", required = false) MultipartFile formImage
+            @RequestParam(value = "formImage", required = false)
+            MultipartFile formImage
     ) {
 
+        InpCarDto dto = new InpCarDto();
+
+        dto.setCarYear(carYear);
+        dto.setPlateNumberArabic(plateNumberArabic);
+        dto.setPlateNumberEnglish(plateNumberEnglish);
+        dto.setMileage(mileage);
+        dto.setBrandId(brandId);
+        dto.setModelId(modelId);
+
         return ResponseEntity.ok(
-                carService.registerCarManual(request, inpCarDto, formImage)
+                carService.registerCarManual(request, dto, formImage)
         );
     }
 
