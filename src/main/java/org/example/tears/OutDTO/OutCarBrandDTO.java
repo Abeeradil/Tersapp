@@ -11,5 +11,6 @@ public class OutCarBrandDTO {
 
     private Integer id;
     private String name;
+    private String nameAr;
     private String logoPath;
 }

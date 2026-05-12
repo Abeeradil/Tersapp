@@ -38,18 +38,37 @@ public class CarController {
         return ResponseEntity.ok(carModelService.getModelsByBrand(brandId));
     }
 
-    // 🔍 بحث ذكي
-    @GetMapping("/search-brand")
-    public List<OutCarBrandDTO> searchForBrand(@RequestParam String name) {
-        return carBrandService.searchBrands(name);
+    @GetMapping("/brands/search")
+    public ResponseEntity<List<OutCarBrandDTO>> searchBrands(
+
+            @RequestParam(required = false) String keyword,
+
+            @RequestParam(defaultValue = "asc") String sort
+    ) {
+
+        return ResponseEntity.ok(
+                carBrandService.searchBrands(keyword, sort)
+        );
     }
 
-    // 🔤 فلترة بالحرف
-    @GetMapping("/filter")
-    public List<OutCarBrandDTO> filter(@RequestParam String letter) {
-        return carBrandService.filterByLetter(letter);
-    }
+    @GetMapping("/models/search")
+    public ResponseEntity<List<OutCarModelDTO>> searchModels(
 
+            @RequestParam Integer brandId,
+
+            @RequestParam(required = false) String keyword,
+
+            @RequestParam(defaultValue = "asc") String sort
+    ) {
+
+        return ResponseEntity.ok(
+                carModelService.searchModels(
+                        brandId,
+                        keyword,
+                        sort
+                )
+        );
+    }
     /*--------------------------------------------------------------
       🧩 1) التسجيل التلقائي من الاستمارة (OCR)
      --------------------------------------------------------------*/

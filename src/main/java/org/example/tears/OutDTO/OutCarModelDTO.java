@@ -11,4 +11,7 @@ public class OutCarModelDTO {
 
     private Integer id;
     private String nameAr;
+    private String name;
+
+
 }

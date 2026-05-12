@@ -8,6 +8,7 @@ import org.example.tears.Repository.CarBrandRepository;
 import org.example.tears.Repository.CarModelRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -24,22 +25,61 @@ public class CarModelService {
                     .stream()
                     .map(model -> new OutCarModelDTO(
                             model.getId(),
-                            model.getNameAr()
+                            model.getNameAr(),
+                            model.getName()
                     ))
                     .toList();
         }
 
-        public List<OutCarModelDTO> searchModels(Integer brandId, String nameEn,String nameAr) {
-        List<CarModel> models = carModelRepository
-                .findByBrandIdAndNameContainingIgnoreCaseOrBrandIdAndNameArContainingIgnoreCase(brandId, nameEn, brandId, nameAr);
+    public List<OutCarModelDTO> searchModels(
+            Integer brandId,
+            String keyword,
+            String sort
+    ) {
 
-        if (models.isEmpty()) {
-            throw new RuntimeException("لا يوجد موديل بهذا الاسم للبراند المحدد");
+        List<CarModel> models =
+                carModelRepository.findByBrandId(brandId);
+
+        // SEARCH
+        if (keyword != null && !keyword.isBlank()) {
+
+            String k = keyword.toLowerCase();
+
+            models = models.stream()
+                    .filter(m ->
+
+                            m.getName().toLowerCase().contains(k)
+
+                                    ||
+
+                                    m.getNameAr().contains(keyword)
+                    )
+                    .toList();
+        }
+
+        // SORT
+        Comparator<CarModel> comparator =
+                Comparator.comparing(CarModel::getName);
+
+        if ("desc".equalsIgnoreCase(sort)) {
+            comparator = comparator.reversed();
         }
 
         return models.stream()
-                .map(m -> new OutCarModelDTO(m.getId(), m.getName()))
+                .sorted(comparator)
+                .map(this::convertToDTO)
                 .toList();
+    }
+
+    private OutCarModelDTO convertToDTO(CarModel model) {
+
+        OutCarModelDTO dto = new OutCarModelDTO();
+
+        dto.setId(model.getId());
+        dto.setName(model.getName());
+        dto.setNameAr(model.getNameAr());
+
+        return dto;
     }
 }
 

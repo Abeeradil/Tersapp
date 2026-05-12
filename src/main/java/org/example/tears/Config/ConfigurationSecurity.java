@@ -44,8 +44,8 @@ public class ConfigurationSecurity {
                         .requestMatchers(
                                 "/api/v1/tears/cars/brands",
                                 "/api/v1/tears/cars/brands/**",
-                                "/api/v1/tears/cars/search-brand",
-                                "/api/v1/tears/cars/search-model",
+                                "/api/v1/tears/cars/brands/search",
+                                "/api/v1/tears/cars/models/search",
                                 "/api/v1/tears/cars/filter"
                         ).permitAll()
 
