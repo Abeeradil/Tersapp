@@ -37,8 +37,6 @@ public class User {
     @Column(unique = true, nullable = false)
     private String phoneNumber;
 
-    //private String refreshToken;
-    //private boolean active;
 
     private Boolean notificationsEnabled = false;
 
