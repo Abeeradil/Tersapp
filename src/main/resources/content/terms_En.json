@@ -1,0 +1,104 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-04-20T00:00:00Z",
+  "title": "Terms and Conditions",
+  "intro": "This document represents a binding agreement between the user and the Ters application, and governs the use of services available through the app.",
+  "sections": [
+    {
+      "id": "1",
+      "title": "Available Services",
+      "items": [
+        { "text": "Ters provides the following services:", "type": "plain" },
+        { "text": "On-site electronic vehicle inspection.", "type": "number" },
+        { "text": "Comprehensive vehicle maintenance.", "type": "number" },
+        { "text": "Body repair and painting services.", "type": "number" }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Fees and Refund Policy",
+      "subsections": [
+        {
+          "id": "2.1",
+          "title": "Fees",
+          "items": [
+            { "text": "On-site electronic inspection fee: 150 SAR.", "type": "number" },
+            { "text": "Inspection and transport fee for maintenance or bodywork: 250 SAR.", "type": "number" },
+            { "text": "Additional fee for hydraulic tow truck when required: 100 SAR.", "type": "number" }
+          ]
+        },
+        {
+          "id": "2.2",
+          "title": "Refund Policy",
+          "items": [
+            { "text": "The customer may request a refund only before execution begins.", "type": "number" },
+            { "text": "Service is considered started when:", "type": "number" },
+            { "text": "The technician heads to the customer’s location.", "type": "bullet" },
+            { "text": "The tow truck is dispatched toward the customer’s location.", "type": "bullet" },
+            { "text": "After execution begins, cancellation or refunds are not allowed.", "type": "number" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Reports and Approvals",
+      "items": [
+        { "text": "After inspection or vehicle intake, the app provides a technical report including:", "type": "plain" },
+        { "text": "Detected issues.", "type": "bullet" },
+        { "text": "Repair costs.", "type": "bullet" },
+        { "text": "Spare parts costs.", "type": "bullet" },
+        { "text": "The customer has two options:", "type": "plain" },
+        { "text": "Approve and pay.", "type": "number" },
+        { "text": "Reject the report and cancel.", "type": "number" }
+      ],
+      "extra": {
+        "title": "Edit Option",
+        "items": [
+          {
+            "text": "Before selecting (Approve and pay), the customer may modify certain items in the report, such as removing specific repair items. After editing, they can proceed with approval and payment.",
+            "type": "plain"
+          }
+        ]
+      }
+    },
+    {
+      "id": "4",
+      "title": "Warranty and Disclaimer",
+      "items": [
+        { "text": "A one-month warranty applies only to repaired parts, starting from the vehicle delivery date.", "type": "number" },
+        { "text": "The warranty does not cover issues not repaired or not approved in the report.", "type": "number" },
+        { "text": "The warranty does not cover misuse, accidents, or third-party maintenance after repair.", "type": "number" },
+        { "text": "All personal belongings must be removed before vehicle handover, and the app is not responsible for any lost items inside the vehicle.", "type": "number" }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Service Suspension or Refusal",
+      "items": [
+        {
+          "text": "Ters reserves the right to refuse or suspend service before execution if service delivery is not possible for any reason.",
+          "type": "plain"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Consent",
+      "items": [
+        {
+          "text": "Using the application constitutes full acceptance of all terms and conditions in this document.",
+          "type": "plain"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Contact",
+      "items": [
+        { "text": "Email:", "type": "bullet" },
+        { "text": "Customer service number:", "type": "bullet" }
+      ]
+    }
+  ]
+}

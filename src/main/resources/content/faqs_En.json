@@ -1,0 +1,169 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-04-20T00:00:00Z",
+  "title": "Frequently Asked Questions",
+  "faqs": [
+    {
+      "id": 1,
+      "question": "What services does the Ters app currently provide?",
+      "answers": [
+        {
+          "type": "number",
+          "items": [
+            {
+              "text": "Electronic vehicle inspection at the customer’s location."
+            },
+            {
+              "text": "Mobile maintenance services."
+            },
+            {
+              "text": "Body repair and paint services."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "question": "Are service fees refundable?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Yes, fees can only be refunded before execution begins. Once the technician or tow truck heads to the customer’s location, the service is considered started and refunds are no longer possible."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "question": "How can I know my vehicle’s condition after the inspection?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Through the app, you can view a detailed technical report showing detected issues, repair costs, and recommended spare parts."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "question": "What are the available approval options for the report?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "There are only two options:"
+        },
+        {
+          "type": "number",
+          "items": [
+            {
+              "text": "Approve and pay."
+            },
+            {
+              "text": "Reject the report and close the request."
+            }
+          ]
+        },
+        {
+          "type": "plain",
+          "text": "The customer can modify some items within the report before approval."
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "question": "What happens if I reject the repair?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "The vehicle will be returned in the same condition it was received, and the request will be closed without additional charges. Service fees remain non-refundable as they cover inspection, assessment, and transportation costs."
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "question": "Do I need to prepare any information before requesting the service?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Yes, the following information must be prepared:"
+        },
+        {
+          "type": "number",
+          "items": [
+            {
+              "text": "Vehicle plate number."
+            },
+            {
+              "text": "Vehicle type and model."
+            },
+            {
+              "text": "Vehicle registration image or details."
+            },
+            {
+              "text": "City or region of the vehicle."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "question": "Is there a warranty after the repair?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Yes, there is a one-month warranty only for the repaired part, starting from the vehicle delivery date."
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "question": "Is the app responsible for items inside the vehicle?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "No, the app is not responsible for any personal belongings inside the vehicle, and they must be removed before handing over the vehicle."
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "question": "When is the hydraulic tow truck used?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "It is usually used for sports cars or vehicles with very low ground clearance, as it provides a safer loading angle and reduces the possibility of scratches during lifting. Customers may request a hydraulic tow truck when needed, with an additional fee of 100 SAR added to the service cost."
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "question": "How is payment made?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Payments are made electronically داخل التطبيق عبر وسائل دفع آمنة ومعتمدة."
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "question": "Can any type of vehicle be repaired?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Most vehicle types are accepted, and if repair is not possible, the customer will be informed immediately after inspection."
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "question": "Can the request be canceled after submission?",
+      "answers": [
+        {
+          "type": "plain",
+          "text": "Yes, cancellation is only possible before execution begins. However, if the technician or tow truck is already on the way or has arrived at the customer’s location, cancellation and refunds are no longer possible."
+        }
+      ]
+    }
+  ]
+}

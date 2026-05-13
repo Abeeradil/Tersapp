@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-04-27T00:00:00Z",
+  "title": "Privacy Policy",
+  "intro": "In Ters, we are committed to protecting users’ privacy. We collect and use data only for purposes related to delivering our services in a safe and efficient manner.",
+  "sections": [
+    {
+      "id": "1",
+      "title": "Data We Collect",
+      "subsections": [
+        {
+          "id": "1.1",
+          "title": "Personal Information",
+          "items": [
+            { "text": "Name", "type": "bullet" },
+            { "text": "Mobile number", "type": "bullet" },
+            { "text": "Address", "type": "bullet" }
+          ]
+        },
+        {
+          "id": "1.2",
+          "title": "Vehicle Data",
+          "items": [
+            { "text": "License plate number", "type": "bullet" },
+            { "text": "Vehicle type and category", "type": "bullet" },
+            { "text": "Model and year", "type": "bullet" },
+            { "text": "VIN (Vehicle Identification Number)", "type": "bullet" },
+            { "text": "Registration image or details", "type": "bullet" },
+            { "text": "City and region", "type": "bullet" }
+          ]
+        },
+        {
+          "id": "1.3",
+          "title": "Media",
+          "items": [
+            { "text": "Photos or videos of the vehicle condition or damage for inspection or technical reporting purposes.", "type": "bullet" }
+          ]
+        },
+        {
+          "id": "1.4",
+          "title": "Location Data",
+          "items": [
+            { "text": "Customer location is used to accurately direct technicians or tow trucks when providing services.", "type": "bullet" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "title": "How We Use Data",
+      "items": [
+        { "text": "We use collected data for the following purposes:", "type": "plain" },
+        { "text": "Communicating with customers regarding order status.", "type": "number" },
+        { "text": "Directing technicians and tow truck drivers accurately.", "type": "number" },
+        { "text": "Issuing invoices and processing online payments.", "type": "number" },
+        { "text": "Maintaining service records and continuously improving service quality.", "type": "number" }
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Data Sharing",
+      "items": [
+        { "text": "We do not sell or share data with unrelated third parties. Data is only shared with parties required to deliver the service, including:", "type": "plain" },
+        { "text": "Authorized repair centers.", "type": "number" },
+        { "text": "Tow truck drivers.", "type": "number" },
+        { "text": "Payment service providers and related operational service providers.", "type": "number" }
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Data Protection",
+      "items": [
+        { "text": "Storing data in secure systems compliant with security standards.", "type": "number" },
+        { "text": "Encrypting sensitive data during transmission.", "type": "number" },
+        { "text": "Restricting access to authorized personnel only.", "type": "number" }
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Policy Updates",
+      "items": [
+        {
+          "text": "Ters may update this Privacy Policy at any time. Continued use of the application after updates indicates acceptance of the revised policy.",
+          "type": "plain"
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Consent",
+      "items": [
+        {
+          "text": "Using the application constitutes full acceptance of all terms of this Privacy Policy.",
+          "type": "plain"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Contact",
+      "items": [
+        { "text": "Email:", "type": "bullet" },
+        { "text": "Customer service number:", "type": "bullet" }
+      ]
+    }
+  ]
+}
