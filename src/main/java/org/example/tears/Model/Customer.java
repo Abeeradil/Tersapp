@@ -1,5 +1,6 @@
 package org.example.tears.Model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -18,6 +19,7 @@ public class Customer{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Past
     private LocalDate dateOfBirth;
 

@@ -1,6 +1,7 @@
 package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.PhoneNumberDTO;
@@ -25,7 +26,7 @@ public class AuthController {
     // ================= Customer =================
     // تسجيل عميل جديد + إرسال OTP
     @PostMapping("/customer/register")
-    public ApiResponse registerCustomer(@RequestBody CustomerRegisterDTO dto) {
+    public ApiResponse registerCustomer(@Valid @RequestBody CustomerRegisterDTO dto) {
         return authService.registerCustomer(dto);
     }
 
