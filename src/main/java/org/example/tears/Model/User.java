@@ -35,7 +35,6 @@ public class User {
     private String password;
 
     @Column(unique = true, nullable = false)
-    @Pattern(regexp = "^\\+9665\\d{8}$", message = "Invalid Saudi phone number")
     private String phoneNumber;
 
     //private String refreshToken;
@@ -43,7 +42,6 @@ public class User {
 
     private Boolean notificationsEnabled = false;
 
-    @Pattern(regexp = "\\+\\d{13}", message = "Phone number must start with the country code followed by 9 digits.")
     @Column(unique = true)
     private String pendingPhoneNumber;
 
