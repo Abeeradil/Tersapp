@@ -23,7 +23,7 @@ public class Customer{
     @Past
     private LocalDate dateOfBirth;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne()
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
