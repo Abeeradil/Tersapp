@@ -37,6 +37,8 @@ public class Car {
     @Column(nullable = true)
     private String formImagePath;
 
+    private Boolean deleted = false;
+
     @ManyToOne
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;

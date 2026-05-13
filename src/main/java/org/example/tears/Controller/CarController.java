@@ -147,20 +147,31 @@ public class CarController {
 //                    .body(Map.of("error", e.getMessage()));
 //        }
 //    }
+@PutMapping("/update/{carId}")
+public ResponseEntity<?> updateCar(
+        HttpServletRequest request,
+        @PathVariable Integer carId,
+        @RequestBody InpCarDto dto
+) {
+    return ResponseEntity.ok(
+            carService.updateCar(request, carId, dto)
+    );
+}
 
+
+    @DeleteMapping("/delete/{carId}")
+    public ResponseEntity<?> deleteCar(
+            HttpServletRequest request,
+            @PathVariable Integer carId
+    ) {
+        carService.deleteCar(request, carId);
+        return ResponseEntity.ok(Map.of("message", "تم حذف السيارة بنجاح"));
+    }
     // جلب كل سيارات المستخدم
     @GetMapping("/my-car")
     public ResponseEntity<List<OutMyCarDTO>> getUserCars(HttpServletRequest request) {
         List<OutMyCarDTO> cars = carService.getMyCars(request);
         return ResponseEntity.ok(cars);
-    }
-
-    @GetMapping("/search-model")
-    public List<OutCarModelDTO> searchForModel(
-            @RequestParam Integer brandId,
-            @RequestParam String nameAr,
-            @RequestParam String nameEn ) {
-        return carModelService.searchModels(brandId, nameAr,nameEn);
     }
 
     @PostMapping("/extract-owner")

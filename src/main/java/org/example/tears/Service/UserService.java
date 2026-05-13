@@ -10,9 +10,11 @@ import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.Customer;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
+import org.example.tears.Repository.CustomerRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -22,6 +24,7 @@ import java.util.Optional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final AuthService authService;
 
         // ================= Get Profile =================
@@ -80,31 +83,50 @@ public class UserService {
         User user = authService.getAuthenticatedUser(request);
         Customer customer = user.getCustomer();
 
-        // 🟢 الاسم (partial update)
-        if (dto.getFirstName() != null ||
-                dto.getMiddleName() != null ||
-                dto.getLastName() != null) {
+        // ================= CURRENT FULL NAME =================
+        String fullName = user.getFullName() != null
+                ? user.getFullName().trim()
+                : "";
 
-            String[] parts = user.getFullName() != null
-                    ? user.getFullName().split(" ")
-                    : new String[]{"", "", ""};
+        String[] parts = fullName.split("\\s+");
 
-            String first = dto.getFirstName() != null ? dto.getFirstName() : parts[0];
-            String middle = dto.getMiddleName() != null ? dto.getMiddleName() : (parts.length > 1 ? parts[1] : "");
-            String last = dto.getLastName() != null ? dto.getLastName() : (parts.length > 2 ? parts[2] : "");
+        String currentFirst = parts.length > 0 ? parts[0] : "";
+        String currentMiddle = parts.length > 1 ? parts[1] : "";
+        String currentLast = parts.length > 2
+                ? String.join(" ", Arrays.copyOfRange(parts, 2, parts.length))
+                : "";
 
-            user.setFullName((first + " " + middle + " " + last).trim());
-        }
+        // ================= UPDATE NAME =================
+        String firstName = dto.getFirstName() != null
+                ? dto.getFirstName().trim()
+                : currentFirst;
 
-        // 🟢 تاريخ الميلاد
+        String middleName = dto.getMiddleName() != null
+                ? dto.getMiddleName().trim()
+                : currentMiddle;
+
+        String lastName = dto.getLastName() != null
+                ? dto.getLastName().trim()
+                : currentLast;
+
+        String newFullName = (firstName + " " + middleName + " " + lastName)
+                .trim()
+                .replaceAll("\\s+", " ");
+
+        user.setFullName(newFullName);
+
+        // ================= DATE OF BIRTH =================
         if (dto.getDateOfBirth() != null) {
             customer.setDateOfBirth(dto.getDateOfBirth());
         }
 
+        // ================= SAVE =================
         userRepository.save(user);
+        customerRepository.save(customer);
 
-        return new ApiResponse(true, "Profile updated successfully");
+        return new ApiResponse(true, "✅ Profile updated successfully");
     }
+
     // ================= Change Phone (Step 1) =================
     public ApiResponse requestChangePhone(HttpServletRequest request, String newPhone) {
 

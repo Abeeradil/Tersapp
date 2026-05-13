@@ -66,6 +66,8 @@ public class ConfigurationSecurity {
                                 "/api/v1/tears/cars/my-car",
                                 "/api/v1/tears/cars/register/**",
                                 "/api/v1/tears/service-request/**",
+                                "/api/v1/tears/cars/update/**",
+                                "/api/v1/tears/cars/delete/**",
                                 "/api/v1/tears/cars/extract-owner",
                                 "/api/v1/tears/cars/extract-user-name"
                         ).hasRole("CUSTOMER")

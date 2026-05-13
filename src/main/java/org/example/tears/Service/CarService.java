@@ -62,35 +62,50 @@ public class CarService {
 
         User user = authService.getAuthenticatedUser(request);
 
-        if (inpCarDto == null)
+        // ================= VALIDATION =================
+        if (inpCarDto == null) {
             throw new ApiException("❌ البيانات مطلوبة");
-
-        if (formImage == null || formImage.isEmpty())
-            throw new ApiException("❌ يجب رفع صورة الاستمارة");
-
-        // ✅ OCR CHECK
-        Map<String, String> info = extractCarInfo(formImage);
-
-        String extractedName = info.get("ownerName");
-
-        if (isEnglish(extractedName)) {
-            extractedName = normalizeNameSmart(extractedName);
         }
 
-        if (!isNameMatching(user.getFullName(), extractedName)) {
-            throw new ApiException("❌ اسم صاحب الاستمارة لا يطابق حسابك");
+        if (inpCarDto.getBrandId() == null) {
+            throw new ApiException("❌ البراند مطلوب");
         }
 
-        Car car = buildCar(inpCarDto, formImage, user);
+        if (inpCarDto.getModelId() == null) {
+            throw new ApiException("❌ الموديل مطلوب");
+        }
 
-        // ✅ duplicate check
-        if (carRepository.existsByPlateNumberArabic(
-                car.getPlateNumberArabic()
-        )) {
+        // ================= CHECK BRAND =================
+        CarBrand brand = carBrandRepository.findById(inpCarDto.getBrandId())
+                .orElseThrow(() -> new ApiException("❌ البراند غير موجود"));
 
+        // ================= CHECK MODEL =================
+        CarModel model = carModelRepository.findById(inpCarDto.getModelId())
+                .orElseThrow(() -> new ApiException("❌ الموديل غير موجود"));
+
+        // ================= CHECK RELATION =================
+        if (!model.getBrand().getId().equals(brand.getId())) {
+            throw new ApiException("❌ الموديل لا يتبع لهذا البراند");
+        }
+
+        // ================= IMAGE VALIDATION =================
+        if (formImage == null || formImage.isEmpty()) {
+            throw new ApiException("❌ صورة الاستمارة مطلوبة");
+        }
+
+        // ================= PREVENT DUPLICATE =================
+        if (inpCarDto.getPlateNumberArabic() != null &&
+                carRepository.existsByPlateNumberArabic(inpCarDto.getPlateNumberArabic())) {
             throw new ApiException("❌ السيارة مسجلة مسبقًا");
         }
 
+        // ================= BUILD CAR =================
+        Car car = buildCar(inpCarDto, formImage, user);
+
+        car.setBrand(brand);
+        car.setModel(model);
+
+        // ================= SAVE =================
         carRepository.save(car);
 
         return buildResponse(car, user.getFullName());
@@ -553,5 +568,77 @@ public class CarService {
         );
 
         return m;
+    }
+    public Map<String, Object> updateCar(
+            HttpServletRequest request,
+            Integer carId,
+            InpCarDto dto
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        Car car = carRepository.findById(carId)
+                .orElseThrow(() -> new ApiException("❌ السيارة غير موجودة"));
+
+        // 🔴 تأكد أنها ملك المستخدم
+        if (!car.getCustomer().getId().equals(user.getCustomer().getId())) {
+            throw new ApiException("❌ غير مسموح تعديل سيارة ليست لك");
+        }
+
+        // ===== تحديث البيانات =====
+        if (dto.getCarYear() != null)
+            car.setCarYear(dto.getCarYear());
+
+        if (dto.getMileage() != null)
+            car.setMileage(dto.getMileage());
+
+        if (dto.getBrandId() != null) {
+            CarBrand brand = carBrandRepository.findById(dto.getBrandId())
+                    .orElseThrow(() -> new ApiException("❌ البراند غير موجود"));
+            car.setBrand(brand);
+        }
+
+        if (dto.getModelId() != null) {
+            CarModel model = carModelRepository.findById(dto.getModelId())
+                    .orElseThrow(() -> new ApiException("❌ الموديل غير موجود"));
+            car.setModel(model);
+        }
+
+        // plate update (اختياري)
+        if (dto.getPlateNumberArabic() != null || dto.getPlateNumberEnglish() != null) {
+
+            String ar = normalizePlate(dto.getPlateNumberArabic());
+            String en = normalizePlate(dto.getPlateNumberEnglish());
+
+            if (ar != null) {
+                validatePlate(ar);
+                car.setPlateNumberArabic(ar);
+                car.setPlateNumberEnglish(convertPlateToEnglish(ar));
+            }
+
+            if (en != null) {
+                validateEnglishPlate(en);
+                car.setPlateNumberEnglish(en);
+                car.setPlateNumberArabic(convertPlateToArabic(en));
+            }
+        }
+
+        carRepository.save(car);
+
+        return buildResponse(car, user.getFullName());
+    }
+    public void deleteCar(HttpServletRequest request, Integer carId) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        Car car = carRepository.findById(carId)
+                .orElseThrow(() -> new ApiException("❌ السيارة غير موجودة"));
+
+        if (!car.getCustomer().getId().equals(user.getCustomer().getId())) {
+            throw new ApiException("❌ غير مسموح حذف سيارة ليست لك");
+        }
+
+        car.setDeleted(true);
+        carRepository.save(car);
     }
 }
