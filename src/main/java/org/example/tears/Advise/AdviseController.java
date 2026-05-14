@@ -6,12 +6,11 @@ import org.example.tears.Api.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import org.springframework.validation.FieldError;
-
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -31,20 +30,8 @@ public class AdviseController {
                 .body(new ApiResponse(false, e.getMessage()));
     }
 
-    // ✅ Validation Errors
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse> handleValidation(MethodArgumentNotValidException e) {
 
-        String msg = e.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(FieldError::getDefaultMessage)
-                .findFirst()
-                .orElse("❌ Validation Error");
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse(false, msg));
-    }
 
     // ✅ Constraint Validation
     @ExceptionHandler(ConstraintViolationException.class)
@@ -79,6 +66,22 @@ public class AdviseController {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse(false, e.getMessage()));
+    }
+    // ✅ Validation Errors
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse handleValidationErrors(MethodArgumentNotValidException ex) {
+
+        StringBuilder errors = new StringBuilder();
+
+        ex.getBindingResult().getFieldErrors().forEach(error -> {
+            errors.append(error.getField())
+                    .append(": ")
+                    .append(error.getDefaultMessage())
+                    .append(" | ");
+        });
+
+        return new ApiResponse(false, errors.toString());
     }
 
     // ✅ Null Pointer
