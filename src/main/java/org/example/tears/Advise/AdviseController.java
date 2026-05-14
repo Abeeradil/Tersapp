@@ -10,19 +10,19 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import jakarta.validation.ConstraintViolationException;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @ControllerAdvice
 public class AdviseController {
 
-    // ✅ Custom Exception
+    // ================= CUSTOM EXCEPTION =================
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse> handleApiException(ApiException e) {
 
@@ -30,23 +30,23 @@ public class AdviseController {
                 .body(new ApiResponse(false, e.getMessage()));
     }
 
-    // ✅ Constraint Validation
+    // ================= CONSTRAINT VALIDATION =================
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse> handleConstraint(ConstraintViolationException e) {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse(false, "❌ Invalid input"));
+                .body(new ApiResponse(false, e.getMessage()));
     }
 
-    // ✅ Wrong Path Variable Type
+    // ================= TYPE MISMATCH =================
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse(false, "❌ Invalid parameter type"));
+                .body(new ApiResponse(false, "❌ Invalid parameter type: " + e.getName()));
     }
 
-    // ✅ Endpoint Not Found
+    // ================= NOT FOUND =================
     @ExceptionHandler({
             NoHandlerFoundException.class,
             NoResourceFoundException.class
@@ -57,31 +57,33 @@ public class AdviseController {
                 .body(new ApiResponse(false, "❌ Endpoint not found"));
     }
 
-    // ✅ Illegal Argument
+    // ================= ILLEGAL ARGUMENT =================
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse> handleIllegalArgument(IllegalArgumentException e) {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse(false, e.getMessage()));
     }
-    // ✅ Validation Errors
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse handleValidationErrors(MethodArgumentNotValidException ex) {
 
-        StringBuilder errors = new StringBuilder();
+    // ================= VALIDATION (FIXED - NO DUPLICATE) =================
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationErrors(MethodArgumentNotValidException ex) {
+
+        Map<String, String> errors = new HashMap<>();
 
         ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.append(error.getField())
-                    .append(": ")
-                    .append(error.getDefaultMessage())
-                    .append(" | ");
+            errors.put(error.getField(), error.getDefaultMessage());
         });
 
-        return new ApiResponse(false, errors.toString());
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("message", "Validation Error");
+        response.put("errors", errors);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    // ✅ Null Pointer
+    // ================= NULL POINTER =================
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<ApiResponse> handleNullPointer(NullPointerException e) {
 
@@ -89,14 +91,13 @@ public class AdviseController {
                 .body(new ApiResponse(false, "❌ Null reference error"));
     }
 
-
-    // ✅ Any Other Error
+    // ================= GENERAL ERROR =================
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse> handleGeneral(Exception e) {
 
-        e.printStackTrace();
+        e.printStackTrace(); // مهم جدًا للتشخيص
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(false, "❌ حدث خطأ غير متوقع"));
+                .body(new ApiResponse(false, e.getMessage()));
     }
 }
