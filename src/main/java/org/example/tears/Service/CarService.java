@@ -251,6 +251,67 @@ public class CarService {
     // =========================================================
     // AUTO REGISTER
     // =========================================================
+//    public Map<String, Object> registerCarAuto(
+//            HttpServletRequest request,
+//            MultipartFile formImage,
+//            Integer mileage
+//    ) {
+//
+//        User user = authService.getAuthenticatedUser(request);
+//
+//        if (formImage == null || formImage.isEmpty())
+//            throw new ApiException("❌ يجب رفع صورة الاستمارة");
+//
+//        Map<String, String> info = extractCarInfo(formImage);
+//
+//        String extractedName = info.get("ownerName");
+//        String userName = user.getFullName();
+//
+//        if (isEnglish(extractedName))
+//            extractedName = normalizeNameSmart(extractedName);
+//
+//        if (!isNameMatching(userName, extractedName))
+//            throw new ApiException("❌ اسم صاحب الاستمارة لا يطابق حسابك");
+//
+//        String rawText = info.get("rawText");
+//        if (rawText == null || rawText.length() < 10)
+//            throw new ApiException("❌ الصورة غير واضحة");
+//
+//        String plate = normalizePlate(info.get("plateNumberArabic"));
+//        if (plate == null || plate.isBlank())
+//            throw new ApiException("❌ لم يتم استخراج رقم اللوحة");
+//
+//        validatePlate(plate);
+//
+//        if (carRepository.existsByPlateNumberArabic(plate))
+//            throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
+//
+//        CarBrand brand = detectBrandFromText(rawText);
+//        CarModel model = detectModelFromText(rawText, brand);
+//
+//        Car car = new Car();
+//        car.setCustomer(user.getCustomer());
+//        car.setPlateNumberArabic(plate);
+//        car.setPlateNumberEnglish(convertPlateToEnglish(plate));
+//        car.setBrand(brand);
+//        car.setModel(model);
+//        car.setMileage(mileage);
+//        car.setCarYear(parseYear(info.get("carYear")));
+//
+//        // ================= DEV LOG =================
+//        log.info("========== OCR RAW TEXT ==========\n{}", rawText);
+//        log.info("[DEV] OWNER OCR => {}", extractedName);
+//        log.info("[DEV] USER NAME => {}", userName);
+//        log.info("[DEV] BRAND => {}", brand.getNameAr());
+//        log.info("[DEV] MODEL => {}", model.getNameAr());
+//        log.info("[DEV] PLATE AR => {}", car.getPlateNumberArabic());
+//        log.info("[DEV] PLATE EN => {}", car.getPlateNumberEnglish());
+//
+//        carRepository.save(car);
+//
+//        return buildResponse(car, user.getFullName());
+//    }
+
     public Map<String, Object> registerCarAuto(
             HttpServletRequest request,
             MultipartFile formImage,
@@ -263,15 +324,6 @@ public class CarService {
             throw new ApiException("❌ يجب رفع صورة الاستمارة");
 
         Map<String, String> info = extractCarInfo(formImage);
-
-        String extractedName = info.get("ownerName");
-        String userName = user.getFullName();
-
-        if (isEnglish(extractedName))
-            extractedName = normalizeNameSmart(extractedName);
-
-        if (!isNameMatching(userName, extractedName))
-            throw new ApiException("❌ اسم صاحب الاستمارة لا يطابق حسابك");
 
         String rawText = info.get("rawText");
         if (rawText == null || rawText.length() < 10)
@@ -300,8 +352,7 @@ public class CarService {
 
         // ================= DEV LOG =================
         log.info("========== OCR RAW TEXT ==========\n{}", rawText);
-        log.info("[DEV] OWNER OCR => {}", extractedName);
-        log.info("[DEV] USER NAME => {}", userName);
+        log.info("[DEV] USER NAME => {}", user.getFullName());
         log.info("[DEV] BRAND => {}", brand.getNameAr());
         log.info("[DEV] MODEL => {}", model.getNameAr());
         log.info("[DEV] PLATE AR => {}", car.getPlateNumberArabic());
