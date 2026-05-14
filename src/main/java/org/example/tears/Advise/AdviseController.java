@@ -30,9 +30,6 @@ public class AdviseController {
                 .body(new ApiResponse(false, e.getMessage()));
     }
 
-
-
-
     // ✅ Constraint Validation
     @ExceptionHandler(ConstraintViolationException.class)
     public ResponseEntity<ApiResponse> handleConstraint(ConstraintViolationException e) {
