@@ -330,11 +330,24 @@ public class CarService {
             throw new ApiException("❌ الصورة غير واضحة");
 
         // ================= PLATE =================
-        String plate = normalizePlate(info.get("plateNumberArabic"));
-        if (plate == null || plate.isBlank())
-            throw new ApiException("❌ لم يتم استخراج رقم اللوحة");
+        String plate = extractPlateSmart(rawText);
 
-        validatePlate(plate);
+        if (plate == null || plate.length() < 3) {
+            throw new ApiException("❌ لم يتم استخراج رقم اللوحة بشكل صحيح");
+        }
+
+        plate = normalizePlate(plate);
+
+        if (plate == null || plate.split(" ").length < 2) {
+            throw new ApiException("❌ لم يتم استخراج اللوحة بشكل صحيح");
+        }
+        if (plate == null || plate.length() < 3)
+
+
+        if (plate == null || plate.replaceAll("\\s+", "").length() < 3) {
+            throw new ApiException("❌ اللوحة غير واضحة");
+        }
+
 
         if (carRepository.existsByPlateNumberArabic(plate))
             throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
@@ -453,6 +466,28 @@ public class CarService {
         return null;
     }
 
+    private String extractPlateSmart(String text) {
+
+        if (text == null) return null;
+
+        text = text.replaceAll("[^A-Za-z0-9\\u0600-\\u06FF ]", " ");
+        text = text.replaceAll("\\s+", " ").trim();
+
+        // نجمع أي حروف متفرقة قبل الرقم
+        Matcher m = Pattern.compile("([A-Za-z\\u0600-\\u06FF\\s]{1,10})(\\d{2,5})").matcher(text);
+
+        if (m.find()) {
+            String letters = m.group(1).replaceAll("\\s+", "");
+            String numbers = m.group(2);
+
+            if (letters.length() >= 1 && numbers.length() >= 2) {
+                return letters + " " + numbers;
+            }
+        }
+
+        return null;
+    }
+
     // =========================================================
     // NAME NORMALIZATION
     // =========================================================
@@ -490,19 +525,32 @@ public class CarService {
                 .findFirst()
                 .orElseThrow(() -> new ApiException("❌ لم يتم التعرف على الماركة"));
     }
+
+    private double similarity(String s1, String s2) {
+        Set<String> a = new HashSet<>(Arrays.asList(s1.split(" ")));
+        Set<String> b = new HashSet<>(Arrays.asList(s2.split(" ")));
+
+        Set<String> inter = new HashSet<>(a);
+        inter.retainAll(b);
+
+        return (double) inter.size() / Math.max(a.size(), b.size());
+    }
     private CarModel detectModelFromText(String text, CarBrand brand) {
 
         String normalized = normalizeText(text);
 
         return carModelRepository.findByBrandId(brand.getId())
                 .stream()
-                .filter(model ->
-                        normalized.contains(normalizeText(model.getNameAr())) ||
-                                normalized.contains(normalizeText(model.getName()))
-                )
-                .findFirst()
+                .map(model -> new AbstractMap.SimpleEntry<>(
+                        model,
+                        similarity(normalized, normalizeText(model.getNameAr()))
+                ))
+                .filter(entry -> entry.getValue() > 0.4)
+                .max(Comparator.comparingDouble(Map.Entry::getValue))
+                .map(Map.Entry::getKey)
                 .orElseThrow(() -> new ApiException("❌ لم يتم التعرف على الموديل"));
     }
+
 
     // =========================================================
     // PLATE CONVERSION
@@ -601,6 +649,7 @@ public class CarService {
         String[] patterns = {
                 "اسم المالك\\s*[:\\-]?\\s*([\\u0600-\\u06FF ]{3,40})",
                 "المالك\\s*[:\\-]?\\s*([\\u0600-\\u06FF ]{3,40})",
+                "المستخدم\\s*[:\\-]?\\s*([\\u0600-\\u06FF ]{3,40})",
                 "اسم صاحب المركبة\\s*[:\\-]?\\s*([\\u0600-\\u06FF ]{3,40})"
         };
 
