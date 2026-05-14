@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import net.sourceforge.tess4j.ITesseract;
+import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.example.tears.Api.ApiException;
 import org.example.tears.InpDTO.InpCarDto;
 import org.example.tears.Model.*;
@@ -341,8 +342,6 @@ public class CarService {
         if (plate == null || plate.split(" ").length < 2) {
             throw new ApiException("❌ لم يتم استخراج اللوحة بشكل صحيح");
         }
-        if (plate == null || plate.length() < 3)
-
 
         if (plate == null || plate.replaceAll("\\s+", "").length() < 3) {
             throw new ApiException("❌ اللوحة غير واضحة");
@@ -516,17 +515,35 @@ public class CarService {
 
         String normalized = normalizeText(text);
 
+        log.info("OCR NORMALIZED TEXT => {}", normalized);
+
+        LevenshteinDistance distance = new LevenshteinDistance();
+
         return carBrandRepository.findAll()
                 .stream()
-                .filter(brand ->
-                        normalized.contains(normalizeText(brand.getNameAr())) ||
-                                normalized.contains(normalizeText(brand.getName()))
-                )
-                .findFirst()
+                .min(Comparator.comparingInt(brand -> {
+
+                    String ar = normalizeText(brand.getNameAr());
+                    String en = normalizeText(brand.getName());
+
+                    int arDistance = distance.apply(normalized, ar);
+                    int enDistance = distance.apply(normalized, en);
+
+                    return Math.min(arDistance, enDistance);
+                }))
                 .orElseThrow(() -> new ApiException("❌ لم يتم التعرف على الماركة"));
     }
 
+
     private double similarity(String s1, String s2) {
+
+        s1 = normalizeText(s1);
+        s2 = normalizeText(s2);
+
+        if (s1.contains(s2) || s2.contains(s1)) {
+            return 1.0;
+        }
+
         Set<String> a = new HashSet<>(Arrays.asList(s1.split(" ")));
         Set<String> b = new HashSet<>(Arrays.asList(s2.split(" ")));
 
@@ -535,6 +552,7 @@ public class CarService {
 
         return (double) inter.size() / Math.max(a.size(), b.size());
     }
+
     private CarModel detectModelFromText(String text, CarBrand brand) {
 
         String normalized = normalizeText(text);
