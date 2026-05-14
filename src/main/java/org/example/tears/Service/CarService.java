@@ -329,6 +329,7 @@ public class CarService {
         if (rawText == null || rawText.length() < 10)
             throw new ApiException("❌ الصورة غير واضحة");
 
+        // ================= PLATE =================
         String plate = normalizePlate(info.get("plateNumberArabic"));
         if (plate == null || plate.isBlank())
             throw new ApiException("❌ لم يتم استخراج رقم اللوحة");
@@ -338,9 +339,31 @@ public class CarService {
         if (carRepository.existsByPlateNumberArabic(plate))
             throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
 
+        // ================= BRAND / MODEL =================
         CarBrand brand = detectBrandFromText(rawText);
         CarModel model = detectModelFromText(rawText, brand);
 
+        // ================= OPTIONAL OWNER CHECK =================
+        String extractedName = info.get("ownerName");
+
+        if (extractedName != null && !extractedName.isBlank()) {
+
+            String userName = user.getFullName();
+
+            if (isEnglish(extractedName))
+                extractedName = normalizeNameSmart(extractedName);
+
+            boolean match = isNameMatching(userName, extractedName);
+
+            if (!match) {
+                log.warn("⚠️ Owner mismatch (ignored) OCR='{}' USER='{}'",
+                        extractedName, userName);
+            } else {
+                log.info("✅ Owner matched: {}", extractedName);
+            }
+        }
+
+        // ================= SAVE CAR =================
         Car car = new Car();
         car.setCustomer(user.getCustomer());
         car.setPlateNumberArabic(plate);
@@ -349,14 +372,6 @@ public class CarService {
         car.setModel(model);
         car.setMileage(mileage);
         car.setCarYear(parseYear(info.get("carYear")));
-
-        // ================= DEV LOG =================
-        log.info("========== OCR RAW TEXT ==========\n{}", rawText);
-        log.info("[DEV] USER NAME => {}", user.getFullName());
-        log.info("[DEV] BRAND => {}", brand.getNameAr());
-        log.info("[DEV] MODEL => {}", model.getNameAr());
-        log.info("[DEV] PLATE AR => {}", car.getPlateNumberArabic());
-        log.info("[DEV] PLATE EN => {}", car.getPlateNumberEnglish());
 
         carRepository.save(car);
 
@@ -385,13 +400,16 @@ public class CarService {
             if (name != null)
                 result.put("ownerName", name);
 
-            Matcher plate = Pattern.compile("([\\u0621-\\u064A]{1,3}\\s*\\d{1,4})").matcher(text);
-            if (plate.find())
-                result.put("plateNumberArabic", plate.group(1).trim());
+            String plate = extractPlateFromRawText(text);
+            if (plate != null) {
+                result.put("plateNumberArabic", plate);
+            }
 
             Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})").matcher(text);
             if (year.find())
                 result.put("carYear", year.group());
+
+            log.info("OCR CLEAN TEXT => \n{}", text);
 
             return result;
 
@@ -417,6 +435,22 @@ public class CarService {
 
         u.retainAll(o);
         return u.size() >= 2;
+    }
+
+    private String extractPlateFromRawText(String text) {
+
+        if (text == null) return null;
+
+        text = text.replaceAll("[^\\p{L}\\p{N}\\s]", " ");
+
+        Pattern pattern = Pattern.compile("([A-Z]{1,3}\\s?[0-9]{1,4})");
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            return matcher.group(1).trim();
+        }
+
+        return null;
     }
 
     // =========================================================
@@ -498,14 +532,14 @@ public class CarService {
     // =========================================================
     private void validatePlate(String plate) {
 
-        if (plate == null || plate.isBlank())
-            throw new ApiException("❌ رقم اللوحة مطلوب");
+        if (plate == null || plate.length() < 3)
+            throw new ApiException("❌ صيغة اللوحة غير صحيحة");
 
-        boolean valid = plate.matches("^\\d{1,4}\\s?[\\u0621-\\u064A]{1,3}(\\s?[\\u0621-\\u064A]){0,2}$");
-
-        if (!valid)
-            throw new ApiException("❌ صيغة اللوحة العربية غير صحيحة");
+        // تقليل الصرامة لأن OCR مو دقيق
+        if (!plate.matches(".*\\d+.*"))
+            throw new ApiException("❌ اللوحة غير واضحة");
     }
+
     private void validateEnglishPlate(String plate) {
 
         if (plate == null || plate.isBlank())
