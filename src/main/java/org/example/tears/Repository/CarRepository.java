@@ -12,4 +12,5 @@ public interface CarRepository extends JpaRepository<Car,Integer> {
 
     List<Car> findByCustomerId(Integer customerId);
     boolean existsByPlateNumberArabic(String plateNumberArabic);
+    List<Car> findByCustomerIdAndDeletedFalse(Integer userId);
 }

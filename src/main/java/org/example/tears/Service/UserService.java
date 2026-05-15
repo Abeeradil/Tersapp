@@ -8,7 +8,6 @@ import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.Customer;
-import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.CustomerRepository;
 import org.example.tears.Repository.UserRepository;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Service;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor

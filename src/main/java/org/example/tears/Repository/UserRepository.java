@@ -1,8 +1,10 @@
 package org.example.tears.Repository;
 
+import org.example.tears.Model.Car;
 import org.example.tears.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User,Integer> {
@@ -13,5 +15,6 @@ public interface UserRepository extends JpaRepository<User,Integer> {
     Optional<User> findByEmailOrPhoneNumber(String email, String phoneNumber);
 
     boolean existsByPhoneNumber(String phone);
+
 
 }
