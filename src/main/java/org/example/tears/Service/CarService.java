@@ -339,8 +339,9 @@ public class CarService {
 
         String rawText = info.get("rawText");
 
-        if (rawText == null || rawText.length() < 10) {
-            throw new ApiException("❌ الصورة غير واضحة");
+        if (rawText == null || rawText.length() < 5) {
+            log.warn("OCR weak but continuing registration");
+            rawText = "";
         }
 
         String plate = normalizePlate(info.get("plateNumberArabic"));
@@ -408,39 +409,42 @@ public class CarService {
             tempFile = Files.createTempFile("ocr_", ".jpg");
             Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
 
-            String pythonCmd = System.getProperty("os.name").toLowerCase().contains("win")
-                    ? "python"
-                    : "python3";
-
             ProcessBuilder pb = new ProcessBuilder(
-                    pythonCmd,
-                    scriptPath,
+                    "python3",
+                    scriptPath != null ? scriptPath : "python/ocr.py",
                     tempFile.toString()
             );
 
             pb.redirectErrorStream(true);
-
             Process process = pb.start();
 
-            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(25, TimeUnit.SECONDS);
 
             if (!finished) {
                 process.destroyForcibly();
                 log.warn("OCR timeout");
-                return result; // ❌ ما نرمي Exception
+                return result;
             }
 
             String output = new BufferedReader(
                     new InputStreamReader(process.getInputStream())
             ).lines().collect(Collectors.joining());
 
-            if (process.exitValue() != 0 || output == null || output.isBlank()) {
-                log.warn("OCR failed or empty output");
+            if (output == null || output.isBlank()) {
+                log.warn("OCR empty output");
                 return result;
             }
 
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode json = mapper.readTree(output);
+
+            JsonNode json;
+            try {
+                json = mapper.readTree(output);
+            } catch (Exception parseError) {
+                log.warn("OCR JSON invalid, treating as raw text only");
+                result.put("rawText", output);
+                return result;
+            }
 
             StringBuilder rawText = new StringBuilder();
 
@@ -450,30 +454,31 @@ public class CarService {
                 }
             }
 
-            result.put("rawText", rawText.toString().trim());
+            String raw = rawText.toString().trim();
+
+            if (!raw.isBlank()) {
+                result.put("rawText", raw);
+            }
 
             if (json.has("plate") && !json.get("plate").isNull()) {
                 result.put("plateNumberArabic", json.get("plate").asText());
             }
 
-            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})")
-                    .matcher(rawText.toString());
-
+            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})").matcher(raw);
             if (year.find()) {
                 result.put("carYear", year.group());
             }
 
-            String owner = extractUserNameFromText(rawText.toString());
-            if (owner != null) {
+            String owner = extractUserNameFromText(raw);
+            if (owner != null && !owner.isBlank()) {
                 result.put("ownerName", owner);
             }
 
             return result;
 
         } catch (Exception e) {
-            log.error("OCR crashed but handled safely: {}", e.getMessage());
-
-            return result; // 🔥 أهم شيء: لا نكسر السيرفر
+            log.error("OCR failed safely: {}", e.getMessage());
+            return result; // 🔥 لا نكسر السيرفر
         } finally {
             try {
                 if (tempFile != null) Files.deleteIfExists(tempFile);
