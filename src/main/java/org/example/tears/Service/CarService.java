@@ -401,23 +401,19 @@ public class CarService {
     // =========================================================
     public Map<String, String> extractCarInfo(MultipartFile file) {
 
+        Map<String, String> result = new LinkedHashMap<>();
         Path tempFile = null;
 
         try {
-            if (file == null || file.isEmpty()) {
-                throw new ApiException("❌ صورة الاستمارة مطلوبة");
-            }
-
             tempFile = Files.createTempFile("ocr_", ".jpg");
+            Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
 
-            Files.copy(
-                    file.getInputStream(),
-                    tempFile,
-                    StandardCopyOption.REPLACE_EXISTING
-            );
+            String pythonCmd = System.getProperty("os.name").toLowerCase().contains("win")
+                    ? "python"
+                    : "python3";
 
             ProcessBuilder pb = new ProcessBuilder(
-                    "python3",
+                    pythonCmd,
                     scriptPath,
                     tempFile.toString()
             );
@@ -426,69 +422,62 @@ public class CarService {
 
             Process process = pb.start();
 
-            boolean finished = process.waitFor(35, TimeUnit.SECONDS);
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
+
+            if (!finished) {
+                process.destroyForcibly();
+                log.warn("OCR timeout");
+                return result; // ❌ ما نرمي Exception
+            }
 
             String output = new BufferedReader(
                     new InputStreamReader(process.getInputStream())
             ).lines().collect(Collectors.joining());
 
-            if (!finished) {
-                process.destroyForcibly();
-                throw new ApiException("❌ OCR timeout");
-            }
-
-            if (process.exitValue() != 0) {
-                throw new ApiException("❌ OCR failed in Python script");
-            }
-
-            if (output == null || output.isBlank()) {
-                throw new ApiException("❌ OCR returned empty response");
+            if (process.exitValue() != 0 || output == null || output.isBlank()) {
+                log.warn("OCR failed or empty output");
+                return result;
             }
 
             ObjectMapper mapper = new ObjectMapper();
             JsonNode json = mapper.readTree(output);
 
-            if (json == null || !json.has("raw")) {
-                throw new ApiException("❌ OCR response invalid");
-            }
-
             StringBuilder rawText = new StringBuilder();
 
-            for (JsonNode n : json.get("raw")) {
-                if (n != null) {
+            if (json.has("raw") && json.get("raw").isArray()) {
+                for (JsonNode n : json.get("raw")) {
                     rawText.append(n.asText()).append(" ");
                 }
             }
 
-            Map<String, String> result = new LinkedHashMap<>();
             result.put("rawText", rawText.toString().trim());
 
             if (json.has("plate") && !json.get("plate").isNull()) {
                 result.put("plateNumberArabic", json.get("plate").asText());
             }
 
-            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})").matcher(rawText);
+            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})")
+                    .matcher(rawText.toString());
+
             if (year.find()) {
                 result.put("carYear", year.group());
             }
 
             String owner = extractUserNameFromText(rawText.toString());
-            if (owner != null && !owner.isBlank()) {
+            if (owner != null) {
                 result.put("ownerName", owner);
             }
 
             return result;
 
         } catch (Exception e) {
-            throw new ApiException("❌ OCR Failed: " + e.getMessage());
+            log.error("OCR crashed but handled safely: {}", e.getMessage());
 
+            return result; // 🔥 أهم شيء: لا نكسر السيرفر
         } finally {
             try {
-                if (tempFile != null) {
-                    Files.deleteIfExists(tempFile);
-                }
-            } catch (Exception ignored) {
-            }
+                if (tempFile != null) Files.deleteIfExists(tempFile);
+            } catch (Exception ignored) {}
         }
     }
 
