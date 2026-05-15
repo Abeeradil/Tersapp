@@ -63,6 +63,16 @@ public class UserController {
         );
     }
 
+    @DeleteMapping("/delete/{userId}")
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Integer userId) {
+
+        userService.deleteUser(userId);
+
+        return ResponseEntity.ok(
+                new ApiResponse(true, "✅ User deleted successfully")
+        );
+    }
+
     @PostMapping("/notifications")
     public ResponseEntity<ApiResponse> updateNotifications(
             HttpServletRequest request,

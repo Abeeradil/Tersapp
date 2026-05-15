@@ -1,5 +1,7 @@
 package org.example.tears.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -12,15 +14,18 @@ import org.example.tears.OutDTO.OutMyCarDTO;
 import org.example.tears.Repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.nio.file.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +39,9 @@ public class CarService {
     private final CarBrandRepository carBrandRepository;
     private final CarModelRepository carModelRepository;
     private final ITesseract tesseract;
+
+    @Value("${ocr.script.path}")
+    private String scriptPath;
 
     // =========================================================
     // LETTER MAPS
@@ -330,52 +338,29 @@ public class CarService {
         if (rawText == null || rawText.length() < 10)
             throw new ApiException("❌ الصورة غير واضحة");
 
-        // ================= PLATE =================
-        String plate = extractPlateSmart(rawText);
+        String plate = normalizePlate(info.get("plateNumberArabic"));
 
-        if (plate == null || plate.length() < 3) {
-            throw new ApiException("❌ لم يتم استخراج رقم اللوحة بشكل صحيح");
-        }
-
-        plate = normalizePlate(plate);
-
-        if (plate == null || plate.split(" ").length < 2) {
-            throw new ApiException("❌ لم يتم استخراج اللوحة بشكل صحيح");
-        }
-
-        if (plate == null || plate.replaceAll("\\s+", "").length() < 3) {
-            throw new ApiException("❌ اللوحة غير واضحة");
-        }
-
+        if (plate == null || plate.isBlank())
+            throw new ApiException("❌ لم يتم استخراج اللوحة");
 
         if (carRepository.existsByPlateNumberArabic(plate))
             throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
 
-        // ================= BRAND / MODEL =================
         CarBrand brand = detectBrandFromText(rawText);
         CarModel model = detectModelFromText(rawText, brand);
 
-        // ================= OPTIONAL OWNER CHECK =================
         String extractedName = info.get("ownerName");
 
-        if (extractedName != null && !extractedName.isBlank()) {
-
-            String userName = user.getFullName();
-
+        if (extractedName != null) {
             if (isEnglish(extractedName))
                 extractedName = normalizeNameSmart(extractedName);
 
-            boolean match = isNameMatching(userName, extractedName);
+            boolean match = isNameMatching(user.getFullName(), extractedName);
 
-            if (!match) {
-                log.warn("⚠️ Owner mismatch (ignored) OCR='{}' USER='{}'",
-                        extractedName, userName);
-            } else {
-                log.info("✅ Owner matched: {}", extractedName);
-            }
+            if (!match)
+                log.warn("Owner mismatch ignored: OCR={} USER={}", extractedName, user.getFullName());
         }
 
-        // ================= SAVE CAR =================
         Car car = new Car();
         car.setCustomer(user.getCustomer());
         car.setPlateNumberArabic(plate);
@@ -390,45 +375,78 @@ public class CarService {
         return buildResponse(car, user.getFullName());
     }
 
+
     // =========================================================
     // OCR
     // =========================================================
     public Map<String, String> extractCarInfo(MultipartFile file) {
 
+        Path tempFile = null;
+
         try {
-            BufferedImage image = ImageIO.read(file.getInputStream());
-            if (image == null)
-                throw new ApiException("❌ الصورة غير صالحة");
+            tempFile = Files.createTempFile("ocr_", ".jpg");
 
-            BufferedImage processed = enhanceImage(image);
-            String text = tesseract.doOCR(processed);
+            Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
 
-            Map<String, String> result = new LinkedHashMap<>();
-            result.put("rawText", text);
+            ProcessBuilder pb = new ProcessBuilder(
+                    "python3",
+                    scriptPath,
+                    tempFile.toString()
+            );
 
-            log.info("\n========== OCR RAW ==========\n{}\n=============================", text);
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
 
-            String name = extractUserNameFromText(text);
-            if (name != null)
-                result.put("ownerName", name);
+            boolean finished = process.waitFor(30, TimeUnit.SECONDS);
 
-            String plate = extractPlateFromRawText(text);
-            if (plate != null) {
-                result.put("plateNumberArabic", plate);
+            if (!finished) {
+                process.destroy();
+                throw new ApiException("❌ OCR timeout");
             }
 
-            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})").matcher(text);
+            String output = new BufferedReader(
+                    new InputStreamReader(process.getInputStream())
+            ).lines().collect(Collectors.joining());
+
+            if (process.exitValue() != 0)
+                throw new ApiException("❌ OCR process failed");
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode json = mapper.readTree(output);
+
+            String rawText = "";
+
+            for (JsonNode n : json.get("raw")) {
+                rawText += n.asText() + " ";
+            }
+
+            Map<String, String> result = new LinkedHashMap<>();
+            result.put("rawText", rawText.trim());
+
+            if (json.has("plate"))
+                result.put("plateNumberArabic", json.get("plate").asText());
+
+            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})").matcher(rawText);
             if (year.find())
                 result.put("carYear", year.group());
 
-            log.info("OCR CLEAN TEXT => \n{}", text);
+            String owner = extractUserNameFromText(rawText);
+            if (owner != null)
+                result.put("ownerName", owner);
 
             return result;
 
         } catch (Exception e) {
             throw new ApiException("❌ OCR Failed: " + e.getMessage());
+
+        } finally {
+            try {
+                if (tempFile != null)
+                    Files.deleteIfExists(tempFile);
+            } catch (Exception ignored) {}
         }
     }
+
 
     // =========================================================
     // NAME MATCHING
@@ -559,14 +577,21 @@ public class CarService {
 
         return carModelRepository.findByBrandId(brand.getId())
                 .stream()
-                .map(model -> new AbstractMap.SimpleEntry<>(
-                        model,
-                        similarity(normalized, normalizeText(model.getNameAr()))
-                ))
-                .filter(entry -> entry.getValue() > 0.4)
-                .max(Comparator.comparingDouble(Map.Entry::getValue))
-                .map(Map.Entry::getKey)
-                .orElseThrow(() -> new ApiException("❌ لم يتم التعرف على الموديل"));
+                .max(Comparator.comparingDouble(model -> {
+
+                    String modelAr =
+                            normalizeText(model.getNameAr());
+
+                    String modelEn =
+                            normalizeText(model.getName());
+
+                    return Math.max(
+                            similarity(normalized, modelAr),
+                            similarity(normalized, modelEn)
+                    );
+                }))
+                .orElseThrow(() ->
+                        new ApiException("❌ لم يتم التعرف على الموديل"));
     }
 
 
@@ -644,6 +669,12 @@ public class CarService {
         if (p == null)
             return null;
 
+        p = convertArabicNumbers(p);
+
+        if (!p.matches(".*\\d+.*")) {
+            throw new ApiException("❌ لم يتم التعرف على اللوحة بشكل صحيح");
+        }
+
         return p.trim().replaceAll("\\s+", " ");
     }
 
@@ -689,6 +720,21 @@ public class CarService {
                 .replaceAll("[^\\u0600-\\u06FF ]", "")
                 .replaceAll("\\s+", " ")
                 .trim();
+    }
+
+    private String convertArabicNumbers(String text) {
+
+        return text
+                .replace("٠", "0")
+                .replace("١", "1")
+                .replace("٢", "2")
+                .replace("٣", "3")
+                .replace("٤", "4")
+                .replace("٥", "5")
+                .replace("٦", "6")
+                .replace("٧", "7")
+                .replace("٨", "8")
+                .replace("٩", "9");
     }
 
     // =========================================================

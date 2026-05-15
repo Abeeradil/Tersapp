@@ -188,6 +188,15 @@ public class UserService {
         return new ApiResponse(true, "Phone updated successfully");
     }
 
+    public void deleteUser(Integer userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ApiException("❌ User not found"));
+
+        userRepository.delete(user);
+    }
+
 
 
         // ================= Update Notifications =================
