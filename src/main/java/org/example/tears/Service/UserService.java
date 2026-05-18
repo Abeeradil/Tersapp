@@ -9,6 +9,7 @@ import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.Customer;
 import org.example.tears.Model.User;
+import org.example.tears.Repository.CarRepository;
 import org.example.tears.Repository.CustomerRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
+    private final CarRepository carRepository;
     private final AuthService authService;
 
         // ================= Get Profile =================
@@ -189,9 +191,14 @@ public class UserService {
     public void deleteUser(Integer userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ApiException("❌ User not found"));
+                .orElseThrow(() -> new ApiException("❌ User not found"));
 
+        Customer customer = user.getCustomer();
+
+        // 1. احذف السيارات أولاً
+        carRepository.deleteAllByCustomerId(customer.getId());
+
+        // 2. احذف المستخدم
         userRepository.delete(user);
     }
 

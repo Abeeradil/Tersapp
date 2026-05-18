@@ -344,26 +344,53 @@ public class CarService {
             rawText = "";
         }
 
-        String plate = normalizePlate(info.get("plateNumberArabic"));
+        String plateArabic = normalizePlate(info.get("plateNumberArabic"));
+        String plateEnglish = info.get("plateNumberEnglish");
 
-        if (plate == null || plate.isBlank()) {
+        if (plateArabic == null || plateArabic.isBlank()) {
             throw new ApiException("❌ لم يتم استخراج اللوحة");
         }
 
-        plate = plate.trim();
+        plateArabic = plateArabic.trim();
 
-        if (carRepository.existsByPlateNumberArabic(plate)) {
+        if (plateEnglish == null || plateEnglish.isBlank()) {
+            plateEnglish = convertPlateToEnglish(plateArabic);
+        }
+
+        plateEnglish = plateEnglish.trim().toUpperCase();
+
+        if (carRepository.existsByPlateNumberArabic(plateArabic)) {
             throw new ApiException("❌ هذه اللوحة مسجلة مسبقًا");
         }
 
-        CarBrand brand = detectBrandFromText(rawText);
+        CarBrand brand;
+
+        if (info.get("brandId") != null) {
+            brand = carBrandRepository.findById(Integer.parseInt(info.get("brandId")))
+                    .orElseThrow(() -> new ApiException("❌ البراند غير موجود"));
+        } else {
+            brand = detectBrandFromText(rawText);
+        }
+
         if (brand == null) {
             throw new ApiException("❌ لم يتم التعرف على الماركة");
         }
 
-        CarModel model = detectModelFromText(rawText, brand);
+        CarModel model;
+
+        if (info.get("modelId") != null) {
+            model = carModelRepository.findById(Integer.parseInt(info.get("modelId")))
+                    .orElseThrow(() -> new ApiException("❌ الموديل غير موجود"));
+        } else {
+            model = detectModelFromText(rawText, brand);
+        }
+
         if (model == null) {
             throw new ApiException("❌ لم يتم التعرف على الموديل");
+        }
+
+        if (!model.getBrand().getId().equals(brand.getId())) {
+            throw new ApiException("❌ الموديل لا يتبع لهذا البراند");
         }
 
         String extractedName = info.get("ownerName");
@@ -384,8 +411,8 @@ public class CarService {
 
         Car car = new Car();
         car.setCustomer(user.getCustomer());
-        car.setPlateNumberArabic(plate);
-        car.setPlateNumberEnglish(convertPlateToEnglish(plate));
+        car.setPlateNumberArabic(plateArabic);
+        car.setPlateNumberEnglish(plateEnglish);
         car.setBrand(brand);
         car.setModel(model);
         car.setMileage(mileage);
@@ -442,48 +469,289 @@ public class CarService {
                 json = mapper.readTree(output);
             } catch (Exception parseError) {
                 log.warn("OCR JSON invalid, treating as raw text only");
-                result.put("rawText", output);
+
+                String raw = output.trim();
+                result.put("rawText", raw);
+
+                fillPlateInfo(result, raw, null);
+                fillYearInfo(result, raw);
+                fillBrandAndModelInfo(result, raw);
+
+                String owner = extractUserNameFromText(raw);
+                if (owner != null && !owner.isBlank()) {
+                    result.put("ownerName", owner);
+                }
+
                 return result;
             }
 
-            StringBuilder rawText = new StringBuilder();
-
-            if (json.has("raw") && json.get("raw").isArray()) {
-                for (JsonNode n : json.get("raw")) {
-                    rawText.append(n.asText()).append(" ");
-                }
-            }
-
-            String raw = rawText.toString().trim();
+            String raw = extractRawTextFromOcrJson(json);
 
             if (!raw.isBlank()) {
                 result.put("rawText", raw);
             }
 
+            String jsonPlate = null;
             if (json.has("plate") && !json.get("plate").isNull()) {
-                result.put("plateNumberArabic", json.get("plate").asText());
+                jsonPlate = json.get("plate").asText();
             }
 
-            Matcher year = Pattern.compile("(19\\d{2}|20\\d{2})").matcher(raw);
-            if (year.find()) {
-                result.put("carYear", year.group());
-            }
+            fillPlateInfo(result, raw, jsonPlate);
+            fillYearInfo(result, raw);
+            fillBrandAndModelInfo(result, raw);
 
             String owner = extractUserNameFromText(raw);
             if (owner != null && !owner.isBlank()) {
                 result.put("ownerName", owner);
             }
 
+            log.info("OCR EXTRACTED CAR INFO => {}", result);
+
+
             return result;
 
         } catch (Exception e) {
             log.error("OCR failed safely: {}", e.getMessage());
-            return result; // 🔥 لا نكسر السيرفر
+            return result;
         } finally {
             try {
-                if (tempFile != null) Files.deleteIfExists(tempFile);
-            } catch (Exception ignored) {}
+                if (tempFile != null) {
+                    Files.deleteIfExists(tempFile);
+                }
+            } catch (Exception ignored) {
+            }
+
+
         }
+    }
+
+    private String extractRawTextFromOcrJson(JsonNode json) {
+
+        StringBuilder rawText = new StringBuilder();
+
+        if (json.has("raw") && json.get("raw").isArray()) {
+            for (JsonNode n : json.get("raw")) {
+                if (n != null && !n.isNull()) {
+                    rawText.append(n.asText()).append(" ");
+                }
+            }
+        }
+
+        if (rawText.isEmpty() && json.has("text") && !json.get("text").isNull()) {
+            rawText.append(json.get("text").asText());
+        }
+
+        if (rawText.isEmpty() && json.has("rawText") && !json.get("rawText").isNull()) {
+            rawText.append(json.get("rawText").asText());
+        }
+
+        return rawText.toString()
+                .replaceAll("[\\n\\r\\t]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private void fillPlateInfo(
+            Map<String, String> result,
+            String rawText,
+            String plateFromJson
+    ) {
+
+        String source = firstNonBlank(plateFromJson, rawText);
+
+        String plateArabic = extractArabicPlate(source);
+        String plateEnglish = extractEnglishPlate(source);
+
+        if ((plateArabic == null || plateArabic.isBlank()) &&
+                plateEnglish != null && !plateEnglish.isBlank()) {
+            plateArabic = convertPlateToArabic(plateEnglish);
+        }
+
+        if ((plateEnglish == null || plateEnglish.isBlank()) &&
+                plateArabic != null && !plateArabic.isBlank()) {
+            plateEnglish = convertPlateToEnglish(plateArabic);
+        }
+
+        if (plateArabic != null && !plateArabic.isBlank()) {
+            plateArabic = normalizeArabicPlateForOcr(plateArabic);
+            result.put("plateNumberArabic", plateArabic);
+        }
+
+        if (plateEnglish != null && !plateEnglish.isBlank()) {
+            plateEnglish = normalizeEnglishPlateForOcr(plateEnglish);
+            result.put("plateNumberEnglish", plateEnglish);
+        }
+    }
+
+    private String extractArabicPlate(String text) {
+
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+
+        String normalized = text
+                .replace("ا", "أ")
+                .replaceAll("[^0-9٠-٩۰-۹\\u0621-\\u064A\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        // مثال: 1234 أ ب ح
+        Pattern numbersThenLetters = Pattern.compile(
+                "([0-9٠-٩۰-۹]{1,4})\\s*([أبحدرسصطعقكلمنهوى]{1,3}(?:\\s*[أبحدرسصطعقكلمنهوى]){0,2})"
+        );
+
+        Matcher matcher = numbersThenLetters.matcher(normalized);
+        if (matcher.find()) {
+            return matcher.group(1) + " " + matcher.group(2).replaceAll("\\s+", " ");
+        }
+
+        // مثال: أ ب ح 1234
+        Pattern lettersThenNumbers = Pattern.compile(
+                "([أبحدرسصطعقكلمنهوى]{1,3}(?:\\s*[أبحدرسصطعقكلمنهوى]){0,2})\\s*([0-9٠-٩۰-۹]{1,4})"
+        );
+
+        matcher = lettersThenNumbers.matcher(normalized);
+        if (matcher.find()) {
+            return matcher.group(2) + " " + matcher.group(1).replaceAll("\\s+", " ");
+        }
+
+        return null;
+    }
+
+    private String extractEnglishPlate(String text) {
+
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+
+        String normalized = text
+                .toUpperCase()
+                .replaceAll("[^A-Z0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        // مثال: 1234 ABC أو 1234 A B C
+        Pattern numbersThenLetters = Pattern.compile(
+                "\\b([0-9]{1,4})\\s*([A-Z]{1,3}(?:\\s*[A-Z]){0,2})\\b"
+        );
+
+        Matcher matcher = numbersThenLetters.matcher(normalized);
+        if (matcher.find()) {
+            return matcher.group(1) + matcher.group(2).replaceAll("\\s+", "");
+        }
+
+        // مثال: ABC 1234 أو A B C 1234
+        Pattern lettersThenNumbers = Pattern.compile(
+                "\\b([A-Z]{1,3}(?:\\s*[A-Z]){0,2})\\s*([0-9]{1,4})\\b"
+        );
+
+        matcher = lettersThenNumbers.matcher(normalized);
+        if (matcher.find()) {
+            return matcher.group(2) + matcher.group(1).replaceAll("\\s+", "");
+        }
+
+        return null;
+    }
+
+    private void fillYearInfo(Map<String, String> result, String rawText) {
+
+        if (rawText == null || rawText.isBlank()) {
+            return;
+        }
+
+        String normalized = convertArabicNumbers(rawText);
+
+        // نحاول نلقط السنة إذا كانت قريبة من كلمات الاستمارة
+        Pattern labeledYear = Pattern.compile(
+                "(?:سنة\\s*الصنع|سنه\\s*الصنع|الصنع|الموديل|model\\s*year|year)\\D{0,20}(19\\d{2}|20\\d{2})",
+                Pattern.CASE_INSENSITIVE
+        );
+
+        Matcher matcher = labeledYear.matcher(normalized);
+        if (matcher.find()) {
+            result.put("carYear", matcher.group(1));
+            return;
+        }
+
+        // fallback: أي سنة منطقية داخل النص
+        Pattern anyYear = Pattern.compile("\\b(19[8-9]\\d|20[0-2]\\d)\\b");
+        matcher = anyYear.matcher(normalized);
+
+        while (matcher.find()) {
+            int year = Integer.parseInt(matcher.group(1));
+
+            if (year >= 1980 && year <= 2027) {
+                result.put("carYear", String.valueOf(year));
+                return;
+            }
+        }
+    }
+
+    private void fillBrandAndModelInfo(Map<String, String> result, String rawText) {
+
+        if (rawText == null || rawText.isBlank()) {
+            return;
+        }
+
+        try {
+            CarBrand brand = detectBrandFromText(rawText);
+
+            if (brand != null) {
+                result.put("brandId", String.valueOf(brand.getId()));
+                result.put("brandName", brand.getName());
+                result.put("brandNameAr", brand.getNameAr());
+
+                CarModel model = detectModelFromText(rawText, brand);
+
+                if (model != null) {
+                    result.put("modelId", String.valueOf(model.getId()));
+                    result.put("modelName", model.getName());
+                    result.put("modelNameAr", model.getNameAr());
+                }
+            }
+
+        } catch (Exception e) {
+            log.warn("Could not detect brand/model from OCR text: {}", e.getMessage());
+        }
+    }
+
+    private String normalizeArabicPlateForOcr(String plate) {
+
+        if (plate == null) {
+            return null;
+        }
+
+        return convertArabicNumbers(plate)
+                .replace("ا", "أ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private String normalizeEnglishPlateForOcr(String plate) {
+
+        if (plate == null) {
+            return null;
+        }
+
+        return plate
+                .toUpperCase()
+                .replaceAll("\\s+", "")
+                .trim();
+    }
+
+    private String firstNonBlank(String... values) {
+
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+
+        return null;
     }
 
 
@@ -572,23 +840,17 @@ public class CarService {
 
         String normalized = normalizeText(text);
 
-        log.info("OCR NORMALIZED TEXT => {}", normalized);
+        for (CarBrand brand : carBrandRepository.findAll()) {
 
-        LevenshteinDistance distance = new LevenshteinDistance();
+            String ar = normalizeText(brand.getNameAr());
+            String en = normalizeText(brand.getName());
 
-        return carBrandRepository.findAll()
-                .stream()
-                .min(Comparator.comparingInt(brand -> {
+            if (normalized.contains(ar) || normalized.contains(en)) {
+                return brand;
+            }
+        }
 
-                    String ar = normalizeText(brand.getNameAr());
-                    String en = normalizeText(brand.getName());
-
-                    int arDistance = distance.apply(normalized, ar);
-                    int enDistance = distance.apply(normalized, en);
-
-                    return Math.min(arDistance, enDistance);
-                }))
-                .orElseThrow(() -> new ApiException("❌ لم يتم التعرف على الماركة"));
+        throw new ApiException("❌ لم يتم التعرف على الماركة");
     }
 
 
@@ -666,7 +928,10 @@ public class CarService {
             throw new ApiException("❌ صيغة اللوحة غير صحيحة");
 
         // تقليل الصرامة لأن OCR مو دقيق
-        if (!plate.matches(".*\\d+.*"))
+        boolean hasNumbers = plate.matches(".*\\d+.*");
+        boolean hasLetters = plate.matches(".*[A-Za-z\\u0600-\\u06FF].*");
+
+        if (!hasNumbers || !hasLetters)
             throw new ApiException("❌ اللوحة غير واضحة");
     }
 
@@ -799,6 +1064,9 @@ public class CarService {
         m.put("modelName", car.getModel().getName());
         m.put("modelNameAr", car.getModel().getNameAr());
 
+        m.put("carYear", car.getCarYear());
+        m.put("mileage", car.getMileage());
+
         m.put("plateArabic", car.getPlateNumberArabic());
         m.put("plateEnglish", car.getPlateNumberEnglish());
 
@@ -818,6 +1086,10 @@ public class CarService {
             InpCarDto dto
     ) {
 
+        if (dto == null) {
+            throw new ApiException("❌ البيانات مطلوبة");
+        }
+
         User user = authService.getAuthenticatedUser(request);
 
         Car car = carRepository.findById(carId)
@@ -826,53 +1098,96 @@ public class CarService {
         // التحقق من الملكية
         if (car.getCustomer() == null ||
                 !car.getCustomer().getId().equals(user.getCustomer().getId())) {
+
             throw new ApiException("❌ غير مسموح تعديل سيارة ليست لك");
         }
 
-        // تحديث السنة
+        // ================= UPDATE YEAR =================
         if (dto.getCarYear() != null) {
             car.setCarYear(dto.getCarYear());
         }
 
-        // تحديث الممشى
+        // ================= UPDATE MILEAGE =================
         if (dto.getMileage() != null) {
             car.setMileage(dto.getMileage());
         }
 
-        // تحديث البراند
+        // ================= CURRENT VALUES =================
+        CarBrand brand = car.getBrand();
+        CarModel model = car.getModel();
+
+        // ================= UPDATE BRAND =================
         if (dto.getBrandId() != null) {
-            CarBrand brand = carBrandRepository.findById(dto.getBrandId())
-                    .orElseThrow(() -> new ApiException("❌ البراند غير موجود"));
+
+            brand = carBrandRepository.findById(dto.getBrandId())
+                    .orElseThrow(() ->
+                            new ApiException("❌ البراند غير موجود"));
+
             car.setBrand(brand);
         }
 
-        // تحديث الموديل
+        // ================= UPDATE MODEL =================
         if (dto.getModelId() != null) {
-            CarModel model = carModelRepository.findById(dto.getModelId())
-                    .orElseThrow(() -> new ApiException("❌ الموديل غير موجود"));
+
+            model = carModelRepository.findById(dto.getModelId())
+                    .orElseThrow(() ->
+                            new ApiException("❌ الموديل غير موجود"));
+
             car.setModel(model);
         }
 
-        // تحديث اللوحة
-        if (dto.getPlateNumberArabic() != null || dto.getPlateNumberEnglish() != null) {
+        // ================= VALIDATE BRAND + MODEL =================
+        if (brand != null &&
+                model != null &&
+                !model.getBrand().getId().equals(brand.getId())) {
+
+            throw new ApiException("❌ الموديل لا يتبع لهذا البراند");
+        }
+
+        car.setBrand(brand);
+        car.setModel(model);
+
+        // ================= UPDATE PLATE =================
+        if (dto.getPlateNumberArabic() != null ||
+                dto.getPlateNumberEnglish() != null) {
 
             String ar = dto.getPlateNumberArabic();
             String en = dto.getPlateNumberEnglish();
 
+            // Arabic plate
             if (ar != null && !ar.isBlank()) {
+
                 ar = normalizePlate(ar);
+
                 validatePlate(ar);
-                car.setPlateNumberArabic(ar);
-                car.setPlateNumberEnglish(convertPlateToEnglish(ar));
+
+                en = convertPlateToEnglish(ar);
             }
 
-            if (en != null && !en.isBlank()) {
+            // English plate
+            else if (en != null && !en.isBlank()) {
+
+                en = en.trim()
+                        .replaceAll("\\s+", " ")
+                        .toUpperCase();
+
                 validateEnglishPlate(en);
-                car.setPlateNumberEnglish(en);
-                car.setPlateNumberArabic(convertPlateToArabic(en));
+
+                ar = convertPlateToArabic(en);
             }
+
+            // duplicate check
+            if (carRepository.existsByPlateNumberArabicAndIdNot(ar, carId)
+                    || carRepository.existsByPlateNumberEnglishAndIdNot(en, carId)) {
+
+                throw new ApiException("❌ السيارة مسجلة مسبقًا");
+            }
+
+            car.setPlateNumberArabic(ar);
+            car.setPlateNumberEnglish(en);
         }
 
+        // ================= SAVE =================
         carRepository.save(car);
 
         return buildResponse(car, user.getFullName());

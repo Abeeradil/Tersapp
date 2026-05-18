@@ -147,7 +147,7 @@ public class CarController {
 //                    .body(Map.of("error", e.getMessage()));
 //        }
 //    }
-@PutMapping("/update/{carId}")
+@PatchMapping("/update/{carId}")
 public ResponseEntity<?> updateCar(
         HttpServletRequest request,
         @PathVariable Integer carId,
