@@ -24,6 +24,12 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
 """)
     List<CarServiceRequest> findAssignedTo(@Param("employeeId") Integer employeeId);
 
+    @Query("""
+    SELECT r.appointmentTime
+    FROM CarServiceRequest r
+    WHERE r.appointmentDate = :date
+""")
+    List<String> findBookedTimesByDate(String date);
 
     @Modifying
     @Query("""

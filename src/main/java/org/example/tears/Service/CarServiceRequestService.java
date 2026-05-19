@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -230,32 +231,31 @@ public class CarServiceRequestService {
         return dto;
     }
 
-    public WorkingHoursResponseDto getWorkingHours() {
+    public Map<String, Object> getAvailability(String date) {
 
-        WorkingHoursResponseDto dto = new WorkingHoursResponseDto();
+        List<String> allTimes = List.of(
+                "08:00","09:00","10:00","11:00","12:00",
+                "16:00","17:00","18:00","19:00"
+        );
 
-        dto.setAvailableTimes(List.of(
-                "08:00",
-                "09:00",
-                "10:00",
-                "11:00",
-                "12:00",
-                "16:00",
-                "17:00",
-                "18:00",
-                "19:00"
-        ));
+        List<String> booked = requestRepository
+                .findBookedTimesByDate(date);
 
-        dto.setSupportedCities(List.of(
-                "Makkah",
-                "Jeddah"
-        ));
+        List<Map<String, Object>> slots = allTimes.stream()
+                .map(time -> {
+                    boolean isAvailable = !booked.contains(time);
 
-        dto.setWorkingDays("Sunday - Thursday");
+                    return Map.<String, Object>of(
+                            "time", time,
+                            "available", isAvailable
+                    );
+                })
+                .toList();
 
-        dto.setNote("المواعيد المتاحة كل ساعة");
-
-        return dto;
+        return Map.of(
+                "date", date,
+                "slots", slots
+        );
     }
 
     public List<OutLocationDto> getMyLocations(HttpServletRequest request) {

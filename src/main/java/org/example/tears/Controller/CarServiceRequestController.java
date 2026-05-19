@@ -40,13 +40,15 @@ public class CarServiceRequestController {
 
             return ResponseEntity.ok(requestService.createRequest(request, dto));
         }
-    @GetMapping("/working-hours")
-    public ResponseEntity<?> getWorkingHours() {
-
+    @GetMapping("/availability")
+    public ResponseEntity<?> getAvailability(
+            @RequestParam String date
+    ) {
         return ResponseEntity.ok(
-                requestService.getWorkingHours()
+                requestService.getAvailability(date)
         );
     }
+
     @GetMapping("/services")
     public ApiResponse getServices() {
 
