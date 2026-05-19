@@ -57,8 +57,7 @@ public class ConfigurationSecurity {
                                 "/api/v1/tears/users/update",
                                 "/api/v1/tears/users/notifications",
                                 "/api/v1/tears/location/**",
-                                "/api/v1/tears/users/change-phone/**",
-                                "/api/v1/tears/service-request/my-locations"
+                                "/api/v1/tears/users/change-phone/**"
                         ).authenticated()
 
                         // ================= CUSTOMER =================
