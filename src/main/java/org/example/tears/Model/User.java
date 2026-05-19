@@ -15,7 +15,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
-@ToString(exclude = {"customer", "employee"})
 @Table(name = "users")
 public class User {
 
@@ -57,9 +56,11 @@ public class User {
 
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Customer customer;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @ToString.Exclude
     private Employee employee;
 
 }

@@ -14,7 +14,6 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 @Table(name = "customers")
-@ToString(exclude = {"user"})
 public class Customer{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,6 +25,7 @@ public class Customer{
 
     @OneToOne()
     @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @ToString.Exclude
     private User user;
 
 }
