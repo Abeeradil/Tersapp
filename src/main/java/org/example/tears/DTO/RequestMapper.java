@@ -36,6 +36,8 @@ public class RequestMapper {
             loc.setLng(locDto.getLng());
             loc.setAddress(locDto.getAddress());
             loc.setCustomer(user.getCustomer());
+            loc.setTitle(loc.getTitle());
+
             return locationRepository.save(loc);
         }
 

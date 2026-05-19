@@ -56,6 +56,16 @@ public class CarServiceRequestController {
         );
     }
 
+    @GetMapping("/my-locations")
+    public ResponseEntity<?> getMyLocations(
+            HttpServletRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                requestService.getMyLocations(request)
+        );
+    }
+
         // Get my requests
 //        @GetMapping("/my")
 //        public ResponseEntity<List<RequestResponseDto>> myRequests(HttpServletRequest request) {

@@ -12,6 +12,7 @@ import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
+import org.example.tears.OutDTO.OutLocationDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Model.*;
@@ -151,6 +152,7 @@ public class CarServiceRequestService {
             location.setLat(loc.getLat());
             location.setLng(loc.getLng());
             location.setAddress(loc.getAddress());
+            location.setTitle(loc.getTitle());
             location.setCustomer(user.getCustomer());
             locationRepository.save(location);
         } else if (dto.getLocations() != null && !dto.getLocations().isEmpty()) {
@@ -159,6 +161,7 @@ public class CarServiceRequestService {
             location.setLat(loc.getLat());
             location.setLng(loc.getLng());
             location.setAddress(loc.getAddress());
+            location.setTitle(loc.getTitle());
             location.setCustomer(user.getCustomer());
             locationRepository.save(location);
         } else {
@@ -253,6 +256,29 @@ public class CarServiceRequestService {
         dto.setNote("المواعيد المتاحة كل ساعة");
 
         return dto;
+    }
+
+    public List<OutLocationDto> getMyLocations(HttpServletRequest request) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return locationRepository
+                .findByCustomerId(user.getCustomer().getId())
+                .stream()
+                .map(location -> {
+
+                    OutLocationDto dto = new OutLocationDto();
+
+                    dto.setId(location.getId());
+                    dto.setLat(location.getLat());
+                    dto.setLng(location.getLng());
+                    dto.setAddress(location.getAddress());
+
+                    dto.setTitle(location.getTitle());
+
+                    return dto;
+                })
+                .toList();
     }
 
 

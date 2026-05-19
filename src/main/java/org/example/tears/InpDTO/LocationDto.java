@@ -7,4 +7,5 @@ public class LocationDto {
     private double lat;
     private double lng;
     private String address;
+    private String title;
 }

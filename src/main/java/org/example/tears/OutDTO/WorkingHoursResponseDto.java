@@ -5,14 +5,14 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-    public class WorkingHoursResponseDto {
+public class WorkingHoursResponseDto {
 
-        private List<String> availableTimes;
+    private List<String> availableTimes;
 
-        private List<String> supportedCities;
+    private List<String> supportedCities;
 
-        private String workingDays;
+    private String workingDays;
 
-        private String note;
+    private String note;
 
 }
