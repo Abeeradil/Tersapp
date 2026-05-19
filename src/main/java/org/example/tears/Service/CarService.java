@@ -6,7 +6,6 @@ import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import net.sourceforge.tess4j.ITesseract;
-import org.apache.commons.text.similarity.LevenshteinDistance;
 import org.example.tears.Api.ApiException;
 import org.example.tears.InpDTO.InpCarDto;
 import org.example.tears.Model.*;

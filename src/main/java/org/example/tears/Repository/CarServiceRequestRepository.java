@@ -2,6 +2,7 @@ package org.example.tears.Repository;
 
 import org.example.tears.Model.CarServiceRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -24,6 +25,17 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
     List<CarServiceRequest> findAssignedTo(@Param("employeeId") Integer employeeId);
 
 
+    @Modifying
+    @Query("""
+            UPDATE CarServiceRequest r
+            SET r.assignedEmployee = null,
+                r.assignedPricingEmployee = null,
+                r.currentEmployee = null
+            WHERE r.assignedEmployee.id = :employeeId
+               OR r.assignedPricingEmployee.id = :employeeId
+               OR r.currentEmployee.id = :employeeId
+            """)
+    void clearEmployeeReferences(@Param("employeeId") Integer employeeId);
 
     List<CarServiceRequest> findByAssignedEmployeeId(Integer staffId);
 

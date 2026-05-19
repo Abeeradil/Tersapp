@@ -15,6 +15,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Entity
 @Inheritance(strategy = InheritanceType.JOINED)
+@ToString(exclude = {"customer", "employee"})
 @Table(name = "users")
 public class User {
 

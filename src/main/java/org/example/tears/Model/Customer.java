@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 @Table(name = "customers")
+@ToString(exclude = {"user"})
 public class Customer{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

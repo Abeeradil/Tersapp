@@ -12,4 +12,8 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Integer>
         @Modifying
         @Query("UPDATE RequestAssignment r SET r.status = 'CLOSED' WHERE r.request.id = :requestId AND r.status = 'ACTIVE'")
         void closeActive(Integer requestId);
+
+    void deleteByRequestId(Integer requestId);
+
+    void deleteByEmployeeId(Integer userId);
     }
