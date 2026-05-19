@@ -15,6 +15,7 @@ import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Model.*;
+import org.example.tears.OutDTO.WorkingHoursResponseDto;
 import org.example.tears.Repository.CarRepository;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.CouponRepository;
@@ -222,6 +223,34 @@ public class CarServiceRequestService {
         }
 
         dto.setHydraulicTruck(r.isHydraulicTruck());
+
+        return dto;
+    }
+
+    public WorkingHoursResponseDto getWorkingHours() {
+
+        WorkingHoursResponseDto dto = new WorkingHoursResponseDto();
+
+        dto.setAvailableTimes(List.of(
+                "08:00",
+                "09:00",
+                "10:00",
+                "11:00",
+                "12:00",
+                "16:00",
+                "17:00",
+                "18:00",
+                "19:00"
+        ));
+
+        dto.setSupportedCities(List.of(
+                "Makkah",
+                "Jeddah"
+        ));
+
+        dto.setWorkingDays("Sunday - Thursday");
+
+        dto.setNote("المواعيد المتاحة كل ساعة");
 
         return dto;
     }
