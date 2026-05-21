@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
 
-    Integer countByAppointmentDateAndAppointmentTime(String date, String time);
+    List<CarServiceRequest> findByAppointmentDate(String date);
 
     List<CarServiceRequest> findAllByOrderByIdDesc();
 

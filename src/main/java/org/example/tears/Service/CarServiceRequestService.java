@@ -82,10 +82,9 @@ public class CarServiceRequestService {
 
         Location location = locationService.resolveLocation(dto, user);
 
-        appointmentService.validateAppointment(
-                dto.getAppointmentDate(),
-                dto.getAppointmentTime()
-        );
+        appointmentService.getAvailability(
+                dto.getAppointmentDate());
+
 
         int estimatedPrice = pricingCalculationService.calculateFinal(
                 dto.getServiceOption(),
