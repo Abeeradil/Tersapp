@@ -31,7 +31,8 @@ public class ConfigurationSecurity {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/"
+                                "/",
+                                "/extract-istimara/**"
                         ).permitAll()
 
                         // ================= AUTH =================
