@@ -87,9 +87,6 @@ public class CarServiceRequestService {
                 dto.getAppointmentTime()
         );
 
-
-
-
         int estimatedPrice = pricingCalculationService.calculateFinal(
                 dto.getServiceOption(),
                 dto.isHydraulicTruck(),

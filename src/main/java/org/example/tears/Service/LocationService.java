@@ -59,6 +59,7 @@ public class LocationService {
         return mapToDto(saved);
 
     }
+
     // ================= UPDATE LOCATION =================
     public OutLocationDto updateLocation(
             HttpServletRequest request,
@@ -71,11 +72,13 @@ public class LocationService {
         Location location = locationRepository.findById(locationId)
                 .orElseThrow(() -> new ApiException("الموقع غير موجود"));
 
-        // تأكد أنه يخص المستخدم
-        if (!location.getCustomer().getId().equals(user.getCustomer().getId())) {
+        // ownership check
+        if (!location.getCustomer().getId()
+                .equals(user.getCustomer().getId())) {
             throw new ApiException("الموقع لا يخص المستخدم");
         }
 
+        // partial update (PATCH behavior)
         if (dto.getLat() != null) location.setLat(dto.getLat());
         if (dto.getLng() != null) location.setLng(dto.getLng());
         if (dto.getAddress() != null) location.setAddress(dto.getAddress());
@@ -85,6 +88,8 @@ public class LocationService {
 
         return mapToDto(saved);
     }
+
+
     private OutLocationDto mapToDto(Location location) {
 
         OutLocationDto dto = new OutLocationDto();

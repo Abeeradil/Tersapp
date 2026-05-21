@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.InpDTO.LocationDto;
+import org.example.tears.OutDTO.OutLocationDto;
 import org.example.tears.Service.LocationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,17 +26,18 @@ public class LocationController {
                 locationService.addLocation(request, dto)
         );
     }
-    @PostMapping("/update/{locationId}")
-    public ResponseEntity<?> updateLocation(
+
+    @PatchMapping("/locations/{locationId}")
+    public ResponseEntity<OutLocationDto> updateLocation(
             HttpServletRequest request,
             @PathVariable Integer locationId,
             @RequestBody LocationDto dto
     ) {
-
         return ResponseEntity.ok(
-                locationService.updateLocation(request,locationId,dto)
+                locationService.updateLocation(request, locationId, dto)
         );
     }
+
     @DeleteMapping("/delete/{locationId}")
     public ResponseEntity<ApiResponse> deleteLocation(
             HttpServletRequest request,
