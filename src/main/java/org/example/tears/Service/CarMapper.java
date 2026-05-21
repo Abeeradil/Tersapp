@@ -1,0 +1,198 @@
+package org.example.tears.Service;
+
+import lombok.RequiredArgsConstructor;
+import org.example.tears.InpDTO.InpCarDto;
+import org.example.tears.Model.Car;
+import org.example.tears.Model.CarModel;
+import org.example.tears.Model.CarBrand;
+import org.example.tears.Model.User;
+import org.example.tears.OutDTO.OutMyCarDTO;
+import org.example.tears.Repository.CarBrandRepository;
+import org.example.tears.Repository.CarModelRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class CarMapper {
+
+    private final PlateService plateService;
+    private final FileStorageService fileStorageService;
+
+
+    private final CarBrandRepository carBrandRepository;
+    private final CarModelRepository carModelRepository;
+
+
+
+    // ================= MANUAL BUILD =================
+    public Car buildManualCar(
+            InpCarDto dto,
+            MultipartFile image,
+            User user,
+            CarBrand brand,
+            CarModel model
+    ) {
+
+        Car car = new Car();
+
+        car.setCarYear(dto.getCarYear());
+        car.setMileage(dto.getMileage());
+
+        car.setBrand(brand);
+        car.setModel(model);
+
+        car.setCustomer(user.getCustomer());
+
+        if (image != null && !image.isEmpty()) {
+            car.setFormImagePath(fileStorageService.saveFile(image, "forms"));
+        }
+
+        String ar = dto.getPlateNumberArabic();
+        String en = dto.getPlateNumberEnglish();
+
+        if (ar != null) {
+            ar = plateService.normalizePlate(ar);
+            en = plateService.convertPlateToEnglish(ar);
+        }
+
+        car.setPlateNumberArabic(ar);
+        car.setPlateNumberEnglish(en);
+
+        return car;
+    }
+
+    // ================= AUTO BUILD =================
+    public Car buildAutoCar(
+            Map<String, String> info,
+            User user,
+            CarBrand brand,
+            CarModel model,
+            Integer mileage
+    ) {
+
+        Car car = new Car();
+
+        car.setCustomer(user.getCustomer());
+        car.setBrand(brand);
+        car.setModel(model);
+        car.setMileage(mileage);
+
+        String ar = info.get("plateNumberArabic");
+        ar = plateService.normalizePlate(ar);
+
+        String en = plateService.convertPlateToEnglish(ar);
+
+        car.setPlateNumberArabic(ar);
+        car.setPlateNumberEnglish(en);
+
+        car.setCarYear(parseYear(info.get("carYear")));
+
+        return car;
+    }
+
+    // ================= UPDATE =================
+    public void updateCar(
+            Car car,
+            InpCarDto dto,
+            CarBrandRepository brandRepo,
+            CarModelRepository modelRepo
+    ) {
+
+        if (dto.getCarYear() != null) {
+            car.setCarYear(dto.getCarYear());
+        }
+
+        if (dto.getMileage() != null) {
+            car.setMileage(dto.getMileage());
+        }
+
+        if (dto.getBrandId() != null) {
+            CarBrand brand = brandRepo.findById(dto.getBrandId()).orElseThrow();
+            car.setBrand(brand);
+        }
+
+        if (dto.getModelId() != null) {
+            CarModel model = modelRepo.findById(dto.getModelId()).orElseThrow();
+            car.setModel(model);
+        }
+
+        if (dto.getPlateNumberArabic() != null) {
+            String ar = plateService.normalizePlate(dto.getPlateNumberArabic());
+            car.setPlateNumberArabic(ar);
+            car.setPlateNumberEnglish(plateService.convertPlateToEnglish(ar));
+        }
+    }
+
+    // ================= RESPONSE =================
+    public Map<String, Object> toResponse(Car car, String owner) {
+
+        Map<String, Object> m = new LinkedHashMap<>();
+
+        m.put("carId", car.getId());
+        m.put("owner", owner);
+
+        m.put("brand", car.getBrand().getName());
+        m.put("model", car.getModel().getName());
+
+        m.put("plateAr", car.getPlateNumberArabic());
+        m.put("plateEn", car.getPlateNumberEnglish());
+
+        m.put("year", car.getCarYear());
+        m.put("mileage", car.getMileage());
+
+        return m;
+    }
+
+    // ================= DTO =================
+    public OutMyCarDTO toDto(Car car) {
+
+        OutMyCarDTO dto = new OutMyCarDTO();
+
+        dto.setCarId(car.getId());
+        dto.setPlateNumberArabic(car.getPlateNumberArabic());
+        dto.setBrandNameAr(car.getBrand().getNameAr());
+        dto.setModelNameAr(car.getModel().getNameAr());
+        dto.setCarYear(car.getCarYear());
+
+        return dto;
+    }
+
+    // ================= DETECT BRAND =================
+    public CarBrand detectBrand(String text) {
+
+        return carBrandRepository.findAll().stream()
+                .filter(b ->
+                        text != null &&
+                                (text.contains(b.getName()) ||
+                                        text.contains(b.getNameAr())))
+                .findFirst()
+                .orElse(null);
+    }
+
+    // ================= DETECT MODEL =================
+    public CarModel detectModel(String text, CarBrand brand) {
+
+        if (brand == null) return null;
+
+        return carModelRepository.findByBrandId(brand.getId())
+                .stream()
+                .filter(m ->
+                        text != null &&
+                                (text.contains(m.getName()) ||
+                                        text.contains(m.getNameAr())))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Integer parseYear(String y) {
+        try {
+            return y == null ? null : Integer.parseInt(y);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}

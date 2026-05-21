@@ -3,10 +3,9 @@ package org.example.tears.Controller;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Model.Employee;
-import org.example.tears.Service.PricingService;
+import org.example.tears.Service.PricingCalculationService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 @PreAuthorize("hasRole('PRICING')")
 public class PricingController {
 
-    private final PricingService pricingService;
+    private final PricingCalculationService pricingCalculationService;
 
 
     // استلام طلب للتسعير
@@ -25,7 +24,7 @@ public class PricingController {
             @AuthenticationPrincipal Employee pricingEmp
     ) {
 
-        pricingService.startPricing(
+        pricingCalculationService.startPricing(
                 id,pricingEmp
 
         );
@@ -41,7 +40,7 @@ public class PricingController {
             @RequestParam Integer price
     ) {
 
-        pricingService.setFinalPrice(id, price);
+        pricingCalculationService.setFinalPrice(id, price);
 
         return new ApiResponse(true,"تم تحديث السعر");
     }
@@ -51,7 +50,7 @@ public class PricingController {
     @PutMapping("/requests/{id}/finish")
     public ApiResponse finishPricing(@PathVariable Integer id) {
 
-        pricingService.finishPricing(id);
+        pricingCalculationService.finishPricing(id);
 
         return new ApiResponse(true,"تم إنهاء التسعير");
     }

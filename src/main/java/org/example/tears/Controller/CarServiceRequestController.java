@@ -9,8 +9,10 @@ import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
+import org.example.tears.Service.AppointmentService;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.CarServiceRequestService;
+import org.example.tears.Service.LocationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +24,8 @@ import java.util.List;
 public class CarServiceRequestController {
 
     private final CarServiceRequestService requestService;
+    private final AppointmentService appointmentService;
+    private final LocationService locationService;
     private final AuthService authService;
 
         // Step 1: Preview
@@ -45,7 +49,7 @@ public class CarServiceRequestController {
             @RequestParam String date
     ) {
         return ResponseEntity.ok(
-                requestService.getAvailability(date)
+                appointmentService.getAvailability(date)
         );
     }
 
@@ -64,7 +68,7 @@ public class CarServiceRequestController {
     ) {
 
         return ResponseEntity.ok(
-                requestService.getMyLocations(request)
+                locationService.getMyLocations(request)
         );
     }
 

@@ -1,6 +1,6 @@
 package org.example.tears.Service;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.example.tears.OutDTO.OutCarModelDTO;
 import org.example.tears.Model.CarBrand;
 import org.example.tears.Model.CarModel;
@@ -12,7 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CarModelService {
 
         private final CarModelRepository carModelRepository;

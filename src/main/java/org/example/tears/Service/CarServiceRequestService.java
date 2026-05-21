@@ -10,23 +10,17 @@ import org.example.tears.Enums.PaymentMethod;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.InpDTO.PreviewRequestDto;
-import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
-import org.example.tears.OutDTO.OutLocationDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Model.*;
-import org.example.tears.OutDTO.WorkingHoursResponseDto;
 import org.example.tears.Repository.CarRepository;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.CouponRepository;
-import org.example.tears.Repository.LocationRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -38,7 +32,9 @@ public class CarServiceRequestService {
     private final CarRepository carRepository;
     private final AuthService authService;
     private final CouponRepository couponRepository;
-    private final LocationRepository locationRepository;
+    private final LocationService locationService;
+    private final AppointmentService appointmentService;
+    private final PricingCalculationService pricingCalculationService;
     private final RequestMapper requestMapper;
 
     private static final int HYDRAULIC_EXTRA = 100;
@@ -48,15 +44,16 @@ public class CarServiceRequestService {
     // Step 1: Preview
     // ---------------------------
     public PreviewResponseDto preview(PreviewRequestDto dto) {
-        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption());
 
-        int price = option.getPrice();
-        if (dto.isHydraulicTruck()) {
-            price += HYDRAULIC_EXTRA;
-        }
+        int price = pricingCalculationService.calculatePreview(
+                dto.getServiceOption(),
+                dto.isHydraulicTruck()
+        );
 
         PreviewResponseDto resp = new PreviewResponseDto();
         resp.setEstimatedPrice(price);
+
+        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption());
         resp.setDetails("خدمة: " + option.getDisplayName() + " — سعر تقديري: " + price + " ريال");
 
         return resp;
@@ -81,24 +78,24 @@ public class CarServiceRequestService {
         if (dto.getProblemDescription() == null || dto.getProblemDescription().isBlank())
             throw new RuntimeException("وصف المشكلة إلزامي");
 
-        // 4️⃣ تحديد الموقع
-        Location location = resolveLocation(dto, user);
-
-        // 5️⃣ التحقق من الموعد
-        validateAppointment(dto.getAppointmentDate(), dto.getAppointmentTime());
-
-        // 6️⃣ حساب السعر التقديري
         ServiceOption option = ServiceOption.valueOf(dto.getServiceOption());
-        int estimatedPrice = option.getPrice();
-        if (dto.isHydraulicTruck()) estimatedPrice += HYDRAULIC_EXTRA;
 
-        // تطبيق الكوبونات
-        if (dto.getCouponCode() != null && !dto.getCouponCode().isBlank()) {
-            var couponOpt = couponRepository.findByCodeAndActiveTrue(dto.getCouponCode());
-            if (couponOpt.isPresent()) {
-                estimatedPrice = Math.max(0, estimatedPrice - couponOpt.get().getDiscount());
-            }
-        }
+        Location location = locationService.resolveLocation(dto, user);
+
+        appointmentService.validateAppointment(
+                dto.getAppointmentDate(),
+                dto.getAppointmentTime()
+        );
+
+
+
+
+        int estimatedPrice = pricingCalculationService.calculateFinal(
+                dto.getServiceOption(),
+                dto.isHydraulicTruck(),
+                dto.getCouponCode()
+        );
+
 
         // 7️⃣ التحقق من طريقة الدفع
         if (dto.getPaymentMethod() == null || dto.getPaymentMethod().isBlank())
@@ -138,60 +135,8 @@ public class CarServiceRequestService {
         return toResponseDto(saved);
     }
 
-    private Location resolveLocation(CreateRequestStepDto dto, User user) {
-        Location location;
-        if (dto.getLocationId() != null) {
-            location = locationRepository.findById(dto.getLocationId())
-                    .orElseThrow(() -> new RuntimeException("الموقع غير موجود"));
-            if (!location.getCustomer().getId().equals(user.getCustomer().getId()))
-                throw new RuntimeException("الموقع لا يخص المستخدم");
-        } else if (dto.getNewLocation() != null) {
-            LocationDto loc = dto.getNewLocation();
-            if (!isInMakkah(loc.getLat(), loc.getLng()) && !isInJeddah(loc.getLat(), loc.getLng()))
-                throw new RuntimeException("الخدمة متاحة فقط داخل مكة أو جدة");
-            location = new Location();
-            location.setLat(loc.getLat());
-            location.setLng(loc.getLng());
-            location.setAddress(loc.getAddress());
-            location.setTitle(loc.getTitle());
-            location.setCustomer(user.getCustomer());
-            locationRepository.save(location);
-        } else if (dto.getLocations() != null && !dto.getLocations().isEmpty()) {
-            LocationDto loc = dto.getLocations().get(0);
-            location = new Location();
-            location.setLat(loc.getLat());
-            location.setLng(loc.getLng());
-            location.setAddress(loc.getAddress());
-            location.setTitle(loc.getTitle());
-            location.setCustomer(user.getCustomer());
-            locationRepository.save(location);
-        } else {
-            throw new RuntimeException("يجب اختيار أو إضافة موقع");
-        }
-        return location;
-    }
 
-    // ---------------------------
-    // Helper: Validate Appointment
-    // ---------------------------
-    private void validateAppointment(String date, String time) {
 
-        List<String> allowedTimes = List.of(
-                "08:00","09:00","10:00","11:00","12:00",
-                "16:00","17:00","18:00","19:00"
-        );
-
-        if (!allowedTimes.contains(time)) {
-            throw new RuntimeException("المواعيد المتاحة كل ساعة فقط");
-        }
-
-        int count = requestRepository
-                .countByAppointmentDateAndAppointmentTime(date, time);
-
-        if (count >= 1) {
-            throw new RuntimeException("هذا الموعد محجوز");
-        }
-    }
 
     // ---------------------------
     // عرض طلبات المستخدم
@@ -231,70 +176,6 @@ public class CarServiceRequestService {
         return dto;
     }
 
-    public Map<String, Object> getAvailability(String date) {
-
-        List<String> allTimes = List.of(
-                "08:00","09:00","10:00","11:00","12:00",
-                "16:00","17:00","18:00","19:00"
-        );
-
-        List<String> booked = requestRepository
-                .findBookedTimesByDate(date);
-
-        List<Map<String, Object>> slots = allTimes.stream()
-                .map(time -> {
-                    boolean isAvailable = !booked.contains(time);
-
-                    return Map.<String, Object>of(
-                            "time", time,
-                            "available", isAvailable
-                    );
-                })
-                .toList();
-
-        return Map.of(
-                "date", date,
-                "slots", slots
-        );
-    }
-
-    public List<OutLocationDto> getMyLocations(HttpServletRequest request) {
-
-        User user = authService.getAuthenticatedUser(request);
-
-        return locationRepository
-                .findByCustomerId(user.getCustomer().getId())
-                .stream()
-                .map(location -> {
-
-                    OutLocationDto dto = new OutLocationDto();
-
-                    dto.setId(location.getId());
-                    dto.setLat(location.getLat());
-                    dto.setLng(location.getLng());
-                    dto.setAddress(location.getAddress());
-
-                    dto.setTitle(location.getTitle());
-
-                    return dto;
-                })
-                .toList();
-    }
-
-
-
-    // ---------------------------
-    // Helper: موقع الخدمة
-    // ---------------------------
-    private boolean isInMakkah(double lat, double lng) {
-        return lat >= 21.25 && lat <= 21.55
-                && lng >= 39.70 && lng <= 40.05;
-    }
-
-    private boolean isInJeddah(double lat, double lng) {
-        return lat >= 21.45 && lat <= 21.75
-                && lng >= 39.05 && lng <= 39.35;
-    }
 
     private CustomerRequestStatus mapToCustomerStatus(WorkflowStage stage) {
 

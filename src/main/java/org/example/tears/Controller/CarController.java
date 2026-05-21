@@ -10,13 +10,17 @@ import org.example.tears.OutDTO.OutMyCarDTO;
 import org.example.tears.Service.CarBrandService;
 import org.example.tears.Service.CarModelService;
 import org.example.tears.Service.CarService;
+import org.example.tears.Service.OcrService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.awt.SystemColor.info;
 
 @RestController
 @RequestMapping("api/v1/tears/cars")
@@ -26,6 +30,7 @@ public class CarController {
     private final CarService carService;
     private final CarBrandService carBrandService;
     private final CarModelService carModelService;
+    private final OcrService ocrService;
 
     // 🔹 GET all brands
     @GetMapping("/brands")
@@ -178,7 +183,11 @@ public ResponseEntity<?> updateCar(
     public ResponseEntity<?> extractOwner(
             @RequestParam MultipartFile formImage) {
 
-        return ResponseEntity.ok(carService.extractOwnerName(formImage));
-    }
+        Map<String, String> info = ocrService.extractCarInfo(formImage);
 
+        Map<String, Object> response = new HashMap<>();
+        response.put("ownerName", info.get("ownerName"));
+
+        return ResponseEntity.ok(response);
+    }
 }
