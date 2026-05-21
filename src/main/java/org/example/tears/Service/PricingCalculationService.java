@@ -1,6 +1,5 @@
 package org.example.tears.Service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.ServiceOption;
