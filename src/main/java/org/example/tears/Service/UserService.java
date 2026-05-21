@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
@@ -187,15 +188,21 @@ public class UserService {
 
         return new ApiResponse(true, "Phone updated successfully");
     }
-
+    @Transactional
     public void deleteUser(Integer userId) {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException("❌ User not found"));
 
+        Customer customer = user.getCustomer();
+
+        if (customer != null) {
+            carRepository.deleteAllByCustomerId(customer.getId());
+            customerRepository.delete(customer);
+        }
+
         userRepository.delete(user);
     }
-
 
 
         // ================= Update Notifications =================

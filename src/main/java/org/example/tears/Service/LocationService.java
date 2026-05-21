@@ -56,7 +56,63 @@ public class LocationService {
         out.setAddress(saved.getAddress());
         out.setTitle(saved.getTitle());
 
-        return out;
+        return mapToDto(saved);
+
+    }
+    // ================= UPDATE LOCATION =================
+    public OutLocationDto updateLocation(
+            HttpServletRequest request,
+            Integer locationId,
+            LocationDto dto
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        Location location = locationRepository.findById(locationId)
+                .orElseThrow(() -> new ApiException("الموقع غير موجود"));
+
+        // تأكد أنه يخص المستخدم
+        if (!location.getCustomer().getId().equals(user.getCustomer().getId())) {
+            throw new ApiException("الموقع لا يخص المستخدم");
+        }
+
+        if (dto.getLat() != null) location.setLat(dto.getLat());
+        if (dto.getLng() != null) location.setLng(dto.getLng());
+        if (dto.getAddress() != null) location.setAddress(dto.getAddress());
+        if (dto.getTitle() != null) location.setTitle(dto.getTitle());
+
+        Location saved = locationRepository.save(location);
+
+        return mapToDto(saved);
+    }
+    private OutLocationDto mapToDto(Location location) {
+
+        OutLocationDto dto = new OutLocationDto();
+
+        dto.setId(location.getId());
+        dto.setLat(location.getLat());
+        dto.setLng(location.getLng());
+        dto.setAddress(location.getAddress());
+        dto.setTitle(location.getTitle());
+
+        return dto;
+    }
+    // ================= DELETE LOCATION =================
+    public void deleteLocation(
+            HttpServletRequest request,
+            Integer locationId
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        Location location = locationRepository.findById(locationId)
+                .orElseThrow(() -> new ApiException("الموقع غير موجود"));
+
+        if (!location.getCustomer().getId().equals(user.getCustomer().getId())) {
+            throw new ApiException("الموقع لا يخص المستخدم");
+        }
+
+        locationRepository.delete(location);
     }
         // ---------------------------
         // Resolve Location
@@ -125,18 +181,7 @@ public class LocationService {
             return locationRepository
                     .findByCustomerId(user.getCustomer().getId())
                     .stream()
-                    .map(location -> {
-
-                        OutLocationDto dto = new OutLocationDto();
-
-                        dto.setId(location.getId());
-                        dto.setLat(location.getLat());
-                        dto.setLng(location.getLng());
-                        dto.setAddress(location.getAddress());
-                        dto.setTitle(location.getTitle());
-
-                        return dto;
-                    })
+                    .map(this::mapToDto)
                     .toList();
         }
 
