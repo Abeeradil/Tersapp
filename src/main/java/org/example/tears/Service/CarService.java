@@ -3,6 +3,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.InpDTO.InpCarDto;
 import org.example.tears.Model.*;
+import org.example.tears.OutDTO.OutCarDetailsDTO;
 import org.example.tears.OutDTO.OutMyCarDTO;
 import org.example.tears.Repository.*;
 import org.slf4j.Logger;
@@ -116,8 +117,28 @@ public class CarService {
 
         Car car = carValidator.validateOwnership(carId, user, carRepository);
 
-        car.setDeleted(true);
-
-        carRepository.save(car);
+        carRepository.delete(car);
     }
+
+    // ================= CAR DETAILS =================
+    public OutCarDetailsDTO getCarDetails(
+            HttpServletRequest request,
+            Integer carId
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        Car car = carValidator.validateOwnership(
+                carId,
+                user,
+                carRepository
+        );
+
+        return carMapper.toCarDetailsDto(
+                car,
+                user.getFullName()
+        );
+    }
+
+
 }

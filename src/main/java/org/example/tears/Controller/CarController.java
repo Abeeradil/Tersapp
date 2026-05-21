@@ -179,6 +179,18 @@ public ResponseEntity<?> updateCar(
         return ResponseEntity.ok(cars);
     }
 
+    // ================= CAR DETAILS =================
+    @GetMapping("/details/{carId}")
+    public ResponseEntity<?> getCarDetails(
+            HttpServletRequest request,
+            @PathVariable Integer carId
+    ) {
+
+        return ResponseEntity.ok(
+                carService.getCarDetails(request, carId)
+        );
+    }
+
     @PostMapping("/extract-owner")
     public ResponseEntity<?> extractOwner(
             @RequestParam MultipartFile formImage) {

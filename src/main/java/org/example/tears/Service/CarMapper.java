@@ -6,6 +6,7 @@ import org.example.tears.Model.Car;
 import org.example.tears.Model.CarModel;
 import org.example.tears.Model.CarBrand;
 import org.example.tears.Model.User;
+import org.example.tears.OutDTO.OutCarDetailsDTO;
 import org.example.tears.OutDTO.OutMyCarDTO;
 import org.example.tears.Repository.CarBrandRepository;
 import org.example.tears.Repository.CarModelRepository;
@@ -186,6 +187,32 @@ public class CarMapper {
                                         text.contains(m.getNameAr())))
                 .findFirst()
                 .orElse(null);
+    }
+
+    // ================= CAR DETAILS DTO =================
+    public OutCarDetailsDTO toCarDetailsDto(Car car, String ownerName) {
+
+        OutCarDetailsDTO dto = new OutCarDetailsDTO();
+
+        dto.setCarId(car.getId());
+
+        dto.setOwnerName(ownerName);
+
+        dto.setBrandName(car.getBrand().getName());
+        dto.setBrandNameAr(car.getBrand().getNameAr());
+
+        dto.setModelName(car.getModel().getName());
+        dto.setModelNameAr(car.getModel().getNameAr());
+
+        dto.setPlateNumberArabic(car.getPlateNumberArabic());
+        dto.setPlateNumberEnglish(car.getPlateNumberEnglish());
+
+        dto.setCarYear(car.getCarYear());
+        dto.setMileage(car.getMileage());
+
+        dto.setFormImagePath(car.getFormImagePath());
+
+        return dto;
     }
 
     private Integer parseYear(String y) {
