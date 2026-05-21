@@ -23,7 +23,7 @@ public class OcrService {
 
         try {
 
-            String apiUrl = "http://127.0.0.1:8000/extract-istimara";
+            String apiUrl = "https://tersapp-production.up.railway.app/extract-istimara";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);

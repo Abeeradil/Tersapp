@@ -7,6 +7,8 @@ import org.example.tears.Api.ApiResponse;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
+import org.example.tears.Model.Appointment;
+import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.Service.AppointmentService;
@@ -23,54 +25,49 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CarServiceRequestController {
 
-    private final CarServiceRequestService requestService;
-    private final AppointmentService appointmentService;
-    private final LocationService locationService;
-    private final AuthService authService;
+        private final CarServiceRequestService requestService;
+        private final AppointmentService appointmentService;
+        private final LocationService locationService;
+        private final AuthService authService;
 
-        // Step 1: Preview
         @PostMapping("/preview")
-        public ResponseEntity<PreviewResponseDto> preview(
-                @Valid @RequestBody PreviewRequestDto dto) {
+        public ResponseEntity<?> preview(@RequestBody PreviewRequestDto dto) {
             return ResponseEntity.ok(requestService.preview(dto));
         }
 
-
-    // Step 2: Create final request
         @PostMapping("/create")
-        public ResponseEntity<RequestResponseDto> create(
+        public ResponseEntity<?> create(
                 HttpServletRequest request,
-                @Valid @RequestBody CreateRequestStepDto dto) {
+                @RequestBody CreateRequestStepDto dto) {
 
             return ResponseEntity.ok(requestService.createRequest(request, dto));
         }
-    @GetMapping("/availability")
-    public ResponseEntity<?> getAvailability(
-            @RequestParam String date
-    ) {
-        return ResponseEntity.ok(
-                appointmentService.getAvailability(date)
-        );
-    }
 
-    @GetMapping("/services")
-    public ApiResponse getServices() {
+        @GetMapping("/availability")
+        public ResponseEntity<?> getAvailability(@RequestParam String date) {
+            return ResponseEntity.ok(appointmentService.getAvailability(date));
+        }
 
-        return new ApiResponse(
-                true,
-                ServiceOption.values()
-        );
-    }
+        @GetMapping("/services")
+        public ApiResponse getServices() {
+            return new ApiResponse(true, ServiceOption.values());
+        }
 
-    @GetMapping("/my-locations")
-    public ResponseEntity<?> getMyLocations(
-            HttpServletRequest request
-    ) {
+        @GetMapping("/my-locations")
+        public ResponseEntity<?> getMyLocations(HttpServletRequest request) {
+            return ResponseEntity.ok(locationService.getMyLocations(request));
+        }
 
-        return ResponseEntity.ok(
-                locationService.getMyLocations(request)
-        );
-    }
+//        @GetMapping("/appointments/my")
+//        public ResponseEntity<?> getMyAppointments(HttpServletRequest request) {
+//
+//            User user = authService.getAuthenticatedUser(request);
+//
+//            return ResponseEntity.ok(
+//                    appointmentService.getMyAppointments(user.getCustomer().getId())
+//            );
+//        }
+
 
         // Get my requests
 //        @GetMapping("/my")

@@ -4,9 +4,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
+import org.example.tears.Model.Appointment;
 import org.example.tears.Model.Employee;
 import org.example.tears.OutDTO.EmployeeLoginInfo;
 import org.example.tears.Service.AdminService;
+import org.example.tears.Service.AppointmentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,7 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final AppointmentService appointmentService;
 
 
 
@@ -74,6 +77,10 @@ public class AdminController {
         return adminService.getAllEmployees();
     }
 
+//    @GetMapping("/appointments")
+//    public List<Appointment> getAllAppointments() {
+//        return appointmentRepository.findAll();
+//    }
 
 
     @PutMapping("/admin/employees/{id}/deactivate")
