@@ -193,12 +193,6 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException("❌ User not found"));
 
-        Customer customer = user.getCustomer();
-
-        // 1. احذف السيارات أولاً
-        carRepository.deleteAllByCustomerId(customer.getId());
-
-        // 2. احذف المستخدم
         userRepository.delete(user);
     }
 

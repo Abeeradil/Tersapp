@@ -48,7 +48,8 @@ public class ConfigurationSecurity {
                                         "/api/v1/tears/service-request/availability",
                                         "/api/v1/tears/cars/brands/search",
                                         "/api/v1/tears/cars/models/search",
-                                        "/api/v1/tears/cars/filter"
+                                        "/api/v1/tears/cars/filter",
+                                        "api/v1/tears/users/delete/**"
                         ).permitAll()
 
                         // ================= USER =================
