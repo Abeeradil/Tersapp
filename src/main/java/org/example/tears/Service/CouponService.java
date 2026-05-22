@@ -3,6 +3,8 @@ package org.example.tears.Service;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Enums.ServiceOption;
+import org.example.tears.InpDTO.CreateCouponRequest;
+import org.example.tears.InpDTO.UpdateCouponRequest;
 import org.example.tears.Model.Coupon;
 import org.example.tears.Repository.CouponRepository;
 import org.springframework.stereotype.Service;
@@ -18,59 +20,56 @@ public class CouponService {
 
         private final CouponRepository couponRepository;
 
-        // ================= CREATE =================
-        public Coupon create(Coupon coupon) {
-            coupon.setCreatedAt(LocalDateTime.now());
-            coupon.setUsedCount(0);
-            return couponRepository.save(coupon);
+        public Coupon create(CreateCouponRequest dto) {
+
+            if (couponRepository.findByCodeIgnoreCase(dto.getCode()).isPresent()) {
+                throw new ApiException("الكوبون موجود مسبقًا");
+            }
+
+            Coupon c = new Coupon();
+            c.setCode(dto.getCode().toUpperCase());
+            c.setActive(true);
+            c.setDiscountPercentage(dto.getDiscountPercentage());
+            c.setFixedDiscount(dto.getFixedDiscount());
+            c.setUsageLimit(dto.getUsageLimit());
+            c.setMinimumOrderPrice(dto.getMinimumOrderPrice());
+            c.setMaxDiscountAmount(dto.getMaxDiscountAmount());
+            c.setExpiryDate(dto.getExpiryDate());
+            c.setServiceOption(dto.getServiceOption());
+
+            return couponRepository.save(c);
         }
 
-        // ================= GET ALL =================
-        public List<Coupon> getAll() {
-            return couponRepository.findAll();
+        public Coupon update(Integer id, UpdateCouponRequest dto) {
+
+            Coupon c = couponRepository.findById(id)
+                    .orElseThrow(() -> new ApiException("الكوبون غير موجود"));
+
+            if (dto.getDiscountPercentage() != null)
+                c.setDiscountPercentage(dto.getDiscountPercentage());
+
+            if (dto.getFixedDiscount() != null)
+                c.setFixedDiscount(dto.getFixedDiscount());
+
+            if (dto.getUsageLimit() != null)
+                c.setUsageLimit(dto.getUsageLimit());
+
+            if (dto.getMinimumOrderPrice() != null)
+                c.setMinimumOrderPrice(dto.getMinimumOrderPrice());
+
+            if (dto.getMaxDiscountAmount() != null)
+                c.setMaxDiscountAmount(dto.getMaxDiscountAmount());
+
+            if (dto.getExpiryDate() != null)
+                c.setExpiryDate(dto.getExpiryDate());
+
+            if (dto.getActive() != null)
+                c.setActive(dto.getActive());
+
+            return couponRepository.save(c);
         }
 
-        // ================= DISABLE =================
-        public void disable(Integer id) {
-
-            Coupon coupon = couponRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("الكوبون غير موجود"));
-
-            coupon.setActive(false);
-            couponRepository.save(coupon);
-        }
-
-    public Coupon update(Integer id, Coupon dto) {
-
-        Coupon coupon = couponRepository.findById(id)
-                .orElseThrow(() -> new ApiException("الكوبون غير موجود"));
-
-        if (dto.getDiscountPercentage() != null)
-            coupon.setDiscountPercentage(dto.getDiscountPercentage());
-
-        if (dto.getFixedDiscount() != null)
-            coupon.setFixedDiscount(dto.getFixedDiscount());
-
-        if (dto.getMaxDiscountAmount() != null)
-            coupon.setMaxDiscountAmount(dto.getMaxDiscountAmount());
-
-        if (dto.getMinimumOrderPrice() != null)
-            coupon.setMinimumOrderPrice(dto.getMinimumOrderPrice());
-
-        if (dto.getExpiryDate() != null)
-            coupon.setExpiryDate(dto.getExpiryDate());
-
-        if (dto.getUsageLimit() != null)
-            coupon.setUsageLimit(dto.getUsageLimit());
-
-        if (dto.getServiceOption() != null)
-            coupon.setServiceOption(dto.getServiceOption());
-
-        return couponRepository.save(coupon);
-    }
-
-        // ================= VALIDATE =================
-        public Coupon validate(String code, int totalPrice, ServiceOption option) {
+        public Coupon validate(String code, int total, ServiceOption option) {
 
             Coupon coupon = couponRepository.findByCodeIgnoreCase(code)
                     .orElseThrow(() -> new ApiException("الكوبون غير موجود"));
@@ -79,46 +78,57 @@ public class CouponService {
                 throw new ApiException("الكوبون غير مفعل");
 
             if (coupon.getExpiryDate() != null &&
-                    coupon.getExpiryDate().isBefore(LocalDate.now()))
+                    coupon.getExpiryDate().isBefore(LocalDate.now())) {
                 throw new ApiException("الكوبون منتهي");
-
-            if (coupon.getUsageLimit() != null &&
-                    coupon.getUsedCount() >= coupon.getUsageLimit())
-                throw new ApiException("تم استهلاك الكوبون");
+            }
 
             if (coupon.getMinimumOrderPrice() != null &&
-                    totalPrice < coupon.getMinimumOrderPrice())
-                throw new ApiException("الحد الأدنى للطلب غير متحقق");
+                    total < coupon.getMinimumOrderPrice()) {
+                throw new ApiException("الحد الأدنى غير متحقق");
+            }
 
             if (coupon.getServiceOption() != null &&
-                    coupon.getServiceOption() != option)
+                    coupon.getServiceOption() != option) {
                 throw new ApiException("الكوبون غير صالح لهذه الخدمة");
+            }
+
+            if (coupon.getUsageLimit() != null &&
+                    coupon.getUsedCount() >= coupon.getUsageLimit()) {
+                throw new ApiException("تم استهلاك الكوبون");
+            }
 
             return coupon;
         }
 
-    public int applyDiscount(Coupon coupon, int total) {
+        public int applyDiscount(Coupon c, int total) {
 
-        int discount = 0;
+            if (c.getDiscountPercentage() != null) {
+                int discount = (total * c.getDiscountPercentage()) / 100;
 
-        if (coupon.getDiscountPercentage() != null) {
-            discount += (total * coupon.getDiscountPercentage()) / 100;
+                if (c.getMaxDiscountAmount() != null &&
+                        discount > c.getMaxDiscountAmount()) {
+                    discount = c.getMaxDiscountAmount();
+                }
 
-            if (coupon.getMaxDiscountAmount() != null &&
-                    discount > coupon.getMaxDiscountAmount()) {
-                discount = coupon.getMaxDiscountAmount();
+                total -= discount;
             }
-        }
 
-        if (coupon.getFixedDiscount() != null) {
-            discount += coupon.getFixedDiscount();
-        }
+            if (c.getFixedDiscount() != null) {
+                total -= c.getFixedDiscount();
+            }
 
-        return Math.max(total - discount, 0);
+            return Math.max(total, 0);
+        }
+    public List<Coupon> getAll() {
+        return couponRepository.findAll();
     }
 
-    public void markUsed(Coupon coupon) {
-        coupon.setUsedCount(coupon.getUsedCount() + 1);
-        couponRepository.save(coupon);
+    public Coupon disable(Integer id) {
+        Coupon c = couponRepository.findById(id)
+                .orElseThrow(() -> new ApiException("غير موجود"));
+
+        c.setActive(false);
+        return couponRepository.save(c);
     }
+
 }

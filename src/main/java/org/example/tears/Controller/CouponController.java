@@ -1,8 +1,9 @@
 package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.InpDTO.CreateCouponRequest;
+import org.example.tears.InpDTO.UpdateCouponRequest;
 import org.example.tears.Model.Coupon;
-import org.example.tears.Repository.CouponRepository;
 import org.example.tears.Service.CouponService;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,29 +14,26 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CouponController {
 
-    private final CouponService couponService;
+        private final CouponService couponService;
 
-    @PostMapping("/new")
-    public Coupon create(@RequestBody Coupon coupon) {
-        return couponService.create(coupon);
-    }
+        @PostMapping("/new")
+        public Coupon create(@RequestBody CreateCouponRequest dto) {
+            return couponService.create(dto);
+        }
 
-    @GetMapping("/all")
-    public List<Coupon> getAll() {
-        return couponService.getAll();
-    }
+        @PatchMapping("/update/{id}")
+        public Coupon update(@PathVariable Integer id,
+                             @RequestBody UpdateCouponRequest dto) {
+            return couponService.update(id, dto);
+        }
 
-    @PutMapping("/update/{id}")
-    public Coupon update(
-            @PathVariable Integer id,
-            @RequestBody Coupon coupon
-    ) {
-        return couponService.update(id, coupon);
-    }
+        @GetMapping("/all")
+        public List<Coupon> getAll() {
+            return couponService.getAll();
+        }
 
-
-    @PutMapping("/{id}/disable")
-    public void disable(@PathVariable Integer id) {
-        couponService.disable(id);
-    }
+        @PutMapping("/disable/{id}")
+        public Coupon disable(@PathVariable Integer id) {
+            return couponService.disable(id);
+        }
 }
