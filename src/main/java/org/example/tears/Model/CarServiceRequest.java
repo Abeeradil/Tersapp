@@ -60,8 +60,9 @@ public class CarServiceRequest {
 
 
                 // الدفع
-                private Boolean  initialPaid;       // هل دفعت المرحلة الأولى؟
-                private Boolean  finalPaid;         // هل دفعت المرحلة الثانية؟
+                private Boolean initialPaid = false;       // هل دفعت المرحلة الأولى؟
+                private Boolean finalPaid = false; // هل دفعت المرحلة الثانية؟
+
                 private String initialTransactionId; // رقم العملية الأولى
                 private String finalTransactionId;   // رقم العملية الثانية
 

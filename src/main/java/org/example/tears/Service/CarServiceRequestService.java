@@ -83,8 +83,7 @@ public class CarServiceRequestService {
 
         Location location = locationService.resolveLocation(dto, user);
 
-        LocalDate appointmentDate =
-                dto.getAppointmentDate();
+
 
         appointmentService.validateAppointment(
                 dto.getAppointmentDate(),
