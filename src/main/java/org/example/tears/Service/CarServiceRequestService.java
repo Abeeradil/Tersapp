@@ -83,8 +83,9 @@ public class CarServiceRequestService {
 
         Location location = locationService.resolveLocation(dto, user);
 
-        LocalDate date = LocalDate.parse(dto.getAppointmentDate());
-        appointmentService.getAvailability(date);
+        LocalDate appointmentDate =
+                dto.getAppointmentDate();
+        appointmentService.getAvailability(appointmentDate);
 
 
         int estimatedPrice = pricingCalculationService.calculateFinal(

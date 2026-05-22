@@ -1,6 +1,9 @@
 package org.example.tears.DTO;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+
 @Data
     public class EmployeeRequestResponseDto {
         private Integer id;
@@ -18,6 +21,6 @@ import lombok.Data;
 
         private String address;
 
-        private String appointmentDate;
-        private String appointmentTime;
+        private LocalDate appointmentDate;
+        private LocalTime appointmentTime;
     }

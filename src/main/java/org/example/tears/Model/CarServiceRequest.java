@@ -48,8 +48,8 @@ public class CarServiceRequest {
     // ========================
                 // Appointment
                 // ========================
-                private String appointmentDate;
-                private String appointmentTime;
+                private LocalDate appointmentDate;
+                private LocalTime appointmentTime;
 
                 // ========================
                 // Pricing & Payment

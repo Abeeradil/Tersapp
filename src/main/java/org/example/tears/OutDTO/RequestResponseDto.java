@@ -8,18 +8,21 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.example.tears.InpDTO.LocationDto;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
 @Setter
 @Getter
 public class RequestResponseDto {
+
     private Integer id;
     private String orderNumber;
     private String status;
     private Integer totalPrice;
-    private String appointmentDate;
-    private String appointmentTime;
+    private LocalDate appointmentDate;
+    private LocalTime appointmentTime;
 
     @NotEmpty(message = "يجب اختيار موقع واحد على الأقل")
     private List<LocationDto> locations; // optional if newLocation or locationId is set

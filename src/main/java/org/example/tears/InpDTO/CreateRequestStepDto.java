@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -24,10 +26,10 @@ public class CreateRequestStepDto {
     private LocationDto newLocation; // لو موقع جديد
 
     @NotBlank(message = "يجب اختيار تاريخ الموعد")
-    private String appointmentDate;
+    private LocalDate appointmentDate;
 
     @NotBlank(message = "يجب اختيار وقت الموعد")
-    private String appointmentTime; // صيغة "HH:mm"
+    private LocalTime appointmentTime; // صيغة "HH:mm"
 
     private String couponCode;
 
