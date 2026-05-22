@@ -4,14 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.SlotDto;
 import org.example.tears.Enums.AppointmentSlotStatus;
 import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Repository.AppointmentRepository;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 @Service
