@@ -17,16 +17,21 @@ import java.util.List;
 @Getter
 public class RequestResponseDto {
 
-    private Integer id;
-    private String orderNumber;
-    private String status;
-    private Integer totalPrice;
-    private LocalDate appointmentDate;
-    private LocalTime appointmentTime;
+        private Integer id;
 
-    private LocationDto location;
+        private String orderNumber;
 
-    @Column(nullable = false)
-    private boolean hydraulicTruck;
-    private String paymentMethod;
+        private String status;
+
+        private Integer totalPrice;
+
+        private LocalDate appointmentDate;
+
+        private LocalTime appointmentTime;
+
+        private boolean hydraulicTruck;
+
+        private String paymentMethod;
+
+        private LocationDto location;
 }

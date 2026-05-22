@@ -12,25 +12,23 @@ import java.util.List;
 @Data
 public class CreateRequestStepDto {
 
-        private Integer carId;
+                private Integer carId;
 
-        @NotBlank
-        private String serviceOption;
+                @NotBlank(message = "يجب اختيار نوع الخدمة")
+                private String serviceOption;
 
-        private boolean hydraulicTruck;
+                private boolean hydraulicTruck;
 
-        @NotBlank
-        private String problemDescription;
+                @NotBlank(message = "وصف المشكلة إلزامي")
+                private String problemDescription;
 
-        @NotNull
-        private LocalDate appointmentDate;
+                private Integer locationId;
 
-        @NotNull
-        private LocalTime appointmentTime;
+                private LocalDate appointmentDate;
 
-        private Integer locationId;
+                private LocalTime appointmentTime;
 
-        private String couponCode;
+                private String couponCode;
 
-        private String paymentMethod;
-    }
+                private String paymentMethod;
+        }

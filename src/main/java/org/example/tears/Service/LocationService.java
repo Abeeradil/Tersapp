@@ -124,36 +124,15 @@ public class LocationService {
         // ---------------------------
         public Location resolveLocation(CreateRequestStepDto dto, User user) {
 
-            Location location;
+            if (dto.getLocationId() == null) {
+                throw new RuntimeException("يجب اختيار موقع");
+            }
 
-            if (dto.getLocationId() != null) {
+            Location location = locationRepository.findById(dto.getLocationId())
+                    .orElseThrow(() -> new RuntimeException("الموقع غير موجود"));
 
-                location = locationRepository.findById(dto.getLocationId())
-                        .orElseThrow(() -> new RuntimeException("الموقع غير موجود"));
-
-                if (!location.getCustomer().getId().equals(user.getCustomer().getId())) {
-                    throw new RuntimeException("الموقع لا يخص المستخدم");
-                }
-
-            } else if (dto.getNewLocation() != null) {
-
-                LocationDto loc = dto.getNewLocation();
-
-                validateSupportedCity(loc.getLat(), loc.getLng());
-
-                location = createAndSaveLocation(loc, user);
-
-            } else if (dto.getLocations() != null && !dto.getLocations().isEmpty()) {
-
-                LocationDto loc = dto.getLocations().get(0);
-
-                validateSupportedCity(loc.getLat(), loc.getLng());
-
-                location = createAndSaveLocation(loc, user);
-
-            } else {
-
-                throw new RuntimeException("يجب اختيار أو إضافة موقع");
+            if (!location.getCustomer().getId().equals(user.getCustomer().getId())) {
+                throw new RuntimeException("الموقع لا يخص المستخدم");
             }
 
             return location;
@@ -199,6 +178,8 @@ public class LocationService {
                 throw new RuntimeException("الخدمة متاحة فقط داخل مكة أو جدة");
             }
         }
+
+
 
         private boolean isInMakkah(double lat, double lng) {
 

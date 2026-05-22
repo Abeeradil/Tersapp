@@ -8,41 +8,57 @@ import org.example.tears.Repository.LocationRepository;
 import org.springframework.stereotype.Service;
 
 @Service
+
 public class RequestMapper {
 
-    private final LocationRepository locationRepository;
+//    private final LocationRepository locationRepository;
+//     public RequestMapper(LocationRepository locationRepository) {
+//        this.locationRepository = locationRepository;
+//    }
 
-    public RequestMapper(LocationRepository locationRepository) {
-        this.locationRepository = locationRepository;
-    }
+//    public Location resolveLocation(User user, CreateRequestStepDto dto) {
+//
+//        if (dto.getLocationId() != null && dto.getNewLocation() != null) {
+//            throw new RuntimeException("اختاري موقع واحد فقط");
+//        }
+//
+//        if (dto.getLocationId() != null) {
+//
+//            Location loc = locationRepository.findById(dto.getLocationId())
+//                    .orElseThrow(() -> new RuntimeException("الموقع غير موجود"));
+//
+//            if (loc.getCustomer() == null ||
+//                    !loc.getCustomer().getId().equals(user.getCustomer().getId())) {
+//                throw new RuntimeException("الموقع لا يخص المستخدم");
+//            }
+//
+//            return loc;
+//        }
+//
+//        if (dto.getNewLocation() != null) {
+//
+//            LocationDto locDto = dto.getNewLocation();
+//
+//            boolean valid = isInMakkah(locDto.getLat(), locDto.getLng()) ||
+//                    isInJeddah(locDto.getLat(), locDto.getLng());
+//
+//            if (!valid) {
+//                throw new RuntimeException("الخدمة متاحة فقط داخل مكة أو جدة");
+//            }
+//
+//            Location loc = new Location();
+//            loc.setLat(locDto.getLat());
+//            loc.setLng(locDto.getLng());
+//            loc.setAddress(locDto.getAddress());
+//            loc.setCustomer(user.getCustomer());
+//            loc.setTitle(locDto.getTitle()); // ✅ تصحيح مهم
+//
+//            return locationRepository.save(loc);
+//        }
+//
+//        throw new RuntimeException("يجب اختيار أو إضافة موقع");
+//    }
 
-    public Location resolveLocation(User user, CreateRequestStepDto dto) {
-        if (dto.getLocationId() != null) {
-            Location loc = locationRepository.findById(dto.getLocationId())
-                    .orElseThrow(() -> new RuntimeException("الموقع غير موجود"));
-            if (!loc.getCustomer().getId().equals(user.getCustomer().getId()))
-                throw new RuntimeException("الموقع لا يخص المستخدم");
-            return loc;
-        }
-
-        if (dto.getNewLocation() != null) {
-            LocationDto locDto = dto.getNewLocation();
-            boolean valid = isInMakkah(locDto.getLat(), locDto.getLng()) ||
-                    isInJeddah(locDto.getLat(), locDto.getLng());
-            if (!valid) throw new RuntimeException("الخدمة متاحة فقط داخل مكة أو جدة");
-
-            Location loc = new Location();
-            loc.setLat(locDto.getLat());
-            loc.setLng(locDto.getLng());
-            loc.setAddress(locDto.getAddress());
-            loc.setCustomer(user.getCustomer());
-            loc.setTitle(loc.getTitle());
-
-            return locationRepository.save(loc);
-        }
-
-        throw new RuntimeException("يجب اختيار أو إضافة موقع");
-    }
 
     private boolean isInMakkah(double lat, double lng) {
         return lat >= 21.25 && lat <= 21.55 && lng >= 39.70 && lng <= 40.05;
