@@ -40,6 +40,35 @@ public class CouponService {
             couponRepository.save(coupon);
         }
 
+    public Coupon update(Integer id, Coupon dto) {
+
+        Coupon coupon = couponRepository.findById(id)
+                .orElseThrow(() -> new ApiException("الكوبون غير موجود"));
+
+        if (dto.getDiscountPercentage() != null)
+            coupon.setDiscountPercentage(dto.getDiscountPercentage());
+
+        if (dto.getFixedDiscount() != null)
+            coupon.setFixedDiscount(dto.getFixedDiscount());
+
+        if (dto.getMaxDiscountAmount() != null)
+            coupon.setMaxDiscountAmount(dto.getMaxDiscountAmount());
+
+        if (dto.getMinimumOrderPrice() != null)
+            coupon.setMinimumOrderPrice(dto.getMinimumOrderPrice());
+
+        if (dto.getExpiryDate() != null)
+            coupon.setExpiryDate(dto.getExpiryDate());
+
+        if (dto.getUsageLimit() != null)
+            coupon.setUsageLimit(dto.getUsageLimit());
+
+        if (dto.getServiceOption() != null)
+            coupon.setServiceOption(dto.getServiceOption());
+
+        return couponRepository.save(coupon);
+    }
+
         // ================= VALIDATE =================
         public Coupon validate(String code, int totalPrice, ServiceOption option) {
 

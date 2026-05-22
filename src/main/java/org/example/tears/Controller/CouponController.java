@@ -25,6 +25,15 @@ public class CouponController {
         return couponService.getAll();
     }
 
+    @PutMapping("/update/{id}")
+    public Coupon update(
+            @PathVariable Integer id,
+            @RequestBody Coupon coupon
+    ) {
+        return couponService.update(id, coupon);
+    }
+
+
     @PutMapping("/{id}/disable")
     public void disable(@PathVariable Integer id) {
         couponService.disable(id);
