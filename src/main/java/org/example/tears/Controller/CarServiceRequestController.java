@@ -7,6 +7,7 @@ import org.example.tears.Api.ApiResponse;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
+import org.example.tears.InpDTO.UpdateRequestDto;
 import org.example.tears.Model.Appointment;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -64,15 +65,18 @@ public class CarServiceRequestController {
             return ResponseEntity.ok(locationService.getMyLocations(request));
         }
 
-//        @GetMapping("/appointments/my")
-//        public ResponseEntity<?> getMyAppointments(HttpServletRequest request) {
-//
-//            User user = authService.getAuthenticatedUser(request);
-//
-//            return ResponseEntity.ok(
-//                    appointmentService.getMyAppointments(user.getCustomer().getId())
-//            );
-//        }
+    @PatchMapping("/update/{requestId}")
+    public ResponseEntity<?> updateRequest(
+            HttpServletRequest request,
+            @PathVariable Integer requestId,
+            @RequestBody UpdateRequestDto dto
+    ) {
+
+        return ResponseEntity.ok(
+                requestService.updateRequest(request, requestId, dto)
+        );
+    }
+
 
 
         // Get my requests
@@ -85,6 +89,15 @@ public class CarServiceRequestController {
         }
     }
 
+//@GetMapping("/appointments/my")
+//        public ResponseEntity<?> getMyAppointments(HttpServletRequest request) {
+//
+//            User user = authService.getAuthenticatedUser(request);
+//
+//            return ResponseEntity.ok(
+//                    appointmentService.getMyAppointments(user.getCustomer().getId())
+//            );
+//        }
 
     // apply coupon
 //    @PostMapping("/{id}/apply-coupon")

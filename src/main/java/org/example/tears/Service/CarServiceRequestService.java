@@ -12,12 +12,14 @@ import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
+import org.example.tears.InpDTO.UpdateRequestDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.CarRepository;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.CouponRepository;
+import org.example.tears.Repository.LocationRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -35,6 +37,7 @@ public class CarServiceRequestService {
     private final AuthService authService;
     private final CouponRepository couponRepository;
     private final LocationService locationService;
+    private final LocationRepository locationRepository;
     private final AppointmentService appointmentService;
     private final PricingCalculationService pricingCalculationService;
     private final RequestMapper requestMapper;
@@ -200,6 +203,153 @@ public class CarServiceRequestService {
         // 11) Response
         // =========================
         return toResponseDto(saved);
+    }
+
+    public RequestResponseDto updateRequest(
+            HttpServletRequest request,
+            Integer requestId,
+            UpdateRequestDto dto
+    ) {
+        User user = authService.getAuthenticatedUser(request);
+
+        CarServiceRequest serviceRequest = requestRepository
+                .findById(requestId)
+                .orElseThrow(() ->
+                        new ApiException("الطلب غير موجود")
+                );
+        // =========================
+// Car
+// =========================
+        if (dto.getCarId() != null) {
+
+            boolean ownsCar = carRepository
+                    .findByCustomerId(user.getCustomer().getId())
+                    .stream()
+                    .anyMatch(car ->
+                            car.getId().equals(dto.getCarId())
+                    );
+
+            if (!ownsCar) {
+                throw new ApiException(
+                        "السيارة المختارة لا تنتمي لهذا المستخدم"
+                );
+            }
+
+            serviceRequest.setCarId(dto.getCarId());
+        }
+
+// ownership check
+        if (!serviceRequest.getCustomer().getId()
+                .equals(user.getCustomer().getId())) {
+
+            throw new ApiException("هذا الطلب لا يخص المستخدم");
+        }
+
+// prevent edit after payment
+        if (serviceRequest.isInitialPaid()) {
+            throw new ApiException("لا يمكن تعديل الطلب بعد الدفع");
+        }
+
+// =========================
+// Problem Description
+// =========================
+        if (dto.getProblemDescription() != null) {
+
+            serviceRequest.setProblemDescription(
+                    dto.getProblemDescription()
+            );
+        }
+
+// =========================
+// Hydraulic Truck
+// =========================
+        if (dto.getHydraulicTruck() != null) {
+
+            serviceRequest.setHydraulicTruck(
+                    dto.getHydraulicTruck()
+            );
+        }
+
+// =========================
+// Appointment
+// =========================
+        if (dto.getAppointmentDate() != null
+                && dto.getAppointmentTime() != null) {
+
+            appointmentService.validateAppointment(
+                    dto.getAppointmentDate(),
+                    dto.getAppointmentTime()
+            );
+
+            serviceRequest.setAppointmentDate(
+                    dto.getAppointmentDate()
+            );
+
+            serviceRequest.setAppointmentTime(
+                    dto.getAppointmentTime()
+            );
+        }
+
+// =========================
+// Service Option
+// =========================
+        if (dto.getServiceOption() != null) {
+
+            ServiceOption option = ServiceOption.valueOf(
+                    dto.getServiceOption().toUpperCase()
+            );
+
+            serviceRequest.setServiceOption(option);
+        }
+        if (serviceRequest.getCustomerStatus()
+                == CustomerRequestStatus.CANCELED) {
+
+            throw new ApiException("لا يمكن تعديل طلب ملغي");
+        }
+
+// =========================
+// Payment Method
+// =========================
+        if (dto.getPaymentMethod() != null) {
+
+            PaymentMethod method = PaymentMethod.valueOf(
+                    dto.getPaymentMethod().toUpperCase()
+            );
+
+            serviceRequest.setPaymentMethod(method);
+        }
+
+// =========================
+// Location
+// =========================
+        if (dto.getLocationId() != null) {
+
+            Location location = locationRepository
+                    .findById(dto.getLocationId())
+                    .orElseThrow(() ->
+                            new ApiException("الموقع غير موجود")
+                    );
+
+            serviceRequest.setLocation(location);
+        }
+
+// =========================
+// Recalculate Price
+// =========================
+        int newPrice = pricingCalculationService.calculateFinal(
+                serviceRequest.getServiceOption().name(),
+                serviceRequest.isHydraulicTruck(),
+                dto.getCouponCode()
+        );
+
+        serviceRequest.setEstimatedPrice(newPrice);
+
+        serviceRequest.setLastUpdated(LocalDateTime.now());
+
+        CarServiceRequest updated =
+                requestRepository.save(serviceRequest);
+
+        return toResponseDto(updated);
     }
 
 
