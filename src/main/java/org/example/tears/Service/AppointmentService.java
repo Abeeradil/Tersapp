@@ -9,6 +9,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,11 +20,18 @@ public class AppointmentService {
 
     private final CarServiceRequestRepository requestRepository;
 
-    private static final List<String> AVAILABLE_TIMES = List.of(
-            "08:00","09:00","10:00","11:00",
-            "12:00","16:00","17:00","18:00","19:00"
+    private static final List<LocalTime> AVAILABLE_TIMES = List.of(
+            LocalTime.of(8,0),
+            LocalTime.of(9,0),
+            LocalTime.of(10,0),
+            LocalTime.of(11,0),
+            LocalTime.of(12,0),
+            LocalTime.of(16,0),
+            LocalTime.of(17,0),
+            LocalTime.of(18,0),
+            LocalTime.of(19,0)
     );
-    public void validateAppointment(LocalDate date, String time) {
+    public void validateAppointment(LocalDate date, LocalTime time) {
 
         if (!AVAILABLE_TIMES.contains(time)) {
             throw new RuntimeException("المواعيد كل ساعة فقط");
@@ -36,7 +44,7 @@ public class AppointmentService {
             throw new RuntimeException("هذا الموعد محجوز");
         }
     }
-    
+
     public Map<String, Object> getAvailability(LocalDate date) {
 
         List<CarServiceRequest> requests =
@@ -44,7 +52,7 @@ public class AppointmentService {
 
         List<SlotDto> slots = new ArrayList<>();
 
-        for (String time : AVAILABLE_TIMES) {
+        for (LocalTime time : AVAILABLE_TIMES) {
 
             SlotDto slot = new SlotDto();
             slot.setTime(time);

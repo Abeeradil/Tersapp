@@ -85,7 +85,11 @@ public class CarServiceRequestService {
 
         LocalDate appointmentDate =
                 dto.getAppointmentDate();
-        appointmentService.getAvailability(appointmentDate);
+
+        appointmentService.validateAppointment(
+                dto.getAppointmentDate(),
+                dto.getAppointmentTime()
+        );
 
 
         int estimatedPrice = pricingCalculationService.calculateFinal(
