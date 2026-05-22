@@ -42,6 +42,10 @@ public class CarServiceRequest {
                 @ManyToOne
                 private Customer customer;
 
+                @ManyToOne
+                @JoinColumn(name = "coupon_id")
+                private Coupon coupon;
+
                 @Column(name = "received_image")
                 private String receivedImageUrl;  // رابط الصورة بعد الرفع
 

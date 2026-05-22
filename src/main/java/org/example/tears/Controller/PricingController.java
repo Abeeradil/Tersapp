@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Model.Employee;
 import org.example.tears.Service.PricingCalculationService;
+import org.example.tears.Service.RequestPartService;
+import org.example.tears.Service.RequestPricingService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,44 +16,48 @@ import org.springframework.web.bind.annotation.*;
 @PreAuthorize("hasRole('PRICING')")
 public class PricingController {
 
-    private final PricingCalculationService pricingCalculationService;
 
+        private final RequestPricingService requestPricingService;
+        private final RequestPartService requestPartService;
 
-    // استلام طلب للتسعير
-    @PutMapping("/requests/{id}/start")
-    public ApiResponse startPricing(
-            @PathVariable Integer id,
-            @AuthenticationPrincipal Employee pricingEmp
-    ) {
+        // =========================
+        // Start Pricing
+        // =========================
+        @PutMapping("/requests/{id}/start")
+        public ApiResponse startPricing(
+                @PathVariable Integer id,
+                @AuthenticationPrincipal Employee pricingEmp
+        ) {
 
-        pricingCalculationService.startPricing(
-                id,pricingEmp
+            requestPricingService.startPricing(id, pricingEmp);
 
-        );
+            return new ApiResponse(true, "تم استلام الطلب للتسعير");
+        }
 
-        return new ApiResponse(true,"تم استلام الطلب للتسعير");
+        // =========================
+        // Set Part Price
+        // =========================
+        @PutMapping("/parts/{id}/price")
+        public ApiResponse setPartPrice(
+                @PathVariable Integer id,
+                @RequestParam Integer price
+        ) {
+
+            requestPartService.setFinalPrice(id, price);
+
+            return new ApiResponse(true, "تم تحديث السعر");
+        }
+
+        // =========================
+        // Finish Pricing
+        // =========================
+        @PutMapping("/requests/{id}/finish")
+        public ApiResponse finishPricing(
+                @PathVariable Integer id
+        ) {
+
+            requestPricingService.finishPricing(id);
+
+            return new ApiResponse(true, "تم إنهاء التسعير");
+        }
     }
-
-
-    // تسعير قطعة
-    @PutMapping("/parts/{id}/price")
-    public ApiResponse setPartPrice(
-            @PathVariable Integer id,
-            @RequestParam Integer price
-    ) {
-
-        pricingCalculationService.setFinalPrice(id, price);
-
-        return new ApiResponse(true,"تم تحديث السعر");
-    }
-
-
-    // إنهاء التسعير
-    @PutMapping("/requests/{id}/finish")
-    public ApiResponse finishPricing(@PathVariable Integer id) {
-
-        pricingCalculationService.finishPricing(id);
-
-        return new ApiResponse(true,"تم إنهاء التسعير");
-    }
-}

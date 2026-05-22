@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -73,135 +74,56 @@ public class CarServiceRequestService {
             CreateRequestStepDto dto
     ) {
 
-        // =========================
-        // 1) Authenticated User
-        // =========================
         User user = authService.getAuthenticatedUser(request);
 
-        // =========================
-        // 2) Validate Car Ownership
-        // =========================
-        boolean ownsCar = carRepository
-                .findByCustomerId(user.getCustomer().getId())
+        boolean ownsCar = carRepository.findByCustomerId(user.getCustomer().getId())
                 .stream()
-                .anyMatch(car -> car.getId().equals(dto.getCarId()));
+                .anyMatch(c -> c.getId().equals(dto.getCarId()));
 
-        if (!ownsCar) {
-            throw new ApiException("السيارة المختارة لا تنتمي لهذا المستخدم");
-        }
+        if (!ownsCar)
+            throw new ApiException("السيارة لا تنتمي للمستخدم");
 
-        // =========================
-        // 3) Validate Problem Description
-        // =========================
-        if (dto.getProblemDescription() == null
-                || dto.getProblemDescription().isBlank()) {
-
+        if (dto.getProblemDescription() == null || dto.getProblemDescription().isBlank())
             throw new ApiException("وصف المشكلة إلزامي");
-        }
 
-        // =========================
-        // 4) Service Option
-        // =========================
-        ServiceOption option;
+        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption().toUpperCase());
 
-        try {
-            option = ServiceOption.valueOf(
-                    dto.getServiceOption().toUpperCase()
-            );
-        } catch (Exception e) {
-            throw new ApiException("نوع الخدمة غير صالح");
-        }
-
-        // =========================
-        // 5) Resolve Location
-        // =========================
         Location location = locationService.resolveLocation(dto, user);
 
-        // =========================
-        // 6) Validate Appointment
-        // =========================
         appointmentService.validateAppointment(
                 dto.getAppointmentDate(),
                 dto.getAppointmentTime()
         );
 
-        // =========================
-        // 7) Calculate Price
-        // =========================
+        // 💰 السعر النهائي (مصدر واحد فقط)
         int estimatedPrice = pricingCalculationService.calculateFinal(
                 dto.getServiceOption(),
                 dto.isHydraulicTruck(),
                 dto.getCouponCode()
         );
 
-        // =========================
-        // 8) Validate Payment Method
-        // =========================
-        if (dto.getPaymentMethod() == null
-                || dto.getPaymentMethod().isBlank()) {
+        PaymentMethod method = PaymentMethod.valueOf(dto.getPaymentMethod().toUpperCase());
 
-            throw new ApiException("طريقة الدفع مطلوبة");
-        }
-
-        PaymentMethod paymentMethod;
-
-        try {
-            paymentMethod = PaymentMethod.valueOf(
-                    dto.getPaymentMethod().toUpperCase()
-            );
-        } catch (Exception e) {
-            throw new ApiException("طريقة الدفع غير صالحة");
-        }
-
-        // =========================
-        // 9) Create Request
-        // =========================
         CarServiceRequest req = new CarServiceRequest();
 
         req.setCarId(dto.getCarId());
-
         req.setCustomer(user.getCustomer());
-
         req.setServiceOption(option);
-
         req.setProblemDescription(dto.getProblemDescription());
-
         req.setHydraulicTruck(dto.isHydraulicTruck());
-
         req.setAppointmentDate(dto.getAppointmentDate());
-
         req.setAppointmentTime(dto.getAppointmentTime());
-
         req.setEstimatedPrice(estimatedPrice);
-
-        req.setInitialPaid(false);
-
-        req.setFinalPaid(false);
-
-        req.setPaymentMethod(paymentMethod);
-
+        req.setPaymentMethod(method);
         req.setLocation(location);
 
-        Integer maxId = requestRepository.findMaxId();
+        req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
 
-        int nextNumber = (maxId == null) ? 1001 : maxId + 1001;
-
-        req.setOrderNumber("#" + nextNumber);
-
-        req.setCustomerStatus(
-                mapToCustomerStatus(WorkflowStage.PRICING)
-        );
-
+        req.setCustomerStatus(mapToCustomerStatus(WorkflowStage.PRICING));
         req.setCreatedAt(LocalDateTime.now());
 
-        // =========================
-        // 10) Save
-        // =========================
         CarServiceRequest saved = requestRepository.save(req);
 
-        // =========================
-        // 11) Response
-        // =========================
         return toResponseDto(saved);
     }
 
