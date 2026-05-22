@@ -8,6 +8,7 @@ import org.example.tears.Repository.AppointmentRepository;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,9 +23,21 @@ public class AppointmentService {
             "08:00","09:00","10:00","11:00",
             "12:00","16:00","17:00","18:00","19:00"
     );
+    public void validateAppointment(LocalDate date, String time) {
 
-    // ================= GET SLOTS =================
-    public Map<String, Object> getAvailability(String date) {
+        if (!AVAILABLE_TIMES.contains(time)) {
+            throw new RuntimeException("المواعيد كل ساعة فقط");
+        }
+
+        boolean exists = requestRepository
+                .existsByAppointmentDateAndAppointmentTime(date, time);
+
+        if (exists) {
+            throw new RuntimeException("هذا الموعد محجوز");
+        }
+    }
+    
+    public Map<String, Object> getAvailability(LocalDate date) {
 
         List<CarServiceRequest> requests =
                 requestRepository.findByAppointmentDate(date);
@@ -44,8 +57,7 @@ public class AppointmentService {
             if (match == null) {
                 slot.setStatus(AppointmentSlotStatus.AVAILABLE);
             }
-            else if (Boolean.TRUE.equals(match.getInitialPaid())
-                    && Boolean.TRUE.equals(match.getFinalPaid())) {
+            else if (Boolean.TRUE.equals(match.getInitialPaid())) {
                 slot.setStatus(AppointmentSlotStatus.BOOKED);
             }
             else {
@@ -55,10 +67,28 @@ public class AppointmentService {
             slots.add(slot);
         }
 
+        long available = slots.stream()
+                .filter(s -> s.getStatus() == AppointmentSlotStatus.AVAILABLE)
+                .count();
+
+        long pending = slots.stream()
+                .filter(s -> s.getStatus() == AppointmentSlotStatus.PENDING)
+                .count();
+
+        long booked = slots.stream()
+                .filter(s -> s.getStatus() == AppointmentSlotStatus.BOOKED)
+                .count();
+
         return Map.of(
                 "date", date,
+                "summary", Map.of(
+                        "available", available,
+                        "pending", pending,
+                        "booked", booked
+                ),
                 "slots", slots
         );
     }
+
 
 }

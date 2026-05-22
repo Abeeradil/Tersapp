@@ -19,6 +19,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.CouponRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -82,8 +83,8 @@ public class CarServiceRequestService {
 
         Location location = locationService.resolveLocation(dto, user);
 
-        appointmentService.getAvailability(
-                dto.getAppointmentDate());
+        LocalDate date = LocalDate.parse(dto.getAppointmentDate());
+        appointmentService.getAvailability(date);
 
 
         int estimatedPrice = pricingCalculationService.calculateFinal(

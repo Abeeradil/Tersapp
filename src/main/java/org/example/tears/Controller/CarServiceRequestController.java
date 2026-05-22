@@ -15,9 +15,11 @@ import org.example.tears.Service.AppointmentService;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.CarServiceRequestService;
 import org.example.tears.Service.LocationService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -43,10 +45,14 @@ public class CarServiceRequestController {
             return ResponseEntity.ok(requestService.createRequest(request, dto));
         }
 
-        @GetMapping("/availability")
-        public ResponseEntity<?> getAvailability(@RequestParam String date) {
-            return ResponseEntity.ok(appointmentService.getAvailability(date));
-        }
+    @GetMapping("/availability")
+    public ResponseEntity<?> getAvailability(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+    ) {
+        return ResponseEntity.ok(
+                appointmentService.getAvailability(date)
+        );
+    }
 
         @GetMapping("/services")
         public ApiResponse getServices() {
