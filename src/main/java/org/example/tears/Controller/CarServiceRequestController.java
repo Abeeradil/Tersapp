@@ -76,13 +76,13 @@ public class CarServiceRequestController {
 
 
         // Get my requests
-//        @GetMapping("/my")
-//        public ResponseEntity<List<RequestResponseDto>> myRequests(HttpServletRequest request) {
-//            var user = authService.getAuthenticatedUser(request);
-//            return ResponseEntity.ok(
-//                    requestService.getMyRequests(user.getCustomer().getId())
-//            );
-//        }
+        @GetMapping("/my")
+        public ResponseEntity<List<RequestResponseDto>> myRequests(HttpServletRequest request) {
+            var user = authService.getAuthenticatedUser(request);
+            return ResponseEntity.ok(
+                    requestService.getMyRequests(user.getCustomer().getId())
+            );
+        }
     }
 
 

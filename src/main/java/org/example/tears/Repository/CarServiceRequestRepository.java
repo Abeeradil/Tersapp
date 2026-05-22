@@ -20,6 +20,9 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
     );
 
 
+    @Query("SELECT MAX(r.id) FROM CarServiceRequest r")
+    Integer findMaxId();
+
 
     List<CarServiceRequest> findByAppointmentDate(LocalDate appointmentDate);
 

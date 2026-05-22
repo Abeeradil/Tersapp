@@ -179,9 +179,11 @@ public class CarServiceRequestService {
 
         req.setLocation(location);
 
-        req.setOrderNumber(
-                "#" + ORDER_COUNTER.incrementAndGet()
-        );
+        Integer maxId = requestRepository.findMaxId();
+
+        int nextNumber = (maxId == null) ? 1001 : maxId + 1001;
+
+        req.setOrderNumber("#" + nextNumber);
 
         req.setCustomerStatus(
                 mapToCustomerStatus(WorkflowStage.PRICING)
