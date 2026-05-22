@@ -9,6 +9,7 @@ import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PaymentMethod;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.Enums.WorkflowStage;
+import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
@@ -121,7 +122,6 @@ public class CarServiceRequestService {
         req.setEstimatedPrice(estimatedPrice);
 
         // الدفع الجزئي للدفعة الأولى
-        req.setInitialPaid(false); // يمكن تغييره لاحقًا إذا الدفع تم
         req.setInitialTransactionId(null);
 
         req.setOrderNumber("#" + ORDER_COUNTER.incrementAndGet());
@@ -148,32 +148,25 @@ public class CarServiceRequestService {
     }
 
     private RequestResponseDto toResponseDto(CarServiceRequest r) {
-
         RequestResponseDto dto = new RequestResponseDto();
 
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
+        dto.setStatus(r.getCustomerStatus().name());
 
-        // حالة الطلب للعميل مع فحص null
-        dto.setStatus(r.getCustomerStatus() != null ? r.getCustomerStatus().name() : "REQUEST_CREATED");
+        dto.setLocation(mapLocation(r.getLocation())); 
 
-        // السعر التقديري (الدفع الأول) مع فحص null
-        dto.setTotalPrice(r.getEstimatedPrice() != null ? r.getEstimatedPrice() : 0);
+        return dto;
+    }
 
-        dto.setAppointmentDate(r.getAppointmentDate());
-        dto.setAppointmentTime(r.getAppointmentTime());
-        dto.setPaymentMethod(r.getPaymentMethod() != null ? r.getPaymentMethod().name() : "UNKNOWN");
+    private LocationDto mapLocation(Location loc) {
+        if (loc == null) return null;
 
-        Location loc = r.getLocation();
-        if (loc != null) {
-            dto.setLocationId(loc.getId());
-            dto.setLat(loc.getLat());
-            dto.setLng(loc.getLng());
-            dto.setAddress(loc.getAddress());
-        }
-
-        dto.setHydraulicTruck(r.isHydraulicTruck());
-
+        LocationDto dto = new LocationDto();
+        dto.setId(loc.getId());
+        dto.setLat(loc.getLat());
+        dto.setLng(loc.getLng());
+        dto.setAddress(loc.getAddress());
         return dto;
     }
 

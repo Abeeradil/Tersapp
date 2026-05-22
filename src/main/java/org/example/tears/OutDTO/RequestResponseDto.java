@@ -24,17 +24,9 @@ public class RequestResponseDto {
     private LocalDate appointmentDate;
     private LocalTime appointmentTime;
 
-    @NotEmpty(message = "يجب اختيار موقع واحد على الأقل")
-    private List<LocationDto> locations; // optional if newLocation or locationId is set
+    private LocationDto location;
 
     @Column(nullable = false)
     private boolean hydraulicTruck;
-
-    private Integer locationId;
-    private LocationDto newLocation;
-
-    private Double lat;
-    private Double lng;
-    private String address;
     private String paymentMethod;
 }

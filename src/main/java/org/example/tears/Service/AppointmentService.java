@@ -63,7 +63,7 @@ public class AppointmentService {
             if (match == null) {
                 slot.setStatus(AppointmentSlotStatus.AVAILABLE);
             }
-            else if (Boolean.TRUE.equals(match.getInitialPaid())) {
+            else if (Boolean.TRUE.equals(match.isInitialPaid())) {
                 slot.setStatus(AppointmentSlotStatus.BOOKED);
             }
             else {

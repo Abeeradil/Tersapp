@@ -48,7 +48,7 @@ public class PaymentService {
         }
 
         // 🚨 منع الدفع المكرر
-        if (Boolean.TRUE.equals(request.getInitialPaid())) {
+        if (Boolean.TRUE.equals(request.isInitialPaid())) {
             throw new RuntimeException("Payment already completed");
         }
 
@@ -85,7 +85,7 @@ public class PaymentService {
                 .orElseThrow(() -> new RuntimeException("Transaction not found"));
 
         // 🚨 منع إعادة التأكيد
-        if (Boolean.TRUE.equals(request.getInitialPaid())) {
+        if (Boolean.TRUE.equals(request.isInitialPaid())) {
             throw new RuntimeException("Payment already confirmed");
         }
 
@@ -121,6 +121,6 @@ public class PaymentService {
         CarServiceRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
 
-        return request.getInitialPaid(); // 🔥 الأفضل
+        return request.isInitialPaid(); // 🔥 الأفضل
     }
 }

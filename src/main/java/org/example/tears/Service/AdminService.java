@@ -8,8 +8,10 @@ import org.example.tears.Config.TempEmailGenerator;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
+import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.Location;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeLoginInfo;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -95,13 +97,7 @@ public class AdminService {
         dto.setPaymentMethod(r.getPaymentMethod() != null ? r.getPaymentMethod().name() : "UNKNOWN");
         dto.setHydraulicTruck(r.isHydraulicTruck());
 
-        if (r.getLocation() != null) {
-            dto.setLocationId(r.getLocation().getId());
-            dto.setLat(r.getLocation().getLat());
-            dto.setLng(r.getLocation().getLng());
-            dto.setAddress(r.getLocation().getAddress());
-        }
-
+        mapLocation(r.getLocation());
         return dto;
     }
 
@@ -113,5 +109,15 @@ public class AdminService {
         employeeRepository.save(employee);
 
         return new ApiResponse(true,"Employee deactivated");
+    }
+    private LocationDto mapLocation(Location loc) {
+        if (loc == null) return null;
+
+        LocationDto dto = new LocationDto();
+        dto.setId(loc.getId());
+        dto.setLat(loc.getLat());
+        dto.setLng(loc.getLng());
+        dto.setAddress(loc.getAddress());
+        return dto;
     }
 }
