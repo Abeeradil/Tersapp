@@ -29,60 +29,54 @@ import static org.example.tears.Enums.PaymentMethod.*;
         @Value("${MOYASAR_CALLBACK_URL}")
         private String callbackUrl;
 
-        public String createPayment(Integer requestId) {
+    public String createPayment(Integer requestId) {
 
-            CarServiceRequest request = requestRepository.findById(requestId)
-                    .orElseThrow(() -> new RuntimeException("Request not found"));
+        CarServiceRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-            int amount = request.getEstimatedPrice() * 100;
+        int amount = request.getEstimatedPrice() * 100;
+        amount = (amount / 10) * 10;
 
-            // Moyasar requirement: safe rounding
-            amount = (amount / 10) * 10;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(secretKey, "");
+        headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.setBasicAuth(secretKey, "");
-            headers.setContentType(MediaType.APPLICATION_JSON);
+        Map<String, Object> source = new HashMap<>();
+        source.put("type", "creditcard"); // أو applepay لاحقًا
 
-            // نوع الدفع (ثابت كبداية - تقدر تطوره لاحقًا)
-            Map<String, Object> source = new HashMap<>();
-            source.put("type", "creditcard");
-            source.put("name", "Test User");
-            source.put("number", "4111111111111111");
-            source.put("month", "12");
-            source.put("year", "2030");
-            source.put("cvc", "123");
+        Map<String, Object> body = new HashMap<>();
+        body.put("amount", amount);
+        body.put("currency", "SAR");
+        body.put("description", "Request #" + request.getOrderNumber());
+        body.put("callback_url", callbackUrl);
+        body.put("source", source);
 
-            Map<String, Object> body = new HashMap<>();
-            body.put("amount", amount);
-            body.put("currency", "SAR");
-            body.put("description", "Request #" + request.getOrderNumber());
-            body.put("callback_url", callbackUrl);
-            body.put("source", source);
+        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                "https://api.moyasar.com/v1/payments",
+                entity,
+                Map.class
+        );
 
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    "https://api.moyasar.com/v1/payments",
-                    entity,
-                    Map.class
-            );
+        Map data = response.getBody();
 
-            Map data = response.getBody();
-
-            if (data == null || data.get("id") == null) {
-                throw new RuntimeException("Payment creation failed");
-            }
-
-            String paymentId = (String) data.get("id");
-
-            // نخزن الدفع مع الطلب
-            request.setInitialTransactionId(paymentId);
-            request.setInitialPaid(false);
-
-            requestRepository.save(request);
-
-            return paymentId;
+        if (data == null || data.get("id") == null) {
+            throw new RuntimeException("Payment creation failed");
         }
+
+        String paymentId = data.get("id").toString();
+
+        // ⭐ هذا أهم سطر
+        String url = ((Map) data.get("source")).get("transaction_url").toString();
+
+        request.setInitialTransactionId(paymentId);
+        request.setInitialPaid(false);
+
+        requestRepository.save(request);
+
+        return url; // 🔥 ترجعين رابط الدفع للفرونت
+    }
 
         public void confirmPayment(String paymentId) {
 
