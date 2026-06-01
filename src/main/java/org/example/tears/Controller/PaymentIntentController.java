@@ -3,10 +3,7 @@ package org.example.tears.Controller;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Service.PaymentIntentService;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
@@ -15,10 +12,25 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PaymentIntentController {
 
-    private final PaymentIntentService service;
+        private final PaymentIntentService service;
 
-    @PostMapping("/create")
-    public Map<String, String> create(@RequestBody CreateRequestStepDto dto) {
-        return service.createPaymentIntent(dto);
+        // 1. create intent
+        @PostMapping("/intent")
+        public Map<String, String> create(@RequestBody CreateRequestStepDto dto) {
+            return service.createIntent(dto);
+        }
+
+        // 2. create checkout
+        @PostMapping("/checkout/{id}")
+        public Map<String, String> checkout(@PathVariable Integer id) {
+            return service.createCheckout(id);
+        }
+
+        // 3. callback (Moyasar)
+        @PostMapping("/callback")
+        public void callback(@RequestParam String id, @RequestParam String status) {
+            if ("paid".equalsIgnoreCase(status)) {
+                service.confirmPayment(id);
+            }
+        }
     }
-}
