@@ -127,4 +127,6 @@ public class CarServiceRequest {
                 @JoinColumn(name = "location_id")
                 private Location location;
 
+    private String paymentId;
+
         }
