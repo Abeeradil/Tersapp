@@ -40,30 +40,46 @@ public class PricingCalculationService {
         return total;
     }
 
-    public int calculateFinal(
-            String serviceOption,
-            boolean hydraulicTruck,
-            String couponCode
-    ) {
 
-        ServiceOption option =
-                ServiceOption.valueOf(serviceOption);
+        public int calculateFinal(String serviceOption,
+                                  boolean hydraulicTruck,
+                                  String couponCode) {
 
-        int total = pricingService.calculatePreview(serviceOption, hydraulicTruck);
+            int total = pricingService.calculatePreview(serviceOption, hydraulicTruck);
 
-        if (couponCode != null && !couponCode.isBlank()) {
+            if (couponCode != null && !couponCode.isBlank()) {
 
-            Coupon coupon = couponService.validate(
-                    couponCode,
-                    total,
-                    option
-            );
+                Coupon coupon = couponService.validate(
+                        couponCode,
+                        total,
+                        ServiceOption.valueOf(serviceOption)
+                );
 
-            total = couponService.applyDiscount(coupon, total);
+                total = applyDiscount(coupon, total);
+            }
+
+            return Math.max(total, 0);
         }
 
-        return total;
-    }
+        private int applyDiscount(Coupon coupon, int total) {
+
+            if (coupon.getDiscountPercentage() != null) {
+
+                int discount = (total * coupon.getDiscountPercentage()) / 100;
+
+                if (coupon.getMaxDiscountAmount() != null) {
+                    discount = Math.min(discount, coupon.getMaxDiscountAmount());
+                }
+
+                total -= discount;
+            }
+
+            if (coupon.getFixedDiscount() != null) {
+                total -= coupon.getFixedDiscount();
+            }
+
+            return total;
+        }
 
     public void startPricing(Integer requestId, Employee employee) {
 

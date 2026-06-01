@@ -40,9 +40,7 @@ public class ConfigurationSecurity {
 
                         // ================= CONTENT (TERMS / PRIVACY / FAQS) =================
                         .requestMatchers("/api/v1/tears/content/**").permitAll()
-
-                        .requestMatchers("/api/v1/tears/coupons/**").permitAll()
-
+                        
                         // ================= PUBLIC CAR DATA =================
                         .requestMatchers(
                                         "/api/v1/tears/cars/brands",
@@ -52,6 +50,11 @@ public class ConfigurationSecurity {
                                         "/api/v1/tears/cars/models/search",
                                         "/api/v1/tears/cars/filter",
                                         "api/v1/tears/users/delete/**"
+                        ).permitAll()
+
+                        .requestMatchers(
+                                "/api/v1/tears/coupons/**",
+                                "/api/v1/tears/payment/**"
                         ).permitAll()
 
                         // ================= USER =================

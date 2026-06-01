@@ -1,6 +1,7 @@
 package org.example.tears.Enums;
 
 public enum CustomerRequestStatus {
+        PAYMENT_PENDING,
         REQUEST_CREATED,     // تم إنشاء الطلب
         CAR_RECEIVED,        // تم استلام السيارة
         CAR_INSPECTION,      // فحص السيارة

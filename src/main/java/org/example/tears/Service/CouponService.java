@@ -5,6 +5,7 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateCouponRequest;
 import org.example.tears.InpDTO.UpdateCouponRequest;
+import org.example.tears.InpDTO.ValidateCouponDto;
 import org.example.tears.Model.Coupon;
 import org.example.tears.Repository.CouponRepository;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,6 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class CouponService {
-
 
         private final CouponRepository couponRepository;
 
@@ -72,30 +72,22 @@ public class CouponService {
         public Coupon validate(String code, int total, ServiceOption option) {
 
             Coupon coupon = couponRepository.findByCodeIgnoreCase(code)
-                    .orElseThrow(() -> new ApiException("الكوبون غير موجود"));
+                    .orElseThrow(() -> new RuntimeException("Coupon not found"));
 
             if (!coupon.isActive())
-                throw new ApiException("الكوبون غير مفعل");
+                throw new RuntimeException("Coupon inactive");
 
             if (coupon.getExpiryDate() != null &&
-                    coupon.getExpiryDate().isBefore(LocalDate.now())) {
-                throw new ApiException("الكوبون منتهي");
-            }
-
-            if (coupon.getMinimumOrderPrice() != null &&
-                    total < coupon.getMinimumOrderPrice()) {
-                throw new ApiException("الحد الأدنى غير متحقق");
-            }
+                    coupon.getExpiryDate().isBefore(LocalDate.now()))
+                throw new RuntimeException("Coupon expired");
 
             if (coupon.getServiceOption() != null &&
-                    coupon.getServiceOption() != option) {
-                throw new ApiException("الكوبون غير صالح لهذه الخدمة");
-            }
+                    coupon.getServiceOption() != option)
+                throw new RuntimeException("Coupon not valid for this service");
 
-            if (coupon.getUsageLimit() != null &&
-                    coupon.getUsedCount() >= coupon.getUsageLimit()) {
-                throw new ApiException("تم استهلاك الكوبون");
-            }
+            if (coupon.getMinimumOrderPrice() != null &&
+                    total < coupon.getMinimumOrderPrice())
+                throw new RuntimeException("Minimum order not met");
 
             return coupon;
         }
@@ -119,16 +111,17 @@ public class CouponService {
 
             return Math.max(total, 0);
         }
-    public List<Coupon> getAll() {
-        return couponRepository.findAll();
+
+        public List<Coupon> getAll() {
+            return couponRepository.findAll();
+        }
+
+        public Coupon disable(Integer id) {
+
+            Coupon c = couponRepository.findById(id)
+                    .orElseThrow(() -> new ApiException("غير موجود"));
+
+            c.setActive(false);
+            return couponRepository.save(c);
+        }
     }
-
-    public Coupon disable(Integer id) {
-        Coupon c = couponRepository.findById(id)
-                .orElseThrow(() -> new ApiException("غير موجود"));
-
-        c.setActive(false);
-        return couponRepository.save(c);
-    }
-
-}

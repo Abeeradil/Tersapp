@@ -307,8 +307,6 @@ public class CarServiceRequestService {
 
         dto.setAppointmentDate(r.getAppointmentDate());
 
-        dto.setAppointmentTime(r.getAppointmentTime());
-
         dto.setHydraulicTruck(r.isHydraulicTruck());
 
         dto.setPaymentMethod(
@@ -318,6 +316,7 @@ public class CarServiceRequestService {
         );
 
         dto.setLocation(mapLocation(r.getLocation()));
+
 
         return dto;
     }
