@@ -53,57 +53,9 @@ public class PaymentIntentService {
 
         repository.save(intent);
 
-        // Moyasar
-        int amount = price * 100;
-
-        Map<String, Object> source = new HashMap<>();
-        source.put("type", "creditcard");
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("amount", amount);
-        body.put("currency", "SAR");
-        body.put("description", "PaymentIntent #" + intent.getId());
-        body.put("callback_url", callbackUrl);
-        body.put("source", source);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(secretKey, "");
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
-
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                "https://api.moyasar.com/v1/payments",
-                entity,
-                Map.class
-        );
-
-        Map data = response.getBody();
-
-        if (data == null || data.get("id") == null) {
-            throw new RuntimeException("Moyasar failed: " + data);
-        }
-
-        String checkoutUrl = null;
-
-        if (data.get("redirect_url") != null) {
-            checkoutUrl = data.get("redirect_url").toString();
-        } else if (data.get("source") instanceof Map sourceMap) {
-            Object tx = sourceMap.get("transaction_url");
-            if (tx != null) {
-                checkoutUrl = tx.toString();
-            }
-        }
-
-        intent.setPaymentId(intent.getPaymentId());
-        intent.setCheckoutUrl(checkoutUrl);
-        intent.setPaymentStatus(PaymentStatus.INITIATED);
-
-        repository.save(intent);
-
         Map<String, String> result = new HashMap<>();
         result.put("paymentIntentId", intent.getId().toString());
-        result.put("checkoutUrl", checkoutUrl);
+        result.put("amount", String.valueOf(price));
 
         return result;
     }
