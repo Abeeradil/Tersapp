@@ -290,7 +290,6 @@ public class CarServiceRequestService {
         RequestResponseDto dto = new RequestResponseDto();
 
         dto.setId(r.getId());
-
         dto.setOrderNumber(r.getOrderNumber());
 
         dto.setStatus(
@@ -306,6 +305,7 @@ public class CarServiceRequestService {
         );
 
         dto.setAppointmentDate(r.getAppointmentDate());
+        dto.setAppointmentTime(r.getAppointmentTime());
 
         dto.setHydraulicTruck(r.isHydraulicTruck());
 
@@ -317,6 +317,14 @@ public class CarServiceRequestService {
 
         dto.setLocation(mapLocation(r.getLocation()));
 
+        // 🚗 هنا أهم جزء: نجيب السيارة
+        Car car = carRepository.findById(r.getCarId())
+                .orElse(null);
+
+        if (car != null) {
+            dto.setPlateNumberArabic(car.getPlateNumberArabic());
+            dto.setPlateNumberEnglish(car.getPlateNumberEnglish());
+        }
 
         return dto;
     }

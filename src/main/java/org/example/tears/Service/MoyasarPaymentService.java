@@ -14,71 +14,82 @@ import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.Map;
 
-        @Service
+import static org.example.tears.Enums.PaymentMethod.*;
+
+@Service
         @RequiredArgsConstructor
         public class MoyasarPaymentService {
 
-                private final CarServiceRequestRepository requestRepository;
-                private final RestTemplate restTemplate = new RestTemplate();
+        private final CarServiceRequestRepository requestRepository;
+        private final RestTemplate restTemplate = new RestTemplate();
 
+        @Value("${MOYASAR_SECRET_KEY}")
+        private String secretKey;
 
-                @Value("${MOYASAR_SECRET_KEY}")
-                private String secretKey;
+        @Value("${MOYASAR_CALLBACK_URL}")
+        private String callbackUrl;
 
-                @Value("${MOYASAR_CALLBACK_URL}")
-                private String callbackUrl;
+        public String createPayment(Integer requestId) {
 
-                public String createPayment(Integer requestId) {
+            CarServiceRequest request = requestRepository.findById(requestId)
+                    .orElseThrow(() -> new RuntimeException("Request not found"));
 
-                    CarServiceRequest request = requestRepository.findById(requestId)
-                            .orElseThrow(() -> new RuntimeException("Request not found"));
+            int amount = request.getEstimatedPrice() * 100;
 
-                    int amount = request.getEstimatedPrice() * 100;
+            // Moyasar requirement: safe rounding
+            amount = (amount / 10) * 10;
 
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.setBasicAuth(secretKey, "");
-                    headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBasicAuth(secretKey, "");
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
-                    Map<String, Object> body = new HashMap<>();
-                    body.put("amount", amount);
-                    body.put("currency", "SAR");
-                    body.put("description", "Request #" + request.getOrderNumber());
-                    body.put("callback_url", callbackUrl);
+            // نوع الدفع (ثابت كبداية - تقدر تطوره لاحقًا)
+            Map<String, Object> source = new HashMap<>();
+            source.put("type", "creditcard");
 
-                    HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
+            Map<String, Object> body = new HashMap<>();
+            body.put("amount", amount);
+            body.put("currency", "SAR");
+            body.put("description", "Request #" + request.getOrderNumber());
+            body.put("callback_url", callbackUrl);
+            body.put("source", source);
 
-                    ResponseEntity<Map> response = restTemplate.postForEntity(
-                            "https://api.moyasar.com/v1/payments",
-                            entity,
-                            Map.class
-                    );
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
-                    Map data = response.getBody();
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    "https://api.moyasar.com/v1/payments",
+                    entity,
+                    Map.class
+            );
 
-                    if (data == null || data.get("id") == null) {
-                        throw new RuntimeException("Payment creation failed");
-                    }
+            Map data = response.getBody();
 
-                    String paymentId = (String) data.get("id");
-
-                    request.setInitialTransactionId(paymentId);
-                    request.setInitialPaid(false);
-
-                    requestRepository.save(request);
-
-                    return paymentId;
-                }
-
-
-                public void confirmPayment(String paymentId) {
-
-                    CarServiceRequest request =
-                            requestRepository.findByInitialTransactionId(paymentId)
-                                    .orElseThrow(() -> new RuntimeException("Not found"));
-
-                    request.setInitialPaid(true);
-                    request.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
-
-                    requestRepository.save(request);
-                }
+            if (data == null || data.get("id") == null) {
+                throw new RuntimeException("Payment creation failed");
             }
+
+            String paymentId = (String) data.get("id");
+
+            // نخزن الدفع مع الطلب
+            request.setInitialTransactionId(paymentId);
+            request.setInitialPaid(false);
+
+            requestRepository.save(request);
+
+            return paymentId;
+        }
+
+        public void confirmPayment(String paymentId) {
+
+            CarServiceRequest request =
+                    requestRepository.findByInitialTransactionId(paymentId)
+                            .orElseThrow(() -> new RuntimeException("Not found"));
+
+            request.setInitialPaid(true);
+
+            // 🔥 الحالة الصحيحة بعد الدفع
+            request.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED);
+
+            requestRepository.save(request);
+        }
+    }

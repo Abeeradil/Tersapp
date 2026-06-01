@@ -26,12 +26,14 @@ public class RequestResponseDto {
         private Integer totalPrice;
 
         private LocalDate appointmentDate;
-
         private LocalTime appointmentTime;
 
         private boolean hydraulicTruck;
 
         private String paymentMethod;
+
+        private String plateNumberArabic;
+        private String plateNumberEnglish;
 
         private LocationDto location;
 }
