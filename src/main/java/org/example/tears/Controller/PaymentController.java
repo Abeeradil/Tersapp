@@ -20,9 +20,9 @@ public class PaymentController {
     private final MoyasarPaymentService paymentService;
 
     // إنشاء جلسة دفع
-    @PostMapping("/create/{requestId}")
-    public String create(@PathVariable Integer requestId) {
-        return paymentService.createPayment(requestId);
+    @PostMapping("/create")
+    public ResponseEntity<?> create(@RequestBody CreatePaymentRequestDto dto) {
+        return ResponseEntity.ok(paymentService.createPayment(dto.getRequestId()));
     }
 
     // webhook من Moyasar
@@ -36,5 +36,5 @@ public class PaymentController {
             paymentService.confirmPayment(id);
         }
     }
-    
+
 }

@@ -2,6 +2,7 @@ package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.PaymentStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,10 +30,15 @@ import static org.example.tears.Enums.PaymentMethod.*;
         @Value("${MOYASAR_CALLBACK_URL}")
         private String callbackUrl;
 
-    public String createPayment(Integer requestId) {
+    public Map<String, String> createPayment(Integer requestId) {
 
         CarServiceRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("Request not found"));
+
+        // 🚨 منع الدفع المكرر
+        if (request.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new RuntimeException("Already paid");
+        }
 
         int amount = request.getEstimatedPrice() * 100;
         amount = (amount / 10) * 10;
@@ -42,7 +48,7 @@ import static org.example.tears.Enums.PaymentMethod.*;
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         Map<String, Object> source = new HashMap<>();
-        source.put("type", "creditcard"); // أو applepay لاحقًا
+        source.put("type", "creditcard");
 
         Map<String, Object> body = new HashMap<>();
         body.put("amount", amount);
@@ -67,28 +73,43 @@ import static org.example.tears.Enums.PaymentMethod.*;
 
         String paymentId = data.get("id").toString();
 
-        // ⭐ هذا أهم سطر
-        String url = ((Map) data.get("source")).get("transaction_url").toString();
+        // 🔥 استخراج الرابط بطريقة آمنة
+        String checkoutUrl = null;
 
+        if (data.get("source") instanceof Map sourceMap) {
+            Object tx = sourceMap.get("transaction_url");
+            if (tx != null) {
+                checkoutUrl = tx.toString();
+            }
+        }
+
+        // 💾 حفظ الحالة
         request.setInitialTransactionId(paymentId);
-        request.setInitialPaid(false);
-
+        request.setPaymentStatus(PaymentStatus.INITIATED);
         requestRepository.save(request);
 
-        return url; // 🔥 ترجعين رابط الدفع للفرونت
+        Map<String, String> result = new HashMap<>();
+        result.put("paymentId", paymentId);
+        result.put("checkoutUrl", checkoutUrl);
+
+        return result;
     }
 
-        public void confirmPayment(String paymentId) {
+    public void confirmPayment(String paymentId) {
 
-            CarServiceRequest request =
-                    requestRepository.findByInitialTransactionId(paymentId)
-                            .orElseThrow(() -> new RuntimeException("Not found"));
+        CarServiceRequest request = requestRepository.findByInitialTransactionId(paymentId)
+                .orElseThrow(() -> new RuntimeException("Request not found"));
 
-            request.setInitialPaid(true);
-
-            // 🔥 الحالة الصحيحة بعد الدفع
-            request.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED);
-
-            requestRepository.save(request);
+        if (request.getPaymentStatus() == PaymentStatus.PAID) {
+            return;
         }
+
+        request.setInitialPaid(true);
+        request.setPaymentStatus(PaymentStatus.PAID);
+
+        // 🔥 هنا الربط الحقيقي مع الطلب
+        request.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
+
+        requestRepository.save(request);
+    }
     }
