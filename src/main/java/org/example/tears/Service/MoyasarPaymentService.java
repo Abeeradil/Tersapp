@@ -46,6 +46,11 @@ import static org.example.tears.Enums.PaymentMethod.*;
             // نوع الدفع (ثابت كبداية - تقدر تطوره لاحقًا)
             Map<String, Object> source = new HashMap<>();
             source.put("type", "creditcard");
+            source.put("name", "Test User");
+            source.put("number", "4111111111111111");
+            source.put("month", "12");
+            source.put("year", "2030");
+            source.put("cvc", "123");
 
             Map<String, Object> body = new HashMap<>();
             body.put("amount", amount);
