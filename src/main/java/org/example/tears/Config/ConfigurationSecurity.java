@@ -40,7 +40,7 @@ public class ConfigurationSecurity {
 
                         // ================= CONTENT (TERMS / PRIVACY / FAQS) =================
                         .requestMatchers("/api/v1/tears/content/**").permitAll()
-                        
+
                         // ================= PUBLIC CAR DATA =================
                         .requestMatchers(
                                         "/api/v1/tears/cars/brands",
