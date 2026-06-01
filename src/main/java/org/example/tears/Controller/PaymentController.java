@@ -2,9 +2,6 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.CreatePaymentRequestDto;
-import org.example.tears.DTO.CreatePaymentSessionDto;
-import org.example.tears.DTO.PaymentResponseDto;
-import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Service.MoyasarPaymentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -48,6 +48,11 @@ import java.util.Map;
 
         Map<String, Object> source = new HashMap<>();
         source.put("type", "creditcard");
+        source.put("name", "Test User");
+        source.put("number", "4111111111111111");
+        source.put("month", "12");
+        source.put("year", "2030");
+        source.put("cvc", "123");
 
         Map<String, Object> body = new HashMap<>();
         body.put("amount", amount);
@@ -73,14 +78,11 @@ import java.util.Map;
         String paymentId = data.get("id").toString();
 
         // 🔥 استخراج الرابط بطريقة آمنة
-        String checkoutUrl = null;
-
-        if (data.get("source") instanceof Map sourceMap) {
-            Object tx = sourceMap.get("transaction_url");
-            if (tx != null) {
-                checkoutUrl = tx.toString();
-            }
-        }
+        String checkoutUrl = data.get("source") != null
+                ? ((Map) data.get("source")).get("transaction_url") != null
+                ? ((Map)((Map)data.get("source")).get("transaction_url")).toString()
+                : null
+                : null;
 
         // 💾 حفظ الحالة
         request.setInitialTransactionId(paymentId);
