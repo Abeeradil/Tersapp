@@ -10,5 +10,4 @@ public enum CustomerRequestStatus {
         READY_FOR_DELIVERY,  // سيارتك جاهزة
         DELIVERED,            // تم التسليم
         CANCELED
-
 }

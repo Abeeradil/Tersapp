@@ -1,5 +1,6 @@
 package org.example.tears.Repository;
 
+import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -19,6 +20,17 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             LocalTime appointmentTime
     );
 
+    List<CarServiceRequest>
+    findByCustomerIdAndCustomerStatusInOrderByIdDesc(
+            Integer customerId,
+            List<CustomerRequestStatus> statuses
+    );
+
+    List<CarServiceRequest>
+    findByCustomerIdAndCustomerStatusNotInOrderByIdDesc(
+            Integer customerId,
+            List<CustomerRequestStatus> statuses
+    );
 
     @Query("SELECT MAX(r.id) FROM CarServiceRequest r")
     Integer findMaxId();

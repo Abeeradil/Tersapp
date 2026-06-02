@@ -274,6 +274,35 @@ public class CarServiceRequestService {
         return toResponseDto(updated);
     }
 
+    public List<RequestResponseDto> getCurrentRequests(Integer customerId) {
+
+        return requestRepository
+                .findByCustomerIdAndCustomerStatusNotInOrderByIdDesc(
+                        customerId,
+                        List.of(
+                                CustomerRequestStatus.DELIVERED,
+                                CustomerRequestStatus.CANCELED
+                        )
+                )
+                .stream()
+                .map(this::toResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    public List<RequestResponseDto> getPastRequests(Integer customerId) {
+
+        return requestRepository
+                .findByCustomerIdAndCustomerStatusInOrderByIdDesc(
+                        customerId,
+                        List.of(
+                                CustomerRequestStatus.DELIVERED,
+                                CustomerRequestStatus.CANCELED
+                        )
+                )
+                .stream()
+                .map(this::toResponseDto)
+                .collect(Collectors.toList());
+    }
 
 
 

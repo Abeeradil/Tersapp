@@ -87,7 +87,27 @@ public class CarServiceRequestController {
                     requestService.getMyRequests(user.getCustomer().getId())
             );
         }
+    @GetMapping("/my/current")
+    public List<RequestResponseDto> getCurrentRequests(
+            HttpServletRequest request) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return requestService
+                .getCurrentRequests(user.getCustomer().getId());
     }
+
+    @GetMapping("/my/past")
+    public List<RequestResponseDto> getPastRequests(
+            HttpServletRequest request) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return requestService
+                .getPastRequests(user.getCustomer().getId());
+    }
+
+}
 
 //@GetMapping("/appointments/my")
 //        public ResponseEntity<?> getMyAppointments(HttpServletRequest request) {
