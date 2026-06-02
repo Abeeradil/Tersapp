@@ -51,7 +51,7 @@ public class CarServiceRequest {
                 @Column(name = "received_image")
                 private String receivedImageUrl;  // رابط الصورة بعد الرفع
 
-    // ========================
+                // ========================
                 // Appointment
                 // ========================
                 private LocalDate appointmentDate;

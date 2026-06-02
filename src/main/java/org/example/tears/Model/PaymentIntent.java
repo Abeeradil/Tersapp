@@ -57,6 +57,7 @@ public class PaymentIntent {
     // Moyasar
     private String paymentId;
 
+    private String invoiceId;
     private String checkoutUrl;
 
     private LocalDateTime createdAt;

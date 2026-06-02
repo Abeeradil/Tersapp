@@ -1,6 +1,8 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.DTO.CheckoutResponse;
+import org.example.tears.DTO.CreatePaymentIntentRequest;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PaymentStatus;
 import org.example.tears.Enums.ServiceOption;
@@ -25,9 +27,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class PaymentIntentService {
 
-    private final PaymentIntentRepository repository;
-    private final RestTemplate restTemplate = new RestTemplate();
+        private final PaymentIntentRepository paymentIntentRepository;
         private final CarServiceRequestRepository requestRepository;
+        private final RestTemplate restTemplate = new RestTemplate();
 
         @Value("${MOYASAR_SECRET_KEY}")
         private String secretKey;
@@ -35,9 +37,13 @@ public class PaymentIntentService {
         @Value("${MOYASAR_CALLBACK_URL}")
         private String callbackUrl;
 
-        // 1️⃣ إنشاء Intent فقط
-        public Map<String, String> createIntent(CreateRequestStepDto dto) {
+        @Value("${MOYASAR_SUCCESS_URL}")
+        private String successUrl;
 
+        @Value("${MOYASAR_BACK_URL}")
+        private String backUrl;
+
+        public CheckoutResponse createCheckout(CreatePaymentIntentRequest dto) {
             PaymentIntent intent = new PaymentIntent();
 
             intent.setCarId(dto.getCarId());
@@ -45,98 +51,101 @@ public class PaymentIntentService {
             intent.setProblemDescription(dto.getProblemDescription());
             intent.setAppointmentDate(dto.getAppointmentDate());
             intent.setAppointmentTime(dto.getAppointmentTime());
-            intent.setHydraulicTruck(dto.isHydraulicTruck());
+            intent.setHydraulicTruck(Boolean.TRUE.equals(dto.getHydraulicTruck()));
             intent.setCouponCode(dto.getCouponCode());
-
-            int price = intent.getServiceOption().getPrice();
-            if (Boolean.TRUE.equals(intent.getHydraulicTruck())) price += 100;
-
-            intent.setEstimatedPrice(price);
             intent.setPaymentStatus(PaymentStatus.PENDING);
             intent.setCreatedAt(LocalDateTime.now());
 
-            repository.save(intent);
+            int price = intent.getServiceOption().getPrice();
 
-            return Map.of(
-                    "paymentIntentId", intent.getId().toString(),
-                    "amount", String.valueOf(price)
-            );
-        }
+            if (Boolean.TRUE.equals(intent.getHydraulicTruck())) {
+                price += 100;
+            }
 
-        // 2️⃣ إنشاء الدفع (Moyasar)
-        public Map<String, String> createCheckout(Integer intentId) {
+            intent.setEstimatedPrice(price);
+            paymentIntentRepository.save(intent);
 
-            PaymentIntent intent = repository.findById(intentId)
-                    .orElseThrow(() -> new RuntimeException("Intent not found"));
+            int amountInHalalah = price * 100;
 
-            int amount = intent.getEstimatedPrice() * 100;
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("paymentIntentId", intent.getId().toString());
+            metadata.put("carId", intent.getCarId().toString());
 
             Map<String, Object> body = new HashMap<>();
-            body.put("amount", amount);
+            body.put("amount", amountInHalalah);
             body.put("currency", "SAR");
-            body.put("description", "Intent #" + intent.getId());
+            body.put("description", "Car service request #" + intent.getId());
             body.put("callback_url", callbackUrl);
+            body.put("success_url", successUrl);
+            body.put("back_url", backUrl);
+            body.put("metadata", metadata);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(secretKey, "");
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             ResponseEntity<Map> response = restTemplate.postForEntity(
-                    "https://api.moyasar.com/v1/payments",
+                    "https://api.moyasar.com/v1/invoices",
                     new HttpEntity<>(body, headers),
                     Map.class
             );
 
             Map data = response.getBody();
 
-            String paymentId = data.get("id").toString();
-
-            String checkoutUrl = null;
-
-            if (data.get("source") instanceof Map sourceMap) {
-                Object tx = sourceMap.get("transaction_url");
-                if (tx != null) checkoutUrl = tx.toString();
+            if (data == null || data.get("id") == null || data.get("url") == null) {
+                throw new RuntimeException("Invalid Moyasar invoice response");
             }
 
-            intent.setPaymentId(paymentId);
+            String invoiceId = data.get("id").toString();
+            String checkoutUrl = data.get("url").toString();
+
+            intent.setInvoiceId(invoiceId);
             intent.setCheckoutUrl(checkoutUrl);
             intent.setPaymentStatus(PaymentStatus.INITIATED);
 
-            repository.save(intent);
+            paymentIntentRepository.save(intent);
 
-            return Map.of(
-                    "checkoutUrl", checkoutUrl,
-                    "paymentId", paymentId
+            return new CheckoutResponse(
+                    intent.getId().toString(),
+                    invoiceId,
+                    checkoutUrl,
+                    amountInHalalah
             );
         }
 
-        // 3️⃣ تأكيد الدفع + إنشاء الطلب
-        public void confirmPayment(String paymentId) {
+    public void handleInvoiceCallback(Map<String, Object> payload) {
+        String invoiceId = payload.get("id").toString();
+        String status = payload.get("status").toString();
 
-            PaymentIntent intent = repository.findByPaymentId(paymentId)
-                    .orElseThrow(() -> new RuntimeException("Not found"));
+        PaymentIntent intent = paymentIntentRepository.findByInvoiceId(invoiceId)
+                .orElseThrow(() -> new RuntimeException("Payment intent not found"));
 
-            if (intent.getPaymentStatus() == PaymentStatus.PAID)
-                return;
-
-            intent.setPaymentStatus(PaymentStatus.PAID);
-            repository.save(intent);
-
-            // 🔥 إنشاء الطلب الحقيقي هنا
-            CarServiceRequest req = new CarServiceRequest();
-
-            req.setCarId(intent.getCarId());
-            req.setServiceOption(intent.getServiceOption());
-            req.setProblemDescription(intent.getProblemDescription());
-            req.setAppointmentDate(intent.getAppointmentDate());
-            req.setAppointmentTime(intent.getAppointmentTime());
-            req.setHydraulicTruck(intent.getHydraulicTruck());
-            req.setEstimatedPrice(intent.getEstimatedPrice());
-
-            req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
-            req.setCreatedAt(LocalDateTime.now());
-            req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
-
-            requestRepository.save(req);
+        if (!"paid".equalsIgnoreCase(status)) {
+            intent.setPaymentStatus(PaymentStatus.FAILED);
+            paymentIntentRepository.save(intent);
+            return;
         }
+
+        if (intent.getPaymentStatus() == PaymentStatus.PAID) {
+            return;
+        }
+
+        intent.setPaymentStatus(PaymentStatus.PAID);
+        paymentIntentRepository.save(intent);
+
+        CarServiceRequest request = new CarServiceRequest();
+
+        request.setCarId(intent.getCarId());
+        request.setServiceOption(intent.getServiceOption());
+        request.setProblemDescription(intent.getProblemDescription());
+        request.setAppointmentDate(intent.getAppointmentDate());
+        request.setAppointmentTime(intent.getAppointmentTime());
+        request.setHydraulicTruck(intent.getHydraulicTruck());
+        request.setEstimatedPrice(intent.getEstimatedPrice());
+        request.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
+        request.setCreatedAt(LocalDateTime.now());
+        request.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
+
+        requestRepository.save(request);
     }
+}
