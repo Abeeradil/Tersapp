@@ -71,15 +71,11 @@ public class PaymentIntentService {
 
             int amount = intent.getEstimatedPrice() * 100;
 
-            Map<String, Object> source = new HashMap<>();
-            source.put("type", "creditcard");
-
             Map<String, Object> body = new HashMap<>();
             body.put("amount", amount);
             body.put("currency", "SAR");
             body.put("description", "Intent #" + intent.getId());
             body.put("callback_url", callbackUrl);
-            body.put("source", source);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(secretKey, "");
