@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.tears.Enums.PaymentMethod;
 import org.example.tears.Enums.PaymentStatus;
 import org.example.tears.Enums.ServiceOption;
 
@@ -54,13 +55,17 @@ public class PaymentIntent {
 
     private String couponCode;
 
-    // Moyasar
-    private String paymentId;
+
+    @OneToOne
+    private CarServiceRequest serviceRequest;
+
 
     private String invoiceId;
     private String checkoutUrl;
-
-    private LocalDateTime createdAt;
-
+    private LocalDateTime expiresAt;
     private LocalDateTime paidAt;
+
+    // Moyasar
+    private String paymentId;
+    private LocalDateTime createdAt;
 }

@@ -1,10 +1,12 @@
 package org.example.tears.Model;
 
 import jakarta.persistence.*;
+import lombok.Data;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Data
 public class Wallet {
 
     @Id
@@ -12,9 +14,9 @@ public class Wallet {
     private Integer id;
 
     @OneToOne
-    private Customer customer;
+    private User user;
 
-    private Integer balance; // بالهللات
+    private Integer balance = 0;
 
     private LocalDateTime createdAt;
 }

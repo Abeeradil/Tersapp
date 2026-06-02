@@ -69,58 +69,10 @@ public class CarServiceRequestService {
     // Step 2: Create Final Request
     // ---------------------------
     @Transactional
-    public RequestResponseDto createRequest(
-            HttpServletRequest request,
-            CreateRequestStepDto dto
-    ) {
-
+    public RequestResponseDto createRequest(HttpServletRequest request, CreateRequestStepDto dto) {
         User user = authService.getAuthenticatedUser(request);
 
-        boolean ownsCar = carRepository.findByCustomerId(user.getCustomer().getId())
-                .stream()
-                .anyMatch(c -> c.getId().equals(dto.getCarId()));
-
-        if (!ownsCar)
-            throw new ApiException("السيارة لا تنتمي للمستخدم");
-
-        if (dto.getProblemDescription() == null || dto.getProblemDescription().isBlank())
-            throw new ApiException("وصف المشكلة إلزامي");
-
-        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption().toUpperCase());
-
-        Location location = locationService.resolveLocation(dto, user);
-
-        appointmentService.validateAppointment(
-                dto.getAppointmentDate(),
-                dto.getAppointmentTime()
-        );
-
-        // 💰 السعر النهائي (مصدر واحد فقط)
-        int estimatedPrice = pricingCalculationService.calculateFinal(
-                dto.getServiceOption(),
-                dto.isHydraulicTruck(),
-                dto.getCouponCode()
-        );
-
-        PaymentMethod method = PaymentMethod.valueOf(dto.getPaymentMethod().toUpperCase());
-
-        CarServiceRequest req = new CarServiceRequest();
-
-        req.setCarId(dto.getCarId());
-        req.setCustomer(user.getCustomer());
-        req.setServiceOption(option);
-        req.setProblemDescription(dto.getProblemDescription());
-        req.setHydraulicTruck(dto.isHydraulicTruck());
-        req.setAppointmentDate(dto.getAppointmentDate());
-        req.setAppointmentTime(dto.getAppointmentTime());
-        req.setEstimatedPrice(estimatedPrice);
-        req.setPaymentMethod(method);
-        req.setLocation(location);
-
-        req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
-
-        req.setCustomerStatus(mapToCustomerStatus(WorkflowStage.PRICING));
-        req.setCreatedAt(LocalDateTime.now());
+        CarServiceRequest req = buildValidatedRequest(user, dto);
 
         CarServiceRequest saved = requestRepository.save(req);
 
@@ -314,7 +266,7 @@ public class CarServiceRequestService {
                 .stream().map(this::toResponseDto).collect(Collectors.toList());
     }
 
-    private RequestResponseDto toResponseDto(CarServiceRequest r) {
+    public RequestResponseDto toResponseDto(CarServiceRequest r) {
 
         RequestResponseDto dto = new RequestResponseDto();
 
@@ -405,5 +357,53 @@ public class CarServiceRequestService {
         };
     }
 
+    public CarServiceRequest buildValidatedRequest(User user, CreateRequestStepDto dto) {
+        boolean ownsCar = carRepository.findByCustomerId(user.getCustomer().getId())
+                .stream()
+                .anyMatch(c -> c.getId().equals(dto.getCarId()));
+
+        if (!ownsCar) {
+            throw new ApiException("السيارة لا تنتمي للمستخدم");
+        }
+
+        if (dto.getProblemDescription() == null || dto.getProblemDescription().isBlank()) {
+            throw new ApiException("وصف المشكلة إلزامي");
+        }
+
+        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption().toUpperCase());
+
+        Location location = locationService.resolveLocation(dto, user);
+
+        appointmentService.validateAppointment(
+                dto.getAppointmentDate(),
+                dto.getAppointmentTime()
+        );
+
+        int estimatedPrice = pricingCalculationService.calculateFinal(
+                dto.getServiceOption(),
+                dto.isHydraulicTruck(),
+                dto.getCouponCode()
+        );
+
+        PaymentMethod method = PaymentMethod.valueOf(dto.getPaymentMethod().toUpperCase());
+
+        CarServiceRequest req = new CarServiceRequest();
+
+        req.setCarId(dto.getCarId());
+        req.setCustomer(user.getCustomer());
+        req.setServiceOption(option);
+        req.setProblemDescription(dto.getProblemDescription());
+        req.setHydraulicTruck(dto.isHydraulicTruck());
+        req.setAppointmentDate(dto.getAppointmentDate());
+        req.setAppointmentTime(dto.getAppointmentTime());
+        req.setEstimatedPrice(estimatedPrice);
+        req.setPaymentMethod(method);
+        req.setLocation(location);
+        req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
+        req.setCustomerStatus(mapToCustomerStatus(WorkflowStage.PRICING));
+        req.setCreatedAt(LocalDateTime.now());
+
+        return req;
+    }
 
 }

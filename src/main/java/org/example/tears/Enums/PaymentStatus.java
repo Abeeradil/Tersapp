@@ -4,5 +4,6 @@ package org.example.tears.Enums;
         PENDING,
         INITIATED,
         PAID,
+     EXPIRED,
         FAILED
     }
