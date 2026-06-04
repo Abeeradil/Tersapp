@@ -70,7 +70,15 @@ public class PaymentIntentService {
         intent.setHydraulicTruck(draft.isHydraulicTruck());
         intent.setLocation(draft.getLocation());
         intent.setPaymentMethod(draft.getPaymentMethod());
+        intent.setPaymentMethod(draft.getPaymentMethod());
+        intent.setEstimatedPrice(draft.getEstimatedPrice());
 
+        intent.setInitialPaymentAmount(draft.getEstimatedPrice());
+        intent.setInitialPaymentAmountHalalah(
+                (int) Math.round(draft.getEstimatedPrice() * 100)
+        );
+        intent.setInitialPaymentMethod(draft.getPaymentMethod());
+        intent.setInitialPaymentStatus(PaymentStatus.INITIATED);
         intent.setEstimatedPrice(draft.getEstimatedPrice());
         intent.setOriginalPrice(draft.getOriginalPrice());
         intent.setDiscount(draft.getDiscount());
