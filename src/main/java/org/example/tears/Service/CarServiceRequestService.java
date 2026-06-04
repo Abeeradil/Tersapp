@@ -324,6 +324,35 @@ public class CarServiceRequestService {
         dto.setPricingMessage(
                 r.getPricingMessage()
         );
+        dto.setAmountPaid(r.getInitialPaymentAmount());
+
+        dto.setAmountPaidHalalah(r.getInitialPaymentAmountHalalah());
+
+        dto.setInitialPaymentMethod(
+                r.getInitialPaymentMethod() != null
+                        ? r.getInitialPaymentMethod().name()
+                        : null
+        );
+
+        dto.setInitialPaymentStatus(
+                r.getInitialPaymentStatus() != null
+                        ? r.getInitialPaymentStatus().name()
+                        : null
+        );
+
+        dto.setRemainingAmount(r.getRemainingAmount());
+
+        dto.setNextPaymentMethod(
+                r.getNextPaymentMethod() != null
+                        ? r.getNextPaymentMethod().name()
+                        : null
+        );
+
+        dto.setNextPaymentStatus(
+                r.getNextPaymentStatus() != null
+                        ? r.getNextPaymentStatus().name()
+                        : null
+        );
 
         // 🚗 هنا أهم جزء: نجيب السيارة
         Car car = carRepository.findById(r.getCarId())

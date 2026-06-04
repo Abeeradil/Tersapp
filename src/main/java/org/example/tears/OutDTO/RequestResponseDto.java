@@ -48,4 +48,18 @@ public class RequestResponseDto {
         private Boolean couponValid;
 
         private String pricingMessage;
+
+        private Double amountPaid;
+
+        private Integer amountPaidHalalah;
+
+        private String initialPaymentMethod;
+
+        private String initialPaymentStatus;
+
+        private Double remainingAmount;
+
+        private String nextPaymentMethod;
+
+        private String nextPaymentStatus;
 }

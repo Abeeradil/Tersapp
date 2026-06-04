@@ -69,8 +69,8 @@ public class PaymentIntentService {
         intent.setAppointmentTime(draft.getAppointmentTime());
         intent.setHydraulicTruck(draft.isHydraulicTruck());
         intent.setLocation(draft.getLocation());
-
         intent.setPaymentMethod(draft.getPaymentMethod());
+
         intent.setEstimatedPrice(draft.getEstimatedPrice());
         intent.setOriginalPrice(draft.getOriginalPrice());
         intent.setDiscount(draft.getDiscount());
@@ -79,7 +79,7 @@ public class PaymentIntentService {
         intent.setPricingMessage(draft.getPricingMessage());
 
         intent.setPaymentStatus(PaymentStatus.INITIATED);
-        intent.setExpiresAt(LocalDateTime.now().plusMinutes(15));
+        intent.setExpiresAt(LocalDateTime.now().plusMinutes(5));
         intent.setCreatedAt(LocalDateTime.now());
 
         paymentIntentRepository.save(intent);
@@ -147,6 +147,15 @@ public class PaymentIntentService {
         );
 
         req.setPaymentMethod(PaymentMethod.WALLET);
+        req.setInitialPaid(true);
+        req.setInitialPaymentMethod(PaymentMethod.WALLET);
+        req.setInitialPaymentStatus(PaymentStatus.PAID);
+        req.setInitialPaymentAmount(req.getEstimatedPrice());
+        req.setInitialPaymentAmountHalalah(
+                (int) Math.round(req.getEstimatedPrice() * 100)
+        );
+        req.setRemainingAmount(0.0);
+
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
         req.setCreatedAt(LocalDateTime.now());
 
@@ -195,6 +204,14 @@ public class PaymentIntentService {
         req.setLocation(intent.getLocation());
 
         req.setPaymentMethod(intent.getPaymentMethod());
+        req.setInitialPaid(true);
+        req.setInitialPaymentMethod(intent.getPaymentMethod());
+        req.setInitialPaymentStatus(PaymentStatus.PAID);
+        req.setInitialPaymentAmount(intent.getEstimatedPrice());
+        req.setInitialPaymentAmountHalalah(
+                (int) Math.round(intent.getEstimatedPrice() * 100)
+        );
+        req.setRemainingAmount(0.0);
         req.setEstimatedPrice(intent.getEstimatedPrice());
         req.setOriginalPrice(intent.getOriginalPrice());
         req.setDiscount(intent.getDiscount());

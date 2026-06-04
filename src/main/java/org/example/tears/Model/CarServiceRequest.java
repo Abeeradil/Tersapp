@@ -75,6 +75,24 @@ public class CarServiceRequest {
 
     private String pricingMessage;
 
+    private Double initialPaymentAmount;
+
+    private Integer initialPaymentAmountHalalah;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod initialPaymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus initialPaymentStatus;
+
+    private Double remainingAmount;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentMethod nextPaymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus nextPaymentStatus;
+
                 // الدفع
                 private boolean initialPaid = false;       // هل دفعت المرحلة الأولى؟
                 private boolean finalPaid = false; // هل دفعت المرحلة الثانية؟
