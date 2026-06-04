@@ -5,7 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.CheckoutResponse;
 import org.example.tears.DTO.CreatePaymentIntentRequest;
 import org.example.tears.InpDTO.CreateRequestStepDto;
+import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
+import org.example.tears.Service.AuthService;
 import org.example.tears.Service.PaymentIntentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +20,16 @@ import java.util.Map;
 public class PaymentIntentController {
 
         private final PaymentIntentService paymentIntentService;
+        private final AuthService authService;
 
     @PostMapping("/checkout")
     public ResponseEntity<CheckoutResponse> createCheckout(
-            @RequestBody CreatePaymentIntentRequest request
+            HttpServletRequest request,
+            @RequestBody CreateRequestStepDto dto
     ) {
-        return ResponseEntity.ok(paymentIntentService.createCheckout(request));
+        return ResponseEntity.ok(
+                paymentIntentService.createCheckout(request, dto)
+        );
     }
 
     @PostMapping("/moyasar/callback")

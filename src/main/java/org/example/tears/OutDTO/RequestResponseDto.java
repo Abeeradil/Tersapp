@@ -23,7 +23,7 @@ public class RequestResponseDto {
 
         private String status;
 
-        private Integer totalPrice;
+        private Double totalPrice;
 
         private LocalDate appointmentDate;
         private LocalTime appointmentTime;
@@ -32,8 +32,20 @@ public class RequestResponseDto {
 
         private String paymentMethod;
 
+        private String paymentStatus;
+
         private String plateNumberArabic;
         private String plateNumberEnglish;
 
         private LocationDto location;
+
+        private Double originalPrice;
+
+        private Double discount;
+
+        private Double vatAmount;
+
+        private Boolean couponValid;
+
+        private String pricingMessage;
 }

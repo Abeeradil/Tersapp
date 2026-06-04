@@ -7,9 +7,9 @@ import lombok.Data;
 
     private String couponCode;
 
-    private Integer totalPrice;
+    private Double totalPrice;
 
     private String serviceOption;
 
-    private boolean hydraulicTruck;
+    private Boolean hydraulicTruck;
 }

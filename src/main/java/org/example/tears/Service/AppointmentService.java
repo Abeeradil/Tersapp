@@ -3,11 +3,14 @@ package org.example.tears.Service;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.SlotDto;
 import org.example.tears.Enums.AppointmentSlotStatus;
+import org.example.tears.Enums.PaymentStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Repository.CarServiceRequestRepository;
+import org.example.tears.Repository.PaymentIntentRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,28 +21,65 @@ public class AppointmentService {
 
     private final CarServiceRequestRepository requestRepository;
 
-    private static final List<LocalTime> AVAILABLE_TIMES = List.of(
-            LocalTime.of(8,0),
-            LocalTime.of(9,0),
-            LocalTime.of(10,0),
-            LocalTime.of(11,0),
-            LocalTime.of(12,0),
-            LocalTime.of(16,0),
-            LocalTime.of(17,0),
-            LocalTime.of(18,0),
-            LocalTime.of(19,0)
-    );
-    public void validateAppointment(LocalDate date, LocalTime time) {
+    private final PaymentIntentRepository paymentIntentRepository;
 
-        if (!AVAILABLE_TIMES.contains(time)) {
-            throw new RuntimeException("المواعيد كل ساعة فقط");
+    private static final List<LocalTime> AVAILABLE_TIMES =
+            List.of(
+                    LocalTime.of(8,0),
+                    LocalTime.of(9,0),
+                    LocalTime.of(10,0),
+                    LocalTime.of(11,0),
+                    LocalTime.of(12,0),
+                    LocalTime.of(16,0),
+                    LocalTime.of(17,0),
+                    LocalTime.of(18,0),
+                    LocalTime.of(19,0)
+            );
+
+    public void validateAppointment(
+            LocalDate date,
+            LocalTime time
+    ) {
+
+        if (date.isBefore(LocalDate.now())) {
+
+            throw new RuntimeException(
+                    "لا يمكن الحجز بتاريخ سابق"
+            );
         }
 
-        boolean exists = requestRepository
-                .existsByAppointmentDateAndAppointmentTime(date, time);
+        if (!AVAILABLE_TIMES.contains(time)) {
 
-        if (exists) {
-            throw new RuntimeException("هذا الموعد محجوز");
+            throw new RuntimeException(
+                    "وقت غير متاح"
+            );
+        }
+
+        boolean requestExists =
+                requestRepository
+                        .existsByAppointmentDateAndAppointmentTime(
+                                date,
+                                time
+                        );
+
+        boolean paymentIntentExists =
+                paymentIntentRepository
+                        .existsByAppointmentDateAndAppointmentTimeAndPaymentStatusInAndExpiresAtAfter(
+                                date,
+                                time,
+                                List.of(
+                                        PaymentStatus.PENDING,
+                                        PaymentStatus.INITIATED
+                                ),
+                                LocalDateTime.now()
+                        );
+
+        if (requestExists ||
+                paymentIntentExists) {
+
+            throw new RuntimeException(
+                    "هذا الموعد محجوز"
+            );
         }
     }
 
@@ -55,19 +95,27 @@ public class AppointmentService {
             SlotDto slot = new SlotDto();
             slot.setTime(time);
 
-            CarServiceRequest match = requests.stream()
-                    .filter(r -> time.equals(r.getAppointmentTime()))
-                    .findFirst()
-                    .orElse(null);
+            boolean requestExists = requests.stream()
+                    .anyMatch(r -> time.equals(r.getAppointmentTime()));
 
-            if (match == null) {
-                slot.setStatus(AppointmentSlotStatus.AVAILABLE);
-            }
-            else if (Boolean.TRUE.equals(match.isInitialPaid())) {
+            boolean pendingPaymentExists =
+                    paymentIntentRepository
+                            .existsByAppointmentDateAndAppointmentTimeAndPaymentStatusInAndExpiresAtAfter(
+                                    date,
+                                    time,
+                                    List.of(
+                                            PaymentStatus.PENDING,
+                                            PaymentStatus.INITIATED
+                                    ),
+                                    LocalDateTime.now()
+                            );
+
+            if (requestExists) {
                 slot.setStatus(AppointmentSlotStatus.BOOKED);
-            }
-            else {
+            } else if (pendingPaymentExists) {
                 slot.setStatus(AppointmentSlotStatus.PENDING);
+            } else {
+                slot.setStatus(AppointmentSlotStatus.AVAILABLE);
             }
 
             slots.add(slot);
@@ -95,6 +143,4 @@ public class AppointmentService {
                 "slots", slots
         );
     }
-
-
 }

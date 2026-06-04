@@ -14,6 +14,7 @@ import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.UpdateRequestDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
+import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.CarRepository;
@@ -51,7 +52,7 @@ public class CarServiceRequestService {
     // ---------------------------
     public PreviewResponseDto preview(PreviewRequestDto dto) {
 
-        int price = pricingCalculationService.calculatePreview(
+        double price = pricingCalculationService.calculatePreview(
                 dto.getServiceOption(),
                 dto.isHydraulicTruck()
         );
@@ -206,22 +207,25 @@ public class CarServiceRequestService {
 
             serviceRequest.setLocation(location);
         }
-
 // =========================
 // Recalculate Price
 // =========================
-        int newPrice = pricingCalculationService.calculateFinal(
+        PricingResponse pricing = pricingCalculationService.calculateFinal(
                 serviceRequest.getServiceOption().name(),
                 serviceRequest.isHydraulicTruck(),
                 dto.getCouponCode()
         );
 
-        serviceRequest.setEstimatedPrice(newPrice);
+        serviceRequest.setEstimatedPrice(pricing.finalPrice);
+        serviceRequest.setOriginalPrice(pricing.originalPrice);
+        serviceRequest.setDiscount(pricing.discount);
+        serviceRequest.setVatAmount(pricing.vatAmount);
+        serviceRequest.setCouponValid(pricing.couponValid);
+        serviceRequest.setPricingMessage(pricing.message);
 
         serviceRequest.setLastUpdated(LocalDateTime.now());
 
-        CarServiceRequest updated =
-                requestRepository.save(serviceRequest);
+        CarServiceRequest updated = requestRepository.save(serviceRequest);
 
         return toResponseDto(updated);
     }
@@ -297,6 +301,29 @@ public class CarServiceRequestService {
         );
 
         dto.setLocation(mapLocation(r.getLocation()));
+        dto.setTotalPrice(
+                r.getEstimatedPrice()
+        );
+
+        dto.setOriginalPrice(
+                r.getOriginalPrice()
+        );
+
+        dto.setDiscount(
+                r.getDiscount()
+        );
+
+        dto.setVatAmount(
+                r.getVatAmount()
+        );
+
+        dto.setCouponValid(
+                r.getCouponValid()
+        );
+
+        dto.setPricingMessage(
+                r.getPricingMessage()
+        );
 
         // 🚗 هنا أهم جزء: نجيب السيارة
         Car car = carRepository.findById(r.getCarId())
@@ -310,7 +337,7 @@ public class CarServiceRequestService {
         return dto;
     }
 
-    private LocationDto mapLocation(Location loc) {
+    public LocationDto mapLocation(Location loc) {
 
         if (loc == null) {
             return null;
@@ -379,7 +406,7 @@ public class CarServiceRequestService {
                 dto.getAppointmentTime()
         );
 
-        int estimatedPrice = pricingCalculationService.calculateFinal(
+        PricingResponse pricing = pricingCalculationService.calculateFinal(
                 dto.getServiceOption(),
                 dto.isHydraulicTruck(),
                 dto.getCouponCode()
@@ -396,7 +423,29 @@ public class CarServiceRequestService {
         req.setHydraulicTruck(dto.isHydraulicTruck());
         req.setAppointmentDate(dto.getAppointmentDate());
         req.setAppointmentTime(dto.getAppointmentTime());
-        req.setEstimatedPrice(estimatedPrice);
+        req.setEstimatedPrice(
+                pricing.finalPrice
+        );
+
+        req.setOriginalPrice(
+                pricing.originalPrice
+        );
+
+        req.setDiscount(
+                pricing.discount
+        );
+
+        req.setVatAmount(
+                pricing.vatAmount
+        );
+
+        req.setCouponValid(
+                pricing.couponValid
+        );
+
+        req.setPricingMessage(
+                pricing.message
+        );
         req.setPaymentMethod(method);
         req.setLocation(location);
         req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));

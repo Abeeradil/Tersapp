@@ -1,7 +1,9 @@
 package org.example.tears.Model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.example.tears.Enums.ServiceOption;
 
 import java.time.LocalDate;
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
 @Data
 @Entity
 @Table(name = "coupons")
+@AllArgsConstructor
+@NoArgsConstructor
 public class Coupon {
 
         @Id

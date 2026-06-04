@@ -6,7 +6,9 @@ import org.example.tears.InpDTO.CreateCouponRequest;
 import org.example.tears.InpDTO.UpdateCouponRequest;
 import org.example.tears.InpDTO.ValidateCouponDto;
 import org.example.tears.Model.Coupon;
+import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.Service.CouponService;
+import org.example.tears.Service.PricingCalculationService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,44 +19,43 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CouponController {
 
-        private final CouponService couponService;
+    private final CouponService couponService;
+    private final PricingCalculationService pricingCalculationService;
 
-        @PostMapping("/new")
-        public Coupon create(@RequestBody CreateCouponRequest dto) {
-            return couponService.create(dto);
-        }
-
-        @PatchMapping("/update/{id}")
-        public Coupon update(@PathVariable Integer id,
-                             @RequestBody UpdateCouponRequest dto) {
-            return couponService.update(id, dto);
-        }
-
-        @GetMapping("/all")
-        public List<Coupon> getAll() {
-            return couponService.getAll();
-        }
-    @PostMapping("/validate")
-    public ResponseEntity<?> validate(@RequestBody ValidateCouponDto dto) {
-
-        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption());
-
-        // هنا لازم يكون عندك total من السعر
-        int total = dto.getTotalPrice();
-
-        Coupon coupon = couponService.validate(
-                dto.getCouponCode(),
-                total,
-                option
-        );
-
-        int finalPrice = couponService.applyDiscount(coupon, total);
-
-        return ResponseEntity.ok(finalPrice);
+    @PostMapping("/new")
+    public Coupon create(@RequestBody CreateCouponRequest dto) {
+        return couponService.create(dto);
     }
 
-        @PutMapping("/disable/{id}")
-        public Coupon disable(@PathVariable Integer id) {
-            return couponService.disable(id);
-        }
+    @PatchMapping("/update/{id}")
+    public Coupon update(
+            @PathVariable Integer id,
+            @RequestBody UpdateCouponRequest dto
+    ) {
+        return couponService.update(id, dto);
+    }
+
+    @GetMapping("/all")
+    public List<Coupon> getAll() {
+        return couponService.getAll();
+    }
+
+    @PostMapping("/validate")
+    public ResponseEntity<PricingResponse> validate(
+            @RequestBody ValidateCouponDto dto
+    ) {
+        PricingResponse response =
+                pricingCalculationService.calculateFinal(
+                        dto.getServiceOption(),
+                        dto.getHydraulicTruck(),
+                        dto.getCouponCode()
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/disable/{id}")
+    public Coupon disable(@PathVariable Integer id) {
+        return couponService.disable(id);
+    }
 }

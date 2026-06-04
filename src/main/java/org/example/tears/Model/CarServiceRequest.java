@@ -61,9 +61,19 @@ public class CarServiceRequest {
                 // Pricing & Payment
                 // ========================
                 // الأسعار
-                private Integer estimatedPrice;    // السعر التقديري للطلب الأساسي (مثلاً سعر الخدمة + السطحه)
+                private Double estimatedPrice;    // السعر التقديري للطلب الأساسي (مثلاً سعر الخدمة + السطحه)
                 private Integer finalPrice;        // السعر النهائي بعد تسعير القطع والإصلاحات
 
+
+    private Double originalPrice;
+
+    private Double discount;
+
+    private Double vatAmount;
+
+    private Boolean couponValid;
+
+    private String pricingMessage;
 
                 // الدفع
                 private boolean initialPaid = false;       // هل دفعت المرحلة الأولى؟

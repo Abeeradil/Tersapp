@@ -8,6 +8,7 @@ import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Coupon;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.RequestPart;
+import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.CouponRepository;
 import org.example.tears.Repository.RequestPartRepository;
@@ -19,77 +20,149 @@ import java.time.LocalDate;
 @RequiredArgsConstructor
 public class PricingCalculationService {
 
-    private final CouponRepository couponRepository;
     private final CarServiceRequestRepository requestRepository;
     private final CouponService couponService;
     private final RequestPartRepository requestPartRepository;
     private final PricingService pricingService;
 
-    private static final int HYDRAULIC_EXTRA = 100;
+    private static final double VAT_PERCENTAGE = 0.15;
+    private static final double HYDRAULIC_EXTRA = 100;
 
-    public int calculatePreview(String serviceOption, boolean hydraulicTruck) {
+    public double calculatePreview(
+            String serviceOption,
+            boolean hydraulicTruck
+    ) {
 
-        ServiceOption option = ServiceOption.valueOf(serviceOption);
+        ServiceOption option =
+                ServiceOption.valueOf(serviceOption.toUpperCase());
 
-        int total = option.getPrice();
+        double total = option.getPrice();
 
         if (hydraulicTruck) {
-            total += 100;
+            total += HYDRAULIC_EXTRA;
         }
 
         return total;
     }
 
+    public PricingResponse calculateFinal(
+            String serviceOption,
+            Boolean hydraulicTruck,
+            String couponCode
+    ) {
 
-        public int calculateFinal(String serviceOption,
-                                  boolean hydraulicTruck,
-                                  String couponCode) {
+        double originalPrice =
+                calculatePreview(serviceOption, hydraulicTruck);
 
-            int total = pricingService.calculatePreview(serviceOption, hydraulicTruck);
+        ServiceOption option =
+                ServiceOption.valueOf(serviceOption.toUpperCase());
 
-            if (couponCode != null && !couponCode.isBlank()) {
+        double discount = 0;
 
-                Coupon coupon = couponService.validate(
-                        couponCode,
-                        total,
-                        ServiceOption.valueOf(serviceOption)
+        boolean couponValid = true;
+
+        String message = "Success";
+
+        if (couponCode != null &&
+                !couponCode.isBlank()) {
+
+            try {
+
+                Coupon coupon =
+                        couponService.validate(
+                                couponCode,
+                                originalPrice,
+                                option
+                        );
+
+                discount =
+                        calculateDiscount(
+                                coupon,
+                                originalPrice
+                        );
+
+            } catch (Exception e) {
+
+                couponValid = false;
+
+                message = e.getMessage();
+            }
+        }
+
+        double afterDiscount =
+                Math.max(
+                        originalPrice - discount,
+                        0
                 );
 
-                total = applyDiscount(coupon, total);
-            }
+        double vatAmount =
+                afterDiscount * VAT_PERCENTAGE;
 
-            return Math.max(total, 0);
-        }
+        double finalPrice =
+                afterDiscount + vatAmount;
 
-        private int applyDiscount(Coupon coupon, int total) {
+        PricingResponse response =
+                new PricingResponse();
 
-            if (coupon.getDiscountPercentage() != null) {
+        response.originalPrice =
+                round(originalPrice);
 
-                int discount = (total * coupon.getDiscountPercentage()) / 100;
+        response.discount =
+                round(discount);
 
-                if (coupon.getMaxDiscountAmount() != null) {
-                    discount = Math.min(discount, coupon.getMaxDiscountAmount());
-                }
+        response.vatAmount =
+                round(vatAmount);
 
-                total -= discount;
-            }
+        response.finalPrice =
+                round(finalPrice);
 
-            if (coupon.getFixedDiscount() != null) {
-                total -= coupon.getFixedDiscount();
-            }
+        response.couponValid =
+                couponValid;
 
-            return total;
-        }
+        response.message =
+                message;
 
-    public void startPricing(Integer requestId, Employee employee) {
-
-        CarServiceRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Request not found"));
-
-        request.setPricingStatus(PricingStatus.PRICING);
-        request.setAssignedPricingEmployee(employee);
-        requestRepository.save(request);
+        return response;
     }
 
+    private double calculateDiscount(
+            Coupon coupon,
+            double total
+    ) {
 
+        double discount = 0;
+
+        if (coupon.getDiscountPercentage() != null) {
+
+            discount =
+                    total *
+                            coupon.getDiscountPercentage()
+                            / 100.0;
+
+            if (coupon.getMaxDiscountAmount()
+                    != null) {
+
+                discount =
+                        Math.min(
+                                discount,
+                                coupon.getMaxDiscountAmount()
+                        );
+            }
+        }
+
+        if (coupon.getFixedDiscount()
+                != null) {
+
+            discount +=
+                    coupon.getFixedDiscount();
+        }
+
+        return Math.min(discount, total);
+    }
+
+    private double round(double value) {
+
+        return Math.round(value * 100.0)
+                / 100.0;
+    }
 }

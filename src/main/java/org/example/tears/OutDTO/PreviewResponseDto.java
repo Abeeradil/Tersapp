@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class PreviewResponseDto {
-    private Integer estimatedPrice;
+    private Double estimatedPrice;
     private String details;
 }

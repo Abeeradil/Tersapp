@@ -45,13 +45,14 @@ public class PaymentIntent {
     private Location location;
 
     // 💰 السعر المتوقع
-    private Integer estimatedPrice;
+    private Double estimatedPrice;
 
     // 💳 الدفع
     @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus;
+    private PaymentMethod paymentMethod;
 
-    private String paymentMethod;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 
     private String couponCode;
 
@@ -68,4 +69,16 @@ public class PaymentIntent {
     // Moyasar
     private String paymentId;
     private LocalDateTime createdAt;
+
+
+    private Double originalPrice;
+
+    private Double discount;
+
+    private Double vatAmount;
+
+    private Boolean couponValid;
+
+    private String pricingMessage;
+
 }
