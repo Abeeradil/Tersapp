@@ -36,7 +36,7 @@ public class User {
 
     @NotBlank(message = "Phone number is required")
     @Pattern(
-            regexp = "^\\+9665\\d{8}$", message = "Phone number must be a valid Saudi number")
+            regexp = "^\\+9665\\d{9}$", message = "Phone number must be a valid Saudi number")
     @Column(nullable = true, unique = true)
     private String phoneNumber;
 
