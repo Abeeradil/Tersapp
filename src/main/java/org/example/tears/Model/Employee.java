@@ -36,7 +36,6 @@ public class Employee {
 
 
     @OneToOne
-    @JoinColumn(name = "user_id")
-    @JsonIgnore
+    @JoinColumn(name = "user_id",nullable = false)
     private User user;
 }

@@ -37,39 +37,89 @@ public class AdminService {
 
 
     // ================= Employee (Admin registers only) =================
-    public EmployeeLoginInfo createEmployee(AdminCreateEmployeeDTO dto) {
+    public EmployeeLoginInfo createEmployee(
+            AdminCreateEmployeeDTO dto
+    ) {
 
-        if (userRepo.existsByPhoneNumber(dto.getPhoneNumber()))
-            throw new ApiException("Phone already used");
+        if (userRepo.existsByPhoneNumber(
+                dto.getPhoneNumber()
+        )) {
 
-        String email = emailGen.generate(dto.getFullName());
-        String rawPass = passGen.generate();
+            throw new ApiException(
+                    "Phone already used"
+            );
+        }
 
-        User user = new User();
+        String email =
+                emailGen.generate(
+                        dto.getFullName()
+                );
 
-        user.setFullName(dto.getFullName());
-        user.setPhoneNumber(dto.getPhoneNumber());
-        user.setEmail(email);
-        user.setPassword(passwordEncoder.encode(rawPass));
-        user.setRole(UserRole.EMPLOYEE);
-        user.setStatus(UserStatus.PENDING_VERIFICATION);
+        String rawPass =
+                passGen.generate();
 
-        Employee emp = new Employee();
+        User user =
+                new User();
 
-        emp.setJobTitle(dto.getJobTitle());
+        user.setFullName(
+                dto.getFullName()
+        );
 
-        emp.setEmployeeRole(
+        user.setPhoneNumber(
+                dto.getPhoneNumber()
+        );
+
+        user.setEmail(
+                email
+        );
+
+        user.setPassword(
+                passwordEncoder.encode(
+                        rawPass
+                )
+        );
+
+        user.setRole(
+                UserRole.EMPLOYEE
+        );
+
+        user.setStatus(
+                UserStatus.PENDING_VERIFICATION
+        );
+
+        User savedUser =
+                userRepo.save(
+                        user
+                );
+
+        Employee employee =
+                new Employee();
+
+        employee.setUser(
+                savedUser
+        );
+
+        employee.setJobTitle(
+                dto.getJobTitle()
+        );
+
+        employee.setEmployeeRole(
                 dto.getEmployeeRole()
         );
-        emp.setMustChangePassword(true);
 
-        emp.setUser(user);
+        employee.setMustChangePassword(
+                true
+        );
 
-        userRepo.save(user);
+        employeeRepository.save(
+                employee
+        );
 
         return new EmployeeLoginInfo(
                 email,
-                rawPass,dto.getPhoneNumber());
+                rawPass,
+                dto.getPhoneNumber()
+        );
     }
 
 
