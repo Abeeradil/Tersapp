@@ -277,27 +277,32 @@ public class AuthService {
     }
 
     public ApiResponse verifyEmployeeOtp(
-            String phone,
+            String emailOrPhone,
             String otp
     ) {
 
-        User user = userRepo
-                .findByPhoneNumber(phone)
-                .orElseThrow(() ->
-                        new ApiException("User not found")
-                );
+        User user =
+                userRepo
+                        .findByEmailOrPhoneNumber(emailOrPhone,emailOrPhone)
+                        .orElseGet(() ->
 
-        if (user.getRole() != UserRole.EMPLOYEE) {
-            throw new ApiException("ليس موظف");
-        }
+                                userRepo
+                                        .findByPhoneNumber(
+                                                emailOrPhone
+                                        )
+                                        .orElseThrow(() ->
+
+                                                new ApiException(
+                                                        "User not found"
+                                                )
+                                        )
+                        );
 
         if (!otp.equals("123456")) {
-            throw new ApiException("Invalid OTP");
-        }
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            user.setStatus(UserStatus.ACTIVE);
-            userRepo.save(user);
+            throw new ApiException(
+                    "Invalid OTP"
+            );
         }
 
         String token =

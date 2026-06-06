@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.PhoneNumberDTO;
 import org.example.tears.DTO.VerifyChangePasswordDTO;
+import org.example.tears.DTO.VerifyEmployeeOtpDTO;
 import org.example.tears.DTO.VerifyOtpDTO;
 import org.example.tears.InpDTO.ChangePasswordDTO;
 import org.example.tears.InpDTO.CustomerRegisterDTO;
@@ -103,16 +104,15 @@ public class AuthController {
     ) {
         return authService.verifyOtpAndChangePassword(dto);
     }
-
     @PostMapping("/employee/verify")
     public ResponseEntity<?> verifyEmployeeOtp(
-            @RequestParam String phone,
-            @RequestParam String otp
+            @RequestBody VerifyEmployeeOtpDTO dto
     ) {
+
         return ResponseEntity.ok(
                 authService.verifyEmployeeOtp(
-                        phone,
-                        otp
+                        dto.getEmailOrPhone(),
+                        dto.getOtp()
                 )
         );
     }
