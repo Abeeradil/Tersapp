@@ -87,6 +87,18 @@ public class AuthController {
         return authService.verifyOtpAndChangePassword(dto);
     }
 
+    @PostMapping("/employee/verify")
+    public ResponseEntity<?> verifyEmployeeOtp(
+            @RequestParam String phone,
+            @RequestParam String otp
+    ) {
+        return ResponseEntity.ok(
+                authService.verifyEmployeeOtp(
+                        phone,
+                        otp
+                )
+        );
+    }
     // ================= Get Logged User =================
 
     @GetMapping("/me")

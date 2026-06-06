@@ -63,14 +63,16 @@ public class AdminController {
                 "data", requests
         ));
     }
-
+    @PostMapping("/admin/add/employee")
     public ResponseEntity<EmployeeLoginInfo> createEmployee(
-            @Valid @RequestBody AdminCreateEmployeeDTO dto) {
+            @Valid @RequestBody AdminCreateEmployeeDTO dto
+    ) {
 
         return ResponseEntity.ok(
                 adminService.createEmployee(dto)
         );
     }
+
 
     @GetMapping("/admin/employees")
     public List<Employee> getEmployees() {

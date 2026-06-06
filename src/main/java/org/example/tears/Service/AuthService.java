@@ -165,22 +165,36 @@ public class AuthService {
     public ApiResponse loginEmployee(LoginDTO dto) {
 
         User user = userRepo
-                .findByEmailOrPhoneNumber(dto.getEmailOrPhone(), dto.getEmailOrPhone())
-                .orElseThrow(() -> new ApiException("بيانات الدخول غير صحيحة"));
+                .findByEmailOrPhoneNumber(
+                        dto.getEmailOrPhone(),
+                        dto.getEmailOrPhone()
+                )
+                .orElseThrow(() ->
+                        new ApiException("بيانات الدخول غير صحيحة")
+                );
 
-        if (!encoder.matches(dto.getPassword(), user.getPassword()))
-            throw new ApiException("بيانات الدخول غير صحيحة");
-
-        if (user.getEmployee() != null && user.getEmployee().getMustChangePassword()) {
-            return new ApiResponse(true, "يجب تغيير كلمة المرور أول مرة");
+        if (user.getRole() != UserRole.EMPLOYEE) {
+            throw new ApiException("ليس حساب موظف");
         }
 
-        if (user.getStatus() != UserStatus.ACTIVE)
-            throw new ApiException("الحساب غير مفعل");
+        if (!encoder.matches(
+                dto.getPassword(),
+                user.getPassword()
+        )) {
+            throw new ApiException("بيانات الدخول غير صحيحة");
+        }
 
-        String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getRole().name());
+        if (user.getStatus() == UserStatus.INACTIVE) {
+            throw new ApiException("الحساب معطل");
+        }
 
-        return new ApiResponse(true, "تم تسجيل الدخول بنجاح", token);
+        // DEV OTP
+        System.out.println("Employee OTP = 123456");
+
+        return new ApiResponse(
+                true,
+                "OTP sent successfully"
+        );
     }
 
     // =========================================================
@@ -202,7 +216,10 @@ public class AuthService {
 
         userRepo.save(user);
 
-        String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getRole().name());
+        String token = jwtUtil.generateToken(
+                user.getPhoneNumber(),
+                user.getRole().name()
+        );
 
         return new ApiResponse(true, "تم تغيير كلمة المرور بنجاح", token);
     }
@@ -244,6 +261,42 @@ public class AuthService {
         String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getRole().name());
 
         return new ApiResponse(true, "تم تغيير كلمة المرور بنجاح", token);
+    }
+
+    public ApiResponse verifyEmployeeOtp(
+            String phone,
+            String otp
+    ) {
+
+        User user = userRepo
+                .findByPhoneNumber(phone)
+                .orElseThrow(() ->
+                        new ApiException("User not found")
+                );
+
+        if (user.getRole() != UserRole.EMPLOYEE) {
+            throw new ApiException("ليس موظف");
+        }
+
+        if (!otp.equals("123456")) {
+            throw new ApiException("Invalid OTP");
+        }
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            user.setStatus(UserStatus.ACTIVE);
+            userRepo.save(user);
+        }
+
+        String token =
+                jwtUtil.generateToken(
+                        user.getPhoneNumber(),
+                        user.getRole().name()
+                );
+
+        return new ApiResponse(
+                true,
+                token
+        );
     }
 
     // =========================================================

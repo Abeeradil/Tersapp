@@ -55,15 +55,21 @@ public class AdminService {
         user.setStatus(UserStatus.PENDING_VERIFICATION);
 
         Employee emp = new Employee();
-        emp.setJobTitle(dto.getJobTitle());
-        emp.setMustChangePassword(true);
-        emp.setUser(user);
 
-        user.setEmployee(emp);
+        emp.setJobTitle(dto.getJobTitle());
+
+        emp.setEmployeeRole(
+                dto.getEmployeeRole()
+        );
+        emp.setMustChangePassword(true);
+
+        emp.setUser(user);
 
         userRepo.save(user);
 
-        return new EmployeeLoginInfo(email, rawPass);
+        return new EmployeeLoginInfo(
+                email,
+                rawPass,dto.getPhoneNumber());
     }
 
 

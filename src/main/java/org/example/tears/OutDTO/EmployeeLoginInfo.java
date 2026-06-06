@@ -10,4 +10,5 @@ import lombok.NoArgsConstructor;
 public class EmployeeLoginInfo {
     private String email;
     private String tempPassword;
+    private String phoneNumber;
 }

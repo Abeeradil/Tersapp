@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.UserRole;
 import org.hibernate.annotations.Cascade;
 
@@ -27,6 +28,12 @@ public class Employee {
     private String jobTitle;
 
     private Boolean mustChangePassword = true;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EmployeeRole employeeRole;
+
+
 
     @OneToOne
     @JoinColumn(name = "user_id")
