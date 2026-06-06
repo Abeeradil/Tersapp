@@ -172,6 +172,15 @@ public class AuthService {
                 .orElseThrow(() ->
                         new ApiException("بيانات الدخول غير صحيحة")
                 );
+        System.out.println("INPUT = " + dto.getEmailOrPhone());
+
+        System.out.println("USER FOUND = " + user.getEmail());
+
+        System.out.println("PASSWORD MATCH = "
+                + encoder.matches(
+                dto.getPassword(),
+                user.getPassword()
+        ));
 
         if (
                 user.getRole() != UserRole.EMPLOYEE
