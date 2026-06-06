@@ -10,6 +10,7 @@ import org.example.tears.DTO.VerifyOtpDTO;
 import org.example.tears.InpDTO.ChangePasswordDTO;
 import org.example.tears.InpDTO.CustomerRegisterDTO;
 import org.example.tears.InpDTO.LoginDTO;
+import org.example.tears.Model.JwtUtil;
 import org.example.tears.Service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +23,8 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtil jwtUtil;
+
 
     // ================= Customer =================
     // تسجيل عميل جديد + إرسال OTP
@@ -44,7 +47,21 @@ public class AuthController {
     public ApiResponse resendCustomerOtp(@RequestBody PhoneNumberDTO dto) {
         return authService.resendCustomerOtp(dto.getPhoneNumber());
     }
+    @PostMapping("/dev/admin-token")
+    public ResponseEntity<?> adminToken() {
 
+        String token = jwtUtil.generateToken(
+                "+966500000009",
+                "ADMIN"
+        );
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "token",
+                        token
+                )
+        );
+    }
 
     // ================= General Login =================
 
