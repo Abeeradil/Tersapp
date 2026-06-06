@@ -173,8 +173,12 @@ public class AuthService {
                         new ApiException("بيانات الدخول غير صحيحة")
                 );
 
-        if (user.getRole() != UserRole.EMPLOYEE) {
-            throw new ApiException("ليس حساب موظف");
+        if (
+                user.getRole() != UserRole.EMPLOYEE
+                        &&
+                        user.getRole() != UserRole.ADMIN
+        ) {
+            throw new ApiException("غير مصرح");
         }
 
         if (!encoder.matches(
