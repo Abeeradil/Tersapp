@@ -7,6 +7,7 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
+import org.example.tears.InpDTO.UpdateEmployeeProfileDTO;
 import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.Customer;
 import org.example.tears.Model.User;
@@ -29,36 +30,171 @@ public class UserService {
     private final AuthService authService;
 
         // ================= Get Profile =================
-        public ApiResponse getEmProfile(HttpServletRequest request) {
+        public ApiResponse getEmProfile(
+                HttpServletRequest request
+        ) {
 
-            User user = authService.getAuthenticatedUser(request);
+            User user =
+                    authService.getAuthenticatedUser(
+                            request
+                    );
 
-            // 🔐 السماح فقط للموظف أو الأدمن
-            if (user.getRole() != UserRole.EMPLOYEE && user.getRole() != UserRole.ADMIN) {
-                throw new ApiException("Unauthorized access");
+            if (
+                    user.getRole() != UserRole.EMPLOYEE
+                            &&
+                            user.getRole() != UserRole.ADMIN
+            ) {
+
+                throw new ApiException(
+                        "Unauthorized access"
+                );
             }
 
-            Map<String, Object> data = new HashMap<>();
+            String fullName =
+                    user.getFullName() != null
+                            ? user.getFullName().trim()
+                            : "";
 
-            // 👤 بيانات مشتركة للجميع
-            data.put("fullName", user.getFullName());
-            data.put("email", user.getEmail());
-            data.put("role", user.getRole());
+            String[] parts =
+                    fullName.split("\\s+");
 
-            // 👨‍💼 بيانات الموظف فقط
-            if (user.getRole() == UserRole.EMPLOYEE && user.getEmployee() != null) {
-                data.put("mustChangePassword", user.getEmployee().getMustChangePassword());
-            } else {
-                data.put("mustChangePassword", null);
-            }
+            String firstName =
+                    parts.length > 0
+                            ? parts[0]
+                            : "";
 
-            // 🧑‍💼 بيانات الأدمن (إذا تبغين تضيفين لاحقًا)
-            if (user.getRole() == UserRole.ADMIN) {
-                data.put("adminAccess", true);
-            }
+            String middleName =
+                    parts.length > 1
+                            ? parts[1]
+                            : "";
 
-            return new ApiResponse(true, data);
+            String lastName =
+                    parts.length > 2
+                            ? String.join(
+                            " ",
+                            Arrays.copyOfRange(
+                                    parts,
+                                    2,
+                                    parts.length
+                            )
+                    )
+                            : "";
+
+            Map<String,Object> data =
+                    new HashMap<>();
+
+            data.put(
+                    "firstName",
+                    firstName
+            );
+
+            data.put(
+                    "middleName",
+                    middleName
+            );
+
+            data.put(
+                    "lastName",
+                    lastName
+            );
+
+            data.put(
+                    "email",
+                    user.getEmail()
+            );
+
+
+            data.put(
+                    "jobTitle",
+                    user.getEmployee() != null
+                            ? user.getEmployee()
+                            .getJobTitle()
+                            : null
+            );
+
+            return new ApiResponse(
+                    true,
+                    data
+            );
         }
+    public ApiResponse updateEmployeeProfile(
+            HttpServletRequest request,
+            UpdateEmployeeProfileDTO dto
+    ) {
+
+        User user =
+                authService.getAuthenticatedUser(
+                        request
+                );
+
+        if (
+                user.getRole() != UserRole.EMPLOYEE
+                        &&
+                        user.getRole() != UserRole.ADMIN
+        ) {
+
+            throw new ApiException(
+                    "Unauthorized"
+            );
+        }
+
+        String fullName =
+                user.getFullName() != null
+                        ? user.getFullName().trim()
+                        : "";
+
+        String[] parts =
+                fullName.split("\\s+");
+
+        String currentFirst =
+                parts.length > 0 ? parts[0] : "";
+
+        String currentMiddle =
+                parts.length > 1 ? parts[1] : "";
+
+        String currentLast =
+                parts.length > 2
+                        ? String.join(
+                        " ",
+                        Arrays.copyOfRange(
+                                parts,
+                                2,
+                                parts.length
+                        )
+                )
+                        : "";
+
+        String first =
+                dto.getFirstName() != null
+                        ? dto.getFirstName()
+                        : currentFirst;
+
+        String middle =
+                dto.getMiddleName() != null
+                        ? dto.getMiddleName()
+                        : currentMiddle;
+
+        String last =
+                dto.getLastName() != null
+                        ? dto.getLastName()
+                        : currentLast;
+
+        user.setFullName(
+                (first + " " + middle + " " + last)
+                        .trim()
+                        .replaceAll(
+                                "\\s+",
+                                " "
+                        )
+        );
+
+        userRepository.save(user);
+
+        return new ApiResponse(
+                true,
+                "Profile updated"
+        );
+    }
 
     public ApiResponse getCusProfile(HttpServletRequest request) {
 

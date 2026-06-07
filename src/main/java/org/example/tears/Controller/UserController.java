@@ -2,6 +2,7 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.InpDTO.UpdateEmployeeProfileDTO;
 import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.User;
 import org.example.tears.Service.UserService;
@@ -31,8 +32,22 @@ public class UserController {
         return ResponseEntity.ok(userService.getEmProfile(request));
     }
 
+    @PatchMapping("/employee/update")
+    public ResponseEntity<?> updateEmployeeProfile(
+            HttpServletRequest request,
+            @RequestBody UpdateEmployeeProfileDTO dto
+    ) {
+
+        return ResponseEntity.ok(
+                userService.updateEmployeeProfile(
+                        request,
+                        dto
+                )
+        );
+    }
+
     // update profile
-    @PatchMapping("/update")
+    @PatchMapping("/customer/update")
     public ResponseEntity<ApiResponse> updateProfile(
             HttpServletRequest request,
             @RequestBody UpdateProfileDTO dto) {
