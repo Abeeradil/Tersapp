@@ -107,9 +107,7 @@ public class AdminService {
                 dto.getEmployeeRole()
         );
 
-        employee.setMustChangePassword(
-                true
-        );
+        employee.setMustChangePassword(false);
 
         employeeRepository.save(
                 employee

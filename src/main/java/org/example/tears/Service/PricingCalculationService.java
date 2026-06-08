@@ -23,7 +23,6 @@ public class PricingCalculationService {
     private final CarServiceRequestRepository requestRepository;
     private final CouponService couponService;
     private final RequestPartRepository requestPartRepository;
-    private final PricingService pricingService;
 
     private static final double VAT_PERCENTAGE = 0.15;
     private static final double HYDRAULIC_EXTRA = 100;

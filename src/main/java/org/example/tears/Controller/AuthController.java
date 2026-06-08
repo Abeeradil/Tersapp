@@ -4,10 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.PhoneNumberDTO;
-import org.example.tears.DTO.VerifyChangePasswordDTO;
-import org.example.tears.DTO.VerifyEmployeeOtpDTO;
-import org.example.tears.DTO.VerifyOtpDTO;
+import org.example.tears.DTO.*;
 import org.example.tears.InpDTO.ChangePasswordDTO;
 import org.example.tears.InpDTO.CustomerRegisterDTO;
 import org.example.tears.InpDTO.LoginDTO;
@@ -90,20 +87,30 @@ public class AuthController {
     // ================= OTP Password Reset (Employee) =================
 
     // إرسال OTP لتغيير كلمة المرور
-    @PostMapping("/password/otp/send")
-    public ApiResponse sendOtpForPasswordReset(
+    @PostMapping("/password/reset/send-otp")
+    public ApiResponse sendResetOtp(
             @RequestBody PhoneNumberDTO dto
     ) {
-        return authService.sendOtpForPasswordChange(dto.getPhoneNumber());
+        return authService.sendResetOtp(
+                dto.getPhoneNumber()
+        );
     }
 
-    // التحقق من OTP + تغيير كلمة المرور
-    @PostMapping("/password/otp/verify")
-    public ApiResponse verifyOtpAndChangePassword(
-            @RequestBody VerifyChangePasswordDTO dto
+    // التحقق من OTP
+    @PostMapping("/password/reset/verify-otp")
+    public ApiResponse verifyResetOtp(
+            @RequestBody VerifyOtpDTO dto
     ) {
-        return authService.verifyOtpAndChangePassword(dto);
+        return authService.verifyResetOtp(dto);
     }
+
+    @PostMapping("/password/reset")
+    public ApiResponse resetPassword(
+            @RequestBody ResetPasswordDTO dto
+    ) {
+        return authService.resetPassword(dto);
+    }
+
     @PostMapping("/employee/verify")
     public ResponseEntity<?> verifyEmployeeOtp(
             @RequestBody VerifyEmployeeOtpDTO dto

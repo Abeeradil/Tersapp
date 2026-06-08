@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Config.TwilioConfig;
+import org.example.tears.DTO.ResetPasswordDTO;
 import org.example.tears.DTO.VerifyChangePasswordDTO;
+import org.example.tears.DTO.VerifyOtpDTO;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.ChangePasswordDTO;
@@ -237,43 +239,94 @@ public class AuthService {
         return new ApiResponse(true, "تم تغيير كلمة المرور بنجاح", token);
     }
 
-    // =========================================================
-    // 7️⃣ OTP لتغيير كلمة المرور
-    // =========================================================
-    public ApiResponse sendOtpForPasswordChange(String phoneNumber) {
+
+    public ApiResponse sendResetOtp(
+            String phoneNumber
+    ) {
 
         userRepo.findByPhoneNumber(phoneNumber)
-                .orElseThrow(() -> new ApiException("User not found"));
+                .orElseThrow(() ->
+                        new ApiException("User not found")
+                );
 
-        System.out.println("OTP password change = 123456");
+        System.out.println(
+                "Reset OTP = 123456"
+        );
 
-        return new ApiResponse(true, "OTP sent to " + phoneNumber);
+        return new ApiResponse(
+                true,
+                "OTP sent to " + phoneNumber
+        );
     }
 
-    public ApiResponse verifyOtpAndChangePassword(VerifyChangePasswordDTO dto) {
+    public ApiResponse verifyResetOtp(
+            VerifyOtpDTO dto
+    ) {
 
-        User user = userRepo.findByPhoneNumber(dto.getPhoneNumber())
-                .orElseThrow(() -> new ApiException("User not found"));
+        userRepo.findByPhoneNumber(
+                        dto.getPhoneNumber()
+                )
+                .orElseThrow(() ->
+                        new ApiException(
+                                "User not found"
+                        )
+                );
 
-        if (!dto.getOtp().equals("123456"))
-            throw new ApiException("Invalid OTP");
+        if (!dto.getOtp().equals("123456")) {
+            throw new ApiException(
+                    "Invalid OTP"
+            );
+        }
 
-        if (!dto.getNewPassword().equals(dto.getConfirmPassword()))
-            throw new ApiException("Passwords do not match");
+        return new ApiResponse(
+                true,
+                "OTP verified successfully"
+        );
+    }
 
-        user.setPassword(encoder.encode(dto.getNewPassword()));
 
-        if (user.getEmployee() != null)
-            user.getEmployee().setMustChangePassword(false);
+    public ApiResponse resetPassword(
+            ResetPasswordDTO dto
+    ) {
 
-        if (user.getStatus() != UserStatus.ACTIVE)
-            user.setStatus(UserStatus.ACTIVE);
+        User user =
+                userRepo.findByPhoneNumber(
+                                dto.getPhoneNumber()
+                        )
+                        .orElseThrow(() ->
+                                new ApiException(
+                                        "User not found"
+                                )
+                        );
+
+        if (!dto.getNewPassword()
+                .equals(dto.getConfirmPassword())) {
+
+            throw new ApiException(
+                    "Passwords do not match"
+            );
+        }
+
+        user.setPassword(
+                encoder.encode(
+                        dto.getNewPassword()
+                )
+        );
+
+        if (user.getEmployee() != null) {
+
+            user.getEmployee()
+                    .setMustChangePassword(
+                            false
+                    );
+        }
 
         userRepo.save(user);
 
-        String token = jwtUtil.generateToken(user.getPhoneNumber(), user.getRole().name());
-
-        return new ApiResponse(true, "تم تغيير كلمة المرور بنجاح", token);
+        return new ApiResponse(
+                true,
+                "Password reset successfully"
+        );
     }
 
     public ApiResponse verifyEmployeeOtp(
@@ -283,27 +336,27 @@ public class AuthService {
 
         User user =
                 userRepo
-                        .findByEmailOrPhoneNumber(emailOrPhone,emailOrPhone)
-                        .orElseGet(() ->
-
-                                userRepo
-                                        .findByPhoneNumber(
-                                                emailOrPhone
-                                        )
-                                        .orElseThrow(() ->
-
-                                                new ApiException(
-                                                        "User not found"
-                                                )
-                                        )
+                        .findByEmailOrPhoneNumber(
+                                emailOrPhone,
+                                emailOrPhone
+                        )
+                        .orElseThrow(() ->
+                                new ApiException(
+                                        "User not found"
+                                )
                         );
 
         if (!otp.equals("123456")) {
-
             throw new ApiException(
                     "Invalid OTP"
             );
         }
+
+        user.setStatus(
+                UserStatus.ACTIVE
+        );
+
+        userRepo.save(user);
 
         String token =
                 jwtUtil.generateToken(
