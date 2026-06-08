@@ -106,9 +106,13 @@ public class AuthController {
 
     @PostMapping("/password/reset")
     public ApiResponse resetPassword(
+            HttpServletRequest request,
             @RequestBody ResetPasswordDTO dto
     ) {
-        return authService.resetPassword(dto);
+        return authService.resetPassword(
+                request,
+                dto
+        );
     }
 
     @PostMapping("/employee/verify")

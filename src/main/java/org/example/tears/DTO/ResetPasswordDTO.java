@@ -5,10 +5,6 @@ import lombok.Data;
 
 @Data
 public class ResetPasswordDTO {
-
-    @NotBlank
-    private String phoneNumber;
-
     @NotBlank
     private String newPassword;
 

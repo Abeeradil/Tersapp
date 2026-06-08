@@ -263,13 +263,11 @@ public class AuthService {
             VerifyOtpDTO dto
     ) {
 
-        userRepo.findByPhoneNumber(
+        User user =
+                userRepo.findByPhoneNumber(
                         dto.getPhoneNumber()
-                )
-                .orElseThrow(() ->
-                        new ApiException(
-                                "User not found"
-                        )
+                ).orElseThrow(() ->
+                        new ApiException("User not found")
                 );
 
         if (!dto.getOtp().equals("123456")) {
@@ -278,20 +276,67 @@ public class AuthService {
             );
         }
 
+        String resetToken =
+                jwtUtil.generateToken(
+                        user.getPhoneNumber(),
+                        "PASSWORD_RESET"
+                );
+
         return new ApiResponse(
                 true,
-                "OTP verified successfully"
+                "OTP verified successfully",
+                resetToken
         );
     }
 
 
     public ApiResponse resetPassword(
+            HttpServletRequest request,
             ResetPasswordDTO dto
     ) {
 
+        String header =
+                request.getHeader(
+                        "Authorization"
+                );
+
+        if (
+                header == null
+                        ||
+                        !header.startsWith(
+                                "Bearer "
+                        )
+        ) {
+
+            throw new ApiException(
+                    "Missing reset token"
+            );
+        }
+
+        String token =
+                header.substring(7);
+
+
+
+        String type =
+                jwtUtil.getRoleFromToken(
+                        token
+                );
+
+        if (!type.equals("PASSWORD_RESET")) {
+            throw new ApiException(
+                    "Invalid reset token"
+            );
+        }
+
+        String phone =
+                jwtUtil.getPhoneFromToken(
+                        token
+                );
+
         User user =
                 userRepo.findByPhoneNumber(
-                                dto.getPhoneNumber()
+                                phone
                         )
                         .orElseThrow(() ->
                                 new ApiException(
@@ -299,8 +344,12 @@ public class AuthService {
                                 )
                         );
 
-        if (!dto.getNewPassword()
-                .equals(dto.getConfirmPassword())) {
+        if (
+                !dto.getNewPassword()
+                        .equals(
+                                dto.getConfirmPassword()
+                        )
+        ) {
 
             throw new ApiException(
                     "Passwords do not match"
