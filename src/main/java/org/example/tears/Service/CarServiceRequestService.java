@@ -390,24 +390,43 @@ public class CarServiceRequestService {
 
     private CustomerRequestStatus mapToCustomerStatus(WorkflowStage stage) {
 
+        if (stage == null) return CustomerRequestStatus.REQUEST_CREATED;
+
         return switch (stage) {
 
-            case NEW_REQUEST ->
+            // 🟡 بداية الطلب
+            case NEW_REQUEST, ASSIGNED ->
                     CustomerRequestStatus.REQUEST_CREATED;
 
+            // 🚗 استلام السيارة
             case RECEIVED ->
                     CustomerRequestStatus.CAR_RECEIVED;
 
-            case INSPECTION, PARTS_REGISTERED, PRICING, WAITING_APPROVAL, REPAIRING ->
+            // 🔧 كل مراحل الفحص والتجهيز الداخلية
+            case INSPECTION_IN_PROGRESS,
+                 TESTING,
+                 REPORT_WRITING,
+                 PARTS_REGISTERING,
+                 PRICING ->
                     CustomerRequestStatus.CAR_INSPECTION;
 
+            // ⏳ انتظار موافقة العميل
+            case WAITING_APPROVAL ->
+                    CustomerRequestStatus.WAITING_APPROVAL;
 
+            // 🛠️ الإصلاح
+            case REPAIRING ->
+                    CustomerRequestStatus.UNDER_REPAIR;
+
+            // ✅ جاهز للتسليم
             case READY ->
                     CustomerRequestStatus.READY_FOR_DELIVERY;
 
+            // 🚚 تم التسليم
             case DELIVERED ->
                     CustomerRequestStatus.DELIVERED;
 
+            // ❌ إلغاء
             case CANCELLED ->
                     CustomerRequestStatus.CANCELED;
         };

@@ -3,9 +3,12 @@ package org.example.tears.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
+import org.example.tears.DTO.EmployeeSummaryDto;
+import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.RequestNote;
 import org.example.tears.Model.RequestStatusHistory;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -27,18 +30,44 @@ public class RequestWorkflowService {
         private final RequestStatusHistoryRepository historyRepo;
         private final NotificationService notificationService;
 
-    public List<EmployeeRequestResponseDto> getEmployeeRequests(Integer employeeId) {
+    public List<RequestSummaryDto> getMyRequests(Employee employee) {
+        return requestRepo.findByAssignedEmployee(employee)
+                .stream()
+                .map(this::toSummaryDto)
+                .toList();
+    }
 
-        List<CarServiceRequest> requests =
-                requestRepo.findByAssignedEmployeeIdOrderByIdDesc(employeeId);
+    public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
 
-        if (requests.isEmpty()) {
-            return List.of(); // 🔥 بدل Exception
+        RequestSummaryDto dto = new RequestSummaryDto();
+
+        dto.setId(req.getId());
+        dto.setOrderNumber(req.getOrderNumber());
+        dto.setStatus(req.getStage().name());
+        dto.setPaymentStatus(req.getPaymentStatus().name());
+        dto.setTotalPrice(req.getFinalPrice());
+
+        if (req.getAssignedEmployee() != null) {
+            dto.setAssignedEmployee(toEmployeeSummary(req.getAssignedEmployee()));
         }
 
-        return requests.stream()
-                .map(this::toEmployeeCardDto)
-                .collect(Collectors.toList());
+        return dto;
+    }
+
+    public EmployeeSummaryDto toEmployeeSummary(Employee emp) {
+
+        EmployeeSummaryDto dto = new EmployeeSummaryDto();
+
+        dto.setId(emp.getId());
+
+        // ⚠️ حسب الـ Entity عندك
+        dto.setName(emp.getUser().getFullName());
+
+        dto.setJobTitle(emp.getJobTitle());
+
+        dto.setRole(emp.getEmployeeRole()); // إذا موجودة عندك
+
+        return dto;
     }
 
         // =========================
@@ -103,6 +132,14 @@ public class RequestWorkflowService {
             throw new RuntimeException("غير مصرح لك");
         }
 
+        if(status == StaffRequestStatus.RECEIVED
+                && (imageUrl == null || imageUrl.isBlank())) {
+
+            throw new RuntimeException(
+                    "يجب رفع صورة عند الاستلام"
+            );
+        }
+
         // تحديث الحالة
         req.setStaffStatus(status);
         req.setLastUpdated(LocalDateTime.now());
@@ -111,6 +148,8 @@ public class RequestWorkflowService {
         if (status == StaffRequestStatus.RECEIVED && imageUrl != null) {
             req.setReceivedImageUrl(imageUrl);
         }
+
+
         updateStaffTimestamps(req, status);
 
         if (note != null && !note.isBlank()) {
@@ -232,19 +271,35 @@ public class RequestWorkflowService {
 
     private String mapStageToArabic(WorkflowStage stage) {
 
-        if (stage == null) return "غير محدد";
+            if (stage == null) return "غير محدد";
 
-        return switch (stage) {
-            case NEW_REQUEST -> "طلب جديد";
-            case RECEIVED -> "تم الاستلام";
-            case INSPECTION -> "قيد الفحص";
-            case PARTS_REGISTERED -> "تم تسجيل القطع";
-            case PRICING -> "قيد التسعير";
-            case WAITING_APPROVAL -> "بانتظار الموافقة";
-            case REPAIRING -> "قيد الإصلاح";
-            case READY -> "جاهز";
-            case DELIVERED -> "تم التسليم";
-            case CANCELLED -> "ملغي";
-        };
-    }
+            return switch (stage) {
+
+                case NEW_REQUEST -> "طلب جديد";
+
+                case ASSIGNED -> "تم الإسناد";
+
+                case RECEIVED -> "تم الاستلام";
+
+                case INSPECTION_IN_PROGRESS -> "قيد الفحص";
+
+                case TESTING -> "تجربة";
+
+                case REPORT_WRITING -> "كتابة التقرير";
+
+                case PARTS_REGISTERING -> "تسجيل القطع";
+
+                case PRICING -> "قيد التسعير";
+
+                case WAITING_APPROVAL -> "بانتظار الموافقة";
+
+                case REPAIRING -> "قيد الإصلاح";
+
+                case READY -> "جاهز";
+
+                case DELIVERED -> "تم التسليم";
+
+                case CANCELLED -> "ملغي";
+            };
+        }
 }

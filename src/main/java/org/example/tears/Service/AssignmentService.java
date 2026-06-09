@@ -2,10 +2,7 @@ package org.example.tears.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.tears.Enums.AssignmentStatus;
-import org.example.tears.Enums.EmployeeRole;
-import org.example.tears.Enums.UserRole;
-import org.example.tears.Enums.WorkflowStage;
+import org.example.tears.Enums.*;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.RequestAssignment;
@@ -38,11 +35,17 @@ public class AssignmentService {
             throw new RuntimeException("ليس موظف");
         }
 
-        Employee employee = user.getEmployee(); // 🔥 مهم
+        Employee employee = user.getEmployee();
 
-        // ✅ حدث الطلب مباشرة
+        // 🔥 1. ربط الموظف
         request.setAssignedEmployee(employee);
-        request.setStage(WorkflowStage.NEW_REQUEST);
+
+        // 🔥 2. تغيير الحالة (مهم جدًا)
+        request.setStaffStatus(StaffRequestStatus.ASSIGNED);
+
+        request.setStage(WorkflowStage.ASSIGNED);
+
+        request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
 

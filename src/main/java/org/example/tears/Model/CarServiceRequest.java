@@ -33,7 +33,8 @@ public class CarServiceRequest {
                 @Enumerated(EnumType.STRING)
                 private ServiceOption serviceOption;
 
-                 private PaymentStatus paymentStatus;
+    @Enumerated(EnumType.STRING)
+    private PaymentStatus paymentStatus;
 
                 @Column(columnDefinition = "TEXT")
                 private String problemDescription;

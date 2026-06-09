@@ -5,6 +5,8 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Config.PasswordGenerator;
 import org.example.tears.Config.TempEmailGenerator;
+import org.example.tears.DTO.EmployeeSummaryDto;
+import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
@@ -125,35 +127,39 @@ public class AdminService {
         return employeeRepository.findAll();
     }
 
+    public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
 
-    // -----------------------
-    // جلب كل الطلبات
-    // -----------------------
-    public List<RequestResponseDto> getAllRequests() {
-        return reqRepo.findAllByOrderByIdDesc()
-                .stream()
-                .map(this::toResponseDto)
-                .collect(Collectors.toList());
-    }
+        RequestSummaryDto dto = new RequestSummaryDto();
 
-    // -----------------------
-    // تحويل CarServiceRequest -> RequestResponseDto
-    // -----------------------
-    private RequestResponseDto toResponseDto(CarServiceRequest r) {
-        RequestResponseDto dto = new RequestResponseDto();
+        dto.setId(req.getId());
+        dto.setOrderNumber(req.getOrderNumber());
+        dto.setStatus(req.getStage().name());
+        dto.setPaymentStatus(req.getPaymentStatus().name());
+        dto.setTotalPrice(req.getFinalPrice());
 
-        dto.setId(r.getId());
-        dto.setOrderNumber(r.getOrderNumber());
-        dto.setStatus(r.getCustomerStatus() != null ? r.getCustomerStatus().name() : "REQUEST_CREATED");
-        dto.setTotalPrice(r.getEstimatedPrice() != null ? r.getEstimatedPrice() : 0);
-        dto.setAppointmentDate(r.getAppointmentDate());
-        dto.setAppointmentTime(r.getAppointmentTime());
-        dto.setPaymentMethod(r.getPaymentMethod() != null ? r.getPaymentMethod().name() : "UNKNOWN");
-        dto.setHydraulicTruck(r.isHydraulicTruck());
+        if (req.getAssignedEmployee() != null) {
+            dto.setAssignedEmployee(toEmployeeSummary(req.getAssignedEmployee()));
+        }
 
-        mapLocation(r.getLocation());
         return dto;
     }
+
+    private EmployeeSummaryDto toEmployeeSummary(Employee emp) {
+
+        EmployeeSummaryDto dto = new EmployeeSummaryDto();
+
+        dto.setId(emp.getId());
+
+        // ⚠️ حسب الـ Entity عندك
+        dto.setName(emp.getUser().getFullName());
+
+        dto.setJobTitle(emp.getJobTitle());
+
+        dto.setRole(emp.getEmployeeRole()); // إذا موجودة عندك
+
+        return dto;
+    }
+
 
     public ApiResponse deactivateEmployee(Integer id) {
         Employee employee = employeeRepository.findById(id)

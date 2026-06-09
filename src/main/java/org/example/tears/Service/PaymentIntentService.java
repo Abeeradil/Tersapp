@@ -5,9 +5,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.CheckoutResponse;
-import org.example.tears.Enums.CustomerRequestStatus;
-import org.example.tears.Enums.PaymentMethod;
-import org.example.tears.Enums.PaymentStatus;
+import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.PaymentIntent;
@@ -229,6 +227,12 @@ public class PaymentIntentService {
 
         req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
+
+        req.setStaffStatus(StaffRequestStatus.NEW);
+
+        req.setStage(WorkflowStage.NEW_REQUEST);
+
+        req.setLastUpdated(LocalDateTime.now());
         req.setCreatedAt(LocalDateTime.now());
 
         CarServiceRequest savedRequest = requestRepository.save(req);

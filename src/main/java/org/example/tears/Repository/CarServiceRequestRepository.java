@@ -2,6 +2,7 @@ package org.example.tears.Repository;
 
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
+import org.example.tears.Model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +20,18 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             LocalDate appointmentDate,
             LocalTime appointmentTime
     );
+
+    List<CarServiceRequest> findByAssignedEmployee (Employee emp);
+    List<CarServiceRequest> findByAssignedEmployeeIsNull();
+
+
+    @Query("""
+SELECT r FROM CarServiceRequest r
+WHERE r.assignedEmployee IS NULL
+""")
+    List<CarServiceRequest> findUnassignedRequests();
+
+
 
     List<CarServiceRequest>
     findByCustomerIdAndCustomerStatusInOrderByIdDesc(
@@ -40,7 +53,7 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
 
     List<CarServiceRequest> findAllByOrderByIdDesc();
 
-    List<CarServiceRequest> findByAssignedEmployeeIdOrderByIdDesc(Integer employeeId);
+    List<CarServiceRequest> findByAssignedEmployeeIdOrderByCreatedAtDesc(Integer employeeId);
     @Query("""
     SELECT ra.request FROM RequestAssignment ra
     WHERE ra.employee.id = :employeeId

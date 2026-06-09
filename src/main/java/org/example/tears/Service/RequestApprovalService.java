@@ -158,7 +158,7 @@ import java.time.LocalDateTime;
 
             CarServiceRequest request = approval.getRequest();
 
-            request.setStage(WorkflowStage.INSPECTION);
+            request.setStage(WorkflowStage.CANCELLED);
 
             requestRepo.save(request);
 

@@ -12,6 +12,7 @@ import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.PartsService;
 import org.example.tears.Service.ReportService;
+import org.example.tears.Service.RequestQueryService;
 import org.example.tears.Service.RequestWorkflowService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -37,28 +38,25 @@ import java.util.Map;
     private final RequestWorkflowService workflowService;
     private final PartsService partsService;
     private final ReportService reportService;
+    private final RequestQueryService requestQueryService;
 
-    // طلباتي
-    @GetMapping("/my")
+    @GetMapping("/my/requests")
     public List<EmployeeRequestResponseDto> myRequests(
             @AuthenticationPrincipal User user
     ) {
-        return workflowService
-                .getEmployeeRequests(user.getCustomer().getId());
+        return requestQueryService.getMyRequests(user.getEmployee());
     }
 
-    // طلبات موظف - للتجربة بدون توكن
-    @GetMapping("/my-test")
-    public ResponseEntity<?> myRequestsTest(@RequestParam Integer employeeId) {
-        var requests = workflowService.getEmployeeRequests(employeeId);
-
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "data", requests
-        ));
+    @PutMapping("/request/{id}/status")
+    public ApiResponse updateStatus(
+            @PathVariable Integer id,
+            @RequestParam StaffRequestStatus status,
+            @RequestParam(required = false) String note
+    ) {
+        workflowService.updateStaffStatus(id, status, null, note);
+        return new ApiResponse(true, "تم التحديث");
     }
-
-    // تغيير حالة الطلب
+    //  تغيير حالة الطلب
     @PutMapping("/{id}/status")
     public ApiResponse updateStatus(
             @PathVariable Integer id,
