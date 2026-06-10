@@ -60,7 +60,7 @@ public class PaymentIntentService {
         PaymentIntent intent = new PaymentIntent();
 
         intent.setCustomer(user.getCustomer());
-        intent.setCarId(draft.getCarId());
+        intent.setCar(draft.getCar());
         intent.setServiceOption(draft.getServiceOption());
         intent.setProblemDescription(draft.getProblemDescription());
         intent.setAppointmentDate(draft.getAppointmentDate());
@@ -201,7 +201,7 @@ public class PaymentIntentService {
         CarServiceRequest req = new CarServiceRequest();
 
         req.setCustomer(intent.getCustomer());
-        req.setCarId(intent.getCarId());
+        req.setCar(intent.getCar());
         req.setServiceOption(intent.getServiceOption());
         req.setProblemDescription(intent.getProblemDescription());
         req.setAppointmentDate(intent.getAppointmentDate());

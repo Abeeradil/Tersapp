@@ -5,18 +5,19 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.Config.PasswordGenerator;
 import org.example.tears.Config.TempEmailGenerator;
+import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeSummaryDto;
 import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
 import org.example.tears.InpDTO.LocationDto;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.Location;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeLoginInfo;
-import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.EmployeeRepository;
 import org.example.tears.Repository.UserRepository;
@@ -35,6 +36,7 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordGenerator passGen;
     private final TempEmailGenerator emailGen;
+    private final RequestMapper requestMapper;
     private final UserRepository userRepo;
 
 
@@ -123,42 +125,14 @@ public class AdminService {
     }
 
 
-    public List<Employee> getAllEmployees() {
-        return employeeRepository.findAll();
+    public List<EmployeeListDto> getAllEmployees() {
+
+        return employeeRepository.findAll()
+                .stream()
+                .map(requestMapper::toEmployeeDto)
+                .toList();
     }
 
-    public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
-
-        RequestSummaryDto dto = new RequestSummaryDto();
-
-        dto.setId(req.getId());
-        dto.setOrderNumber(req.getOrderNumber());
-        dto.setStatus(req.getStage().name());
-        dto.setPaymentStatus(req.getPaymentStatus().name());
-        dto.setTotalPrice(req.getFinalPrice());
-
-        if (req.getAssignedEmployee() != null) {
-            dto.setAssignedEmployee(toEmployeeSummary(req.getAssignedEmployee()));
-        }
-
-        return dto;
-    }
-
-    private EmployeeSummaryDto toEmployeeSummary(Employee emp) {
-
-        EmployeeSummaryDto dto = new EmployeeSummaryDto();
-
-        dto.setId(emp.getId());
-
-        // ⚠️ حسب الـ Entity عندك
-        dto.setName(emp.getUser().getFullName());
-
-        dto.setJobTitle(emp.getJobTitle());
-
-        dto.setRole(emp.getEmployeeRole()); // إذا موجودة عندك
-
-        return dto;
-    }
 
 
     public ApiResponse deactivateEmployee(Integer id) {

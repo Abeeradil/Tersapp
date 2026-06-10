@@ -21,6 +21,23 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             LocalTime appointmentTime
     );
 
+    @Query("""
+SELECT r
+FROM CarServiceRequest r
+JOIN Car c ON c.id = r.carId
+WHERE
+(:orderNumber IS NULL OR r.orderNumber = :orderNumber)
+AND
+(:plateArabic IS NULL OR c.plateNumberArabic LIKE %:plateArabic%)
+AND
+(:plateEnglish IS NULL OR c.plateNumberEnglish LIKE %:plateEnglish%)
+""")
+    List<CarServiceRequest> search(
+            String orderNumber,
+            String plateArabic,
+            String plateEnglish
+    );
+
     List<CarServiceRequest> findByAssignedEmployee (Employee emp);
     List<CarServiceRequest> findByAssignedEmployeeIsNull();
 

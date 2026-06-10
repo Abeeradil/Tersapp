@@ -27,14 +27,15 @@ public class CarServiceRequest {
                 private String orderNumber;
 
 
-                @NotNull
-                private Integer carId;
+                @ManyToOne
+                @JoinColumn(name = "car_id")
+                private Car car;
 
                 @Enumerated(EnumType.STRING)
                 private ServiceOption serviceOption;
 
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus;
+                @Enumerated(EnumType.STRING)
+                private PaymentStatus paymentStatus;
 
                 @Column(columnDefinition = "TEXT")
                 private String problemDescription;

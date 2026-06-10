@@ -74,27 +74,6 @@ import java.util.Map;
         return new ApiResponse(true,"تم تحديث الحالة بنجاح");
     }
 
-    // 👇 نسخة مؤقتة لتجربة تغيير الحالة بدون توكن
-    @PutMapping("/test/{id}/status")
-    public ApiResponse updateStatusTest(
-            @PathVariable Integer id,
-            @RequestBody UpdateStatusDTO dto
-    ) {
-        // مستخدم وهمي للتجربة
-        User mockUser = new User();
-        mockUser.setId(1); // حطي أي EmployeeId موجود
-        mockUser.setEmployee(mockUser.getEmployee()); // أو أنشئي Employee وهمي بنفس الـ Id
-
-        workflowService.updateStaffStatus(
-                id,
-                dto.getStatus(),
-                mockUser.getEmployee().getId(),
-                dto.getNote()
-        );
-
-        return new ApiResponse(true,"تم تحديث الحالة بنجاح (Test)");
-    }
-
     @PostMapping("/{id}/receive")
     public ApiResponse receiveCar(
             @PathVariable Integer id,
@@ -111,27 +90,6 @@ import java.util.Map;
         );
         return new ApiResponse(true,"تم استلام السيارة ورفع الصورة بنجاح");
     }
-
-    @PostMapping("/test/{id}/receive")
-    public ApiResponse receiveCarTest(
-            @PathVariable Integer id,
-            @RequestParam(required = false) String note,
-            @RequestParam("imageUrl") String imageUrl
-    ) {
-        User mockUser = new User();
-        mockUser.setId(1); // EmployeeId وهمي
-
-        workflowService.updateStatus(
-                id,
-                StaffRequestStatus.RECEIVED,
-                mockUser.getId(),
-                note,
-                imageUrl
-        );
-
-        return new ApiResponse(true,"تم استلام السيارة ورفع الصورة بنجاح (Test)");
-    }
-
 
     // إضافة قطعة
     @PostMapping("/{id}/parts")

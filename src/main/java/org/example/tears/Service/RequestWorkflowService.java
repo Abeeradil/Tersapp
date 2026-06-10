@@ -44,11 +44,12 @@ public class RequestWorkflowService {
         dto.setId(req.getId());
         dto.setOrderNumber(req.getOrderNumber());
         dto.setStatus(req.getStage().name());
-        dto.setPaymentStatus(req.getPaymentStatus().name());
         dto.setTotalPrice(req.getFinalPrice());
 
         if (req.getAssignedEmployee() != null) {
-            dto.setAssignedEmployee(toEmployeeSummary(req.getAssignedEmployee()));
+            dto.setAssignedEmployee(
+                    req.getAssignedEmployee().getUser().getFullName()
+            );
         }
 
         return dto;
@@ -252,7 +253,7 @@ public class RequestWorkflowService {
         );
 
         // ✅ بيانات السيارة (مؤقت)
-        dto.setCarId(r.getCarId());
+        dto.setCarId(r.getCar().getId());
 
         // ✅ وصف المشكلة (مهم للموظف)
         dto.setProblemDescription(r.getProblemDescription());
@@ -261,10 +262,6 @@ public class RequestWorkflowService {
         if (r.getLocation() != null) {
             dto.setAddress(r.getLocation().getAddress());
         }
-
-        // ✅ التاريخ
-        dto.setAppointmentDate(r.getAppointmentDate());
-        dto.setAppointmentTime(r.getAppointmentTime());
 
         return dto;
     }

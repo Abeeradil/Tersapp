@@ -3,6 +3,7 @@ package org.example.tears.Controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
 import org.example.tears.Model.Appointment;
@@ -48,10 +49,29 @@ public class AdminController {
     }
 
     @GetMapping("/employees")
-    public List<Employee> employees() {
+    public List<EmployeeListDto> employees() {
         return adminService.getAllEmployees();
     }
 
+    @GetMapping("/requests/search")
+    public List<RequestSummaryDto> search(
+
+            @RequestParam(required = false)
+            String orderNumber,
+
+            @RequestParam(required = false)
+            String plateArabic,
+
+            @RequestParam(required = false)
+            String plateEnglish
+    ) {
+
+        return requestQueryService.search(
+                orderNumber,
+                plateArabic,
+                plateEnglish
+        );
+    }
 
     // جلب كل الطلبات
 //    @GetMapping("/admin/requests")
@@ -93,12 +113,6 @@ public class AdminController {
         return ResponseEntity.ok(
                 adminService.createEmployee(dto)
         );
-    }
-
-
-    @GetMapping("/admin/employees")
-    public List<Employee> getEmployees() {
-        return adminService.getAllEmployees();
     }
 
     @PutMapping("/admin/employees/{id}/deactivate")

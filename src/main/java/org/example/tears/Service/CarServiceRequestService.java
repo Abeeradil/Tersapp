@@ -93,25 +93,13 @@ public class CarServiceRequestService {
                         new ApiException("الطلب غير موجود")
                 );
         // =========================
-// Car
-// =========================
-        if (dto.getCarId() != null) {
+        // Car
+        // =========================
 
-            boolean ownsCar = carRepository
-                    .findByCustomerId(user.getCustomer().getId())
-                    .stream()
-                    .anyMatch(car ->
-                            car.getId().equals(dto.getCarId())
-                    );
+        Car car = carRepository.findById(dto.getCarId())
+                .orElseThrow(() -> new ApiException("السيارة غير موجودة"));
 
-            if (!ownsCar) {
-                throw new ApiException(
-                        "السيارة المختارة لا تنتمي لهذا المستخدم"
-                );
-            }
-
-            serviceRequest.setCarId(dto.getCarId());
-        }
+        serviceRequest.setCar(car);
 
 // ownership check
         if (!serviceRequest.getCustomer().getId()
@@ -355,7 +343,7 @@ public class CarServiceRequestService {
         );
 
         // 🚗 هنا أهم جزء: نجيب السيارة
-        Car car = carRepository.findById(r.getCarId())
+        Car car = carRepository.findById(r.getCar().getId())
                 .orElse(null);
 
         if (car != null) {
@@ -464,7 +452,11 @@ public class CarServiceRequestService {
 
         CarServiceRequest req = new CarServiceRequest();
 
-        req.setCarId(dto.getCarId());
+        Car car = carRepository.findById(dto.getCarId())
+                .orElseThrow(() -> new ApiException("السيارة غير موجودة"));
+
+        req.setCar(car);
+
         req.setCustomer(user.getCustomer());
         req.setServiceOption(option);
         req.setProblemDescription(dto.getProblemDescription());
@@ -497,7 +489,7 @@ public class CarServiceRequestService {
         req.setPaymentMethod(method);
         req.setLocation(location);
         req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
-        req.setCustomerStatus(mapToCustomerStatus(WorkflowStage.PRICING));
+        req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
         req.setCreatedAt(LocalDateTime.now());
 
         return req;

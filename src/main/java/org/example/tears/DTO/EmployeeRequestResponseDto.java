@@ -1,7 +1,9 @@
 package org.example.tears.DTO;
 import lombok.Data;
+import org.example.tears.Model.CarModel;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Data
@@ -13,14 +15,13 @@ import java.time.LocalTime;
         private String serviceOption;    // نوع الخدمة
         private String ProblemDescription;
 
-        //private String carBrand;         // تويوتا
         private Integer carId;
-         private String carModel;         // كامري
-        //private Integer carYear;         // 2022
-        private String plateNumber;      // أ ب ج 1234
-
+         private CarModel carModel;         // كامري
         private String address;
 
-        private LocalDate appointmentDate;
-        private LocalTime appointmentTime;
+        private String plateNumberArabic;
+        private String plateNumberEnglish;
+
+        private LocalDateTime createdAt;
+
     }

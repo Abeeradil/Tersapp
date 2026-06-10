@@ -28,7 +28,10 @@ public class PaymentIntent {
     private Customer customer;
 
     // 🚗 بيانات الطلب (مؤقتة)
-    private Integer carId;
+    @ManyToOne
+    @JoinColumn(name = "car_id")
+    private Car car;
+
 
     @Enumerated(EnumType.STRING)
     private ServiceOption serviceOption;

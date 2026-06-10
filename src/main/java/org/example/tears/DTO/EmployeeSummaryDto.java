@@ -12,5 +12,7 @@ public class EmployeeSummaryDto {
 
     private EmployeeRole role;
 
+    private String assignedEmployee;
+
     private String jobTitle;
 }
