@@ -10,18 +10,44 @@ import org.springframework.stereotype.Component;
 @Component
 public class RequestMapper {
 
-    public RequestSummaryDto toSummaryDto(CarServiceRequest r) {
+    public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
 
         RequestSummaryDto dto = new RequestSummaryDto();
 
-        dto.setId(r.getId());
-        dto.setOrderNumber(r.getOrderNumber());
+        dto.setId(req.getId());
+        dto.setOrderNumber(req.getOrderNumber());
 
-        if (r.getStage() != null) {
-            dto.setStatus(r.getStage().name());
+        dto.setStatus(
+                req.getStaffStatus() != null
+                        ? req.getStaffStatus().name()
+                        : null
+        );
+
+        dto.setStage(
+                req.getStage() != null
+                        ? req.getStage().name()
+                        : null
+        );
+
+        dto.setTotalPrice(req.getFinalPrice());
+
+        dto.setCreatedAt(req.getCreatedAt());
+
+        if (req.getCustomer() != null) {
+            dto.setCustomerName(
+                    req.getCustomer()
+                            .getUser()
+                            .getFullName()
+            );
         }
 
-        dto.setCreatedAt(r.getCreatedAt());
+        if (req.getAssignedEmployee() != null) {
+            dto.setAssignedEmployee(
+                    req.getAssignedEmployee()
+                            .getUser()
+                            .getFullName()
+            );
+        }
 
         return dto;
     }
