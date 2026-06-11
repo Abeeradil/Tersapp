@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.DTO.CurrentRequestDto;
+import org.example.tears.DTO.RequestHistoryDto;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
@@ -88,7 +90,7 @@ public class CarServiceRequestController {
             );
         }
     @GetMapping("/my/current")
-    public List<RequestResponseDto> getCurrentRequests(
+    public List<CurrentRequestDto> getCurrentRequests(
             HttpServletRequest request) {
 
         User user = authService.getAuthenticatedUser(request);
@@ -98,7 +100,7 @@ public class CarServiceRequestController {
     }
 
     @GetMapping("/my/past")
-    public List<RequestResponseDto> getPastRequests(
+    public List<RequestHistoryDto> getPastRequests(
             HttpServletRequest request) {
 
         User user = authService.getAuthenticatedUser(request);

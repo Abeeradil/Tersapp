@@ -4,6 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
+import org.example.tears.DTO.CurrentRequestDto;
+import org.example.tears.DTO.RequestHistoryDto;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PaymentMethod;
 import org.example.tears.Enums.ServiceOption;
@@ -217,7 +219,7 @@ public class CarServiceRequestService {
         return toResponseDto(updated);
     }
 
-    public List<RequestResponseDto> getCurrentRequests(Integer customerId) {
+    public List<CurrentRequestDto> getCurrentRequests(Integer customerId) {
 
         return requestRepository
                 .findByCustomerIdAndCustomerStatusNotInOrderByIdDesc(
@@ -228,11 +230,11 @@ public class CarServiceRequestService {
                         )
                 )
                 .stream()
-                .map(this::toResponseDto)
-                .collect(Collectors.toList());
+                .map(this::toCurrentDto)
+                .toList();
     }
 
-    public List<RequestResponseDto> getPastRequests(Integer customerId) {
+    public List<RequestHistoryDto> getPastRequests(Integer customerId) {
 
         return requestRepository
                 .findByCustomerIdAndCustomerStatusInOrderByIdDesc(
@@ -243,8 +245,8 @@ public class CarServiceRequestService {
                         )
                 )
                 .stream()
-                .map(this::toResponseDto)
-                .collect(Collectors.toList());
+                .map(this::toHistoryDto)
+                .toList();
     }
 
 
@@ -255,6 +257,51 @@ public class CarServiceRequestService {
     public List<RequestResponseDto> getMyRequests(Integer userCustomerId) {
         return requestRepository.findByCustomerIdOrderByIdDesc(userCustomerId)
                 .stream().map(this::toResponseDto).collect(Collectors.toList());
+    }
+
+    public CurrentRequestDto toCurrentDto(CarServiceRequest req) {
+
+        CurrentRequestDto dto = new CurrentRequestDto();
+
+        dto.setId(req.getId());
+        dto.setOrderNumber(req.getOrderNumber());
+
+        if (req.getServiceOption() != null) {
+            dto.setServiceName(req.getServiceOption().name());
+        }
+
+        if (req.getStage() != null) {
+            dto.setStatus(req.getStage().name());
+        }
+
+        return dto;
+    }
+
+    public RequestHistoryDto toHistoryDto(CarServiceRequest req) {
+
+        RequestHistoryDto dto = new RequestHistoryDto();
+
+        dto.setId(req.getId());
+        dto.setOrderNumber(req.getOrderNumber());
+
+        if (req.getServiceOption() != null) {
+            dto.setServiceName(req.getServiceOption().name());
+        }
+
+        dto.setAppointmentDate(req.getAppointmentDate());
+        dto.setAppointmentTime(req.getAppointmentTime());
+
+        dto.setTotalPrice(
+                req.getFinalPrice() != null
+                        ? req.getFinalPrice().doubleValue()
+                        : req.getEstimatedPrice()
+        );
+
+        if (req.getStage() != null) {
+            dto.setStatus(req.getStage().name());
+        }
+
+        return dto;
     }
 
     public RequestResponseDto toResponseDto(CarServiceRequest r) {
