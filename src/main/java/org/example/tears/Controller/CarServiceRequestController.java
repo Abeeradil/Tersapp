@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.DTO.CancelRequestDto;
 import org.example.tears.DTO.CurrentRequestDto;
 import org.example.tears.DTO.RequestHistoryDto;
 import org.example.tears.Enums.ServiceOption;
@@ -107,6 +108,47 @@ public class CarServiceRequestController {
 
         return requestService
                 .getPastRequests(user.getCustomer().getId());
+    }
+
+    @GetMapping("my-request/details/{requestId}")
+    public ResponseEntity<?> getRequestDetails(
+            HttpServletRequest request,
+            @PathVariable Integer requestId
+    ) {
+
+        User user =
+                authService.getAuthenticatedUser(request);
+
+        return ResponseEntity.ok(
+                requestService.getRequestDetails(
+                        user.getCustomer().getId(),
+                        requestId
+                )
+        );
+    }
+
+    @PostMapping("/cancel/{requestId}")
+    public ResponseEntity<?> cancelRequest(
+            HttpServletRequest request,
+            @PathVariable Integer requestId,
+            @RequestBody CancelRequestDto dto
+    ) {
+
+        User user =
+                authService.getAuthenticatedUser(request);
+
+        requestService.cancelRequest(
+                user.getCustomer().getId(),
+                requestId,
+                dto
+        );
+
+        return ResponseEntity.ok(
+                new ApiResponse(
+                        true,
+                        "تم إلغاء الطلب"
+                )
+        );
     }
 
 }

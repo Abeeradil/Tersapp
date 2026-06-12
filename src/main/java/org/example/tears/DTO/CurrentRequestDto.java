@@ -12,4 +12,6 @@ public class CurrentRequestDto {
     private String serviceName;
 
     private String status;
+
+    private String requestState;
 }

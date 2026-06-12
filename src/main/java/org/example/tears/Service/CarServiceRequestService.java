@@ -4,12 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
+import org.example.tears.DTO.CancelRequestDto;
 import org.example.tears.DTO.CurrentRequestDto;
+import org.example.tears.DTO.RequestDetailsDto;
 import org.example.tears.DTO.RequestHistoryDto;
-import org.example.tears.Enums.CustomerRequestStatus;
-import org.example.tears.Enums.PaymentMethod;
-import org.example.tears.Enums.ServiceOption;
-import org.example.tears.Enums.WorkflowStage;
+import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
@@ -270,9 +269,13 @@ public class CarServiceRequestService {
             dto.setServiceName(req.getServiceOption().name());
         }
 
-        if (req.getStage() != null) {
-            dto.setStatus(req.getStage().name());
+        if (req.getCustomerStatus() != null) {
+            dto.setStatus(req.getCustomerStatus().name());
         }
+
+        dto.setRequestState(
+                mapRequestState(req)
+        );
 
         return dto;
     }
@@ -297,8 +300,12 @@ public class CarServiceRequestService {
                         : req.getEstimatedPrice()
         );
 
-        if (req.getStage() != null) {
-            dto.setStatus(req.getStage().name());
+        dto.setRequestState(
+                mapRequestState(req)
+        );
+
+        if (req.getCustomerStatus() != null) {
+            dto.setStatus(req.getCustomerStatus().name());
         }
 
         return dto;
@@ -419,6 +426,150 @@ public class CarServiceRequestService {
         dto.setTitle(loc.getTitle());
 
         return dto;
+    }
+
+    public RequestDetailsDto getRequestDetails(
+            Integer customerId,
+            Integer requestId
+    ) {
+
+        CarServiceRequest req = requestRepository.findById(requestId)
+                .orElseThrow(() ->
+                        new ApiException("الطلب غير موجود")
+                );
+
+        if (!req.getCustomer().getId().equals(customerId)) {
+            throw new ApiException("غير مصرح");
+        }
+
+        return toDetailsDto(req);
+    }
+
+    public RequestDetailsDto toDetailsDto(
+            CarServiceRequest req
+    ) {
+
+        RequestDetailsDto dto =
+                new RequestDetailsDto();
+
+        dto.setId(req.getId());
+
+        dto.setOrderNumber(
+                req.getOrderNumber()
+        );
+
+        dto.setServiceName(
+                req.getServiceOption() != null
+                        ? req.getServiceOption().name()
+                        : null
+        );
+
+        dto.setCustomerStatus(
+                req.getCustomerStatus() != null
+                        ? req.getCustomerStatus().name()
+                        : null
+        );
+
+        dto.setRequestState(
+                mapRequestState(req)
+        );
+
+        dto.setTotalPrice(
+                req.getFinalPrice() != null
+                        ? req.getFinalPrice().doubleValue()
+                        : req.getEstimatedPrice()
+        );
+
+
+
+        if (req.getLocation() != null) {
+            dto.setAddress(
+                    req.getLocation().getAddress()
+            );
+        }
+
+        if (req.getCar() != null) {
+
+            dto.setPlateNumberArabic(
+                    req.getCar().getPlateNumberArabic()
+            );
+
+            dto.setPlateNumberEnglish(
+                    req.getCar().getPlateNumberEnglish()
+            );
+
+            dto.setRequestState(
+                    mapRequestState(req)
+            );
+        }
+
+        return dto;
+    }
+
+
+    private String mapRequestState(
+            CarServiceRequest req
+    ) {
+
+        if (req.getCustomerStatus()
+                == CustomerRequestStatus.CANCELED) {
+
+            return RequestState.CANCELLED.name();
+        }
+
+        if (req.getCustomerStatus()
+                == CustomerRequestStatus.DELIVERED) {
+
+            return RequestState.COMPLETED.name();
+        }
+
+        return RequestState.ACTIVE.name();
+    }
+
+    @Transactional
+    public void cancelRequest(
+            Integer customerId,
+            Integer requestId,
+            CancelRequestDto dto
+    ) {
+
+        CarServiceRequest req =
+                requestRepository.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود")
+                        );
+
+        if (!req.getCustomer().getId()
+                .equals(customerId)) {
+
+            throw new ApiException("غير مصرح");
+        }
+
+        if (req.isInitialPaid()) {
+
+            throw new ApiException(
+                    "لا يمكن إلغاء الطلب بعد الدفع"
+            );
+        }
+
+        if (dto.getReason() == CancelReason.OTHER &&
+                (dto.getOtherReason() == null
+                        || dto.getOtherReason().isBlank())) {
+
+            throw new ApiException(
+                    "يرجى كتابة سبب الإلغاء"
+            );
+        }
+
+        req.setCustomerStatus(
+                CustomerRequestStatus.CANCELED
+        );
+
+        req.setStage(
+                WorkflowStage.CANCELLED
+        );
+
+        requestRepository.save(req);
     }
 
 

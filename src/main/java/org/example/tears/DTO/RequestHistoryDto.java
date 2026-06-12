@@ -21,4 +21,6 @@ public class RequestHistoryDto {
     private Double totalPrice;
 
     private String status;
+
+    private String requestState;
 }
