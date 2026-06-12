@@ -21,4 +21,7 @@ public class RequestDetailsDto {
     private Double totalPrice;
 
     private String address;
+
+    private Boolean canReview;
+    private Boolean reviewed;
 }

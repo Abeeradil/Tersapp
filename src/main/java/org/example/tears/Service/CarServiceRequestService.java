@@ -4,10 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.CancelRequestDto;
-import org.example.tears.DTO.CurrentRequestDto;
-import org.example.tears.DTO.RequestDetailsDto;
-import org.example.tears.DTO.RequestHistoryDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
@@ -18,10 +15,7 @@ import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Model.*;
-import org.example.tears.Repository.CarRepository;
-import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.CouponRepository;
-import org.example.tears.Repository.LocationRepository;
+import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,6 +36,7 @@ public class CarServiceRequestService {
     private final LocationRepository locationRepository;
     private final AppointmentService appointmentService;
     private final PricingCalculationService pricingCalculationService;
+    private final RequestReviewRepository reviewRepository;
     private final RequestMapper requestMapper;
 
     private static final int HYDRAULIC_EXTRA = 100;
@@ -470,6 +465,17 @@ public class CarServiceRequestService {
                         : null
         );
 
+        dto.setCanReview(
+                req.getCustomerStatus()
+                        == CustomerRequestStatus.DELIVERED
+        );
+
+        dto.setReviewed(
+                reviewRepository.existsByRequestId(
+                        req.getId()
+                )
+        );
+
         dto.setRequestState(
                 mapRequestState(req)
         );
@@ -571,7 +577,71 @@ public class CarServiceRequestService {
 
         requestRepository.save(req);
     }
+    @Transactional
+    public void addReview(
+            Integer customerId,
+            Integer requestId,
+            RequestReviewDto dto
+    ) {
 
+        CarServiceRequest request =
+                requestRepository.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود")
+                        );
+
+        if (!request.getCustomer().getId()
+                .equals(customerId)) {
+
+            throw new ApiException("غير مصرح");
+        }
+
+        if (request.getCustomerStatus()
+                != CustomerRequestStatus.DELIVERED) {
+
+            throw new ApiException(
+                    "لا يمكن تقييم طلب غير منتهي"
+            );
+        }
+
+        if (reviewRepository.existsByRequestId(requestId)) {
+
+            throw new ApiException(
+                    "تم تقييم الطلب مسبقاً"
+            );
+        }
+
+        if (dto.getRating() < 1
+                || dto.getRating() > 5) {
+
+            throw new ApiException(
+                    "التقييم يجب أن يكون من 1 إلى 5"
+            );
+        }
+
+        if (dto.getRating() <= 3 &&
+                (dto.getComment() == null
+                        || dto.getComment().isBlank())) {
+
+            throw new ApiException(
+                    "يرجى كتابة سبب التقييم"
+            );
+        }
+
+        RequestReview review =
+                new RequestReview();
+
+        review.setRequest(request);
+        review.setCustomer(request.getCustomer());
+
+        review.setRating(dto.getRating());
+
+        review.setComment(dto.getComment());
+
+        review.setCreatedAt(LocalDateTime.now());
+
+        reviewRepository.save(review);
+    }
 
     private CustomerRequestStatus mapToCustomerStatus(WorkflowStage stage) {
 

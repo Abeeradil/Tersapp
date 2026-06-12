@@ -7,6 +7,7 @@ import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.CancelRequestDto;
 import org.example.tears.DTO.CurrentRequestDto;
 import org.example.tears.DTO.RequestHistoryDto;
+import org.example.tears.DTO.RequestReviewDto;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
@@ -34,6 +35,7 @@ public class CarServiceRequestController {
         private final CarServiceRequestService requestService;
         private final AppointmentService appointmentService;
         private final LocationService locationService;
+
         private final AuthService authService;
 
         @PostMapping("/preview")
@@ -147,6 +149,30 @@ public class CarServiceRequestController {
                 new ApiResponse(
                         true,
                         "تم إلغاء الطلب"
+                )
+        );
+    }
+
+    @PostMapping("/review/{requestId}")
+    public ResponseEntity<?> addReview(
+            HttpServletRequest request,
+            @PathVariable Integer requestId,
+            @RequestBody RequestReviewDto dto
+    ) {
+
+        User user =
+                authService.getAuthenticatedUser(request);
+
+        requestService.addReview(
+                user.getCustomer().getId(),
+                requestId,
+                dto
+        );
+
+        return ResponseEntity.ok(
+                new ApiResponse(
+                        true,
+                        "شكراً لتقييمك"
                 )
         );
     }
