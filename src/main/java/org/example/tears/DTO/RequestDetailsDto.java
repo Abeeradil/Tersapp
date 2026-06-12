@@ -21,6 +21,4 @@ public class RequestDetailsDto {
     private Double totalPrice;
 
     private String address;
-
-    private String requestState;
 }
