@@ -110,7 +110,7 @@ public class CarServiceRequestController {
                 .getPastRequests(user.getCustomer().getId());
     }
 
-    @GetMapping("my-request/details/{requestId}")
+    @GetMapping("/my-request/details/{requestId}")
     public ResponseEntity<?> getRequestDetails(
             HttpServletRequest request,
             @PathVariable Integer requestId
