@@ -44,7 +44,11 @@ public class RequestWorkflowService {
         dto.setId(req.getId());
         dto.setOrderNumber(req.getOrderNumber());
         dto.setStatus(req.getStage().name());
-        dto.setTotalPrice(req.getFinalPrice());
+        dto.setTotalPrice(
+                req.getFinalPrice() != null
+                        ? req.getFinalPrice().doubleValue()
+                        : req.getEstimatedPrice()
+        );
 
         if (req.getAssignedEmployee() != null) {
             dto.setAssignedEmployee(

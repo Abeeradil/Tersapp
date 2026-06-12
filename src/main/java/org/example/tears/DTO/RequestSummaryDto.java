@@ -15,7 +15,7 @@ public class RequestSummaryDto {
         private String status;
         private String stage;
 
-        private Integer totalPrice;
+        private Double totalPrice;
 
         private String customerName;
 
