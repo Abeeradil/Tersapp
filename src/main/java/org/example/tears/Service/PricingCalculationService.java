@@ -32,17 +32,35 @@ public class PricingCalculationService {
             boolean hydraulicTruck
     ) {
 
+        double subtotal =
+                calculateSubtotal(
+                        serviceOption,
+                        hydraulicTruck
+                );
+
+        double vatAmount =
+                subtotal * VAT_PERCENTAGE;
+
+        return round(subtotal + vatAmount);
+    }
+
+    private double calculateSubtotal(
+            String serviceOption,
+            boolean hydraulicTruck
+    ) {
+
         ServiceOption option =
                 ServiceOption.valueOf(serviceOption.toUpperCase());
 
-        double total = option.getPrice();
+        double subtotal = option.getPrice();
 
         if (hydraulicTruck) {
-            total += HYDRAULIC_EXTRA;
+            subtotal += HYDRAULIC_EXTRA;
         }
 
-        return total;
+        return subtotal;
     }
+
 
     public PricingResponse calculateFinal(
             String serviceOption,
@@ -50,16 +68,17 @@ public class PricingCalculationService {
             String couponCode
     ) {
 
-        double originalPrice =
-                calculatePreview(serviceOption, hydraulicTruck);
+        double subtotal =
+                calculateSubtotal(
+                        serviceOption,
+                        hydraulicTruck
+                );
 
         ServiceOption option =
                 ServiceOption.valueOf(serviceOption.toUpperCase());
 
         double discount = 0;
-
         boolean couponValid = true;
-
         String message = "Success";
 
         if (couponCode != null &&
@@ -70,27 +89,26 @@ public class PricingCalculationService {
                 Coupon coupon =
                         couponService.validate(
                                 couponCode,
-                                originalPrice,
+                                subtotal,
                                 option
                         );
 
                 discount =
                         calculateDiscount(
                                 coupon,
-                                originalPrice
+                                subtotal
                         );
 
             } catch (Exception e) {
 
                 couponValid = false;
-
                 message = e.getMessage();
             }
         }
 
         double afterDiscount =
                 Math.max(
-                        originalPrice - discount,
+                        subtotal - discount,
                         0
                 );
 
@@ -104,7 +122,7 @@ public class PricingCalculationService {
                 new PricingResponse();
 
         response.originalPrice =
-                round(originalPrice);
+                round(subtotal); // قبل الضريبة
 
         response.discount =
                 round(discount);

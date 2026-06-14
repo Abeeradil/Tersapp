@@ -3,6 +3,9 @@ package org.example.tears.Mapper;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.springframework.stereotype.Component;
@@ -62,8 +65,8 @@ public class RequestMapper {
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
-        if (r.getStage() != null) {
-            dto.setStatus(r.getStage().name());
+        if (r.getStaffStatus() != null) {
+            dto.setStatus(r.getStaffStatus().name());
         }
 
         dto.setProblemDescription(r.getProblemDescription());
@@ -119,4 +122,70 @@ public class RequestMapper {
 
         return dto;
     }
+
+
+        public CustomerRequestStatus toCustomer(WorkflowStage stage) {
+
+            return switch (stage) {
+
+                case NEW_REQUEST -> CustomerRequestStatus.REQUEST_CREATED;
+
+                case ASSIGNED, RECEIVED ->
+                        CustomerRequestStatus.CAR_RECEIVED;
+
+                case INSPECTION_IN_PROGRESS,
+                     TESTING,
+                     REPORT_WRITING,
+                     PARTS_REGISTERING,
+                     PRICING ->
+                        CustomerRequestStatus.CAR_INSPECTION;
+
+                case WAITING_APPROVAL ->
+                        CustomerRequestStatus.WAITING_APPROVAL;
+
+                case REPAIRING ->
+                        CustomerRequestStatus.UNDER_REPAIR;
+
+                case READY ->
+                        CustomerRequestStatus.READY_FOR_DELIVERY;
+
+                case DELIVERED ->
+                        CustomerRequestStatus.DELIVERED;
+
+                case CANCELLED ->
+                        CustomerRequestStatus.CANCELED;
+            };
+        }
+
+        public StaffRequestStatus toStaff(WorkflowStage stage) {
+
+            return switch (stage) {
+
+                case NEW_REQUEST -> StaffRequestStatus.NEW;
+
+                case ASSIGNED -> StaffRequestStatus.NEW;
+
+                case RECEIVED -> StaffRequestStatus.RECEIVED;
+
+                case INSPECTION_IN_PROGRESS -> StaffRequestStatus.INSPECTION_IN_PROGRESS;
+
+                case TESTING -> StaffRequestStatus.TESTING;
+
+                case REPORT_WRITING -> StaffRequestStatus.REPORT_WRITING;
+
+                case PARTS_REGISTERING -> StaffRequestStatus.PARTS_REGISTERING;
+
+                case PRICING -> StaffRequestStatus.PRICING;
+
+                case REPAIRING -> StaffRequestStatus.REPAIRING;
+
+                case READY -> StaffRequestStatus.REPAIRING;
+
+                case DELIVERED -> StaffRequestStatus.DELIVERED;
+
+                case WAITING_APPROVAL -> StaffRequestStatus.PRICING;
+
+                case CANCELLED -> StaffRequestStatus.DELIVERED; // أو CANCELLED إذا أضفتها
+            };
+        }
 }

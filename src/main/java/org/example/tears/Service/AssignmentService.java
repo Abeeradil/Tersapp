@@ -41,7 +41,7 @@ public class AssignmentService {
         request.setAssignedEmployee(employee);
 
         // 🔥 2. تغيير الحالة (مهم جدًا)
-        request.setStaffStatus(StaffRequestStatus.ASSIGNED);
+        request.setStaffStatus(StaffRequestStatus.NEW);
 
         request.setStage(WorkflowStage.ASSIGNED);
 

@@ -200,6 +200,7 @@ public class RequestWorkflowService {
         }
 
 
+
         // =========================
         // حفظ ملاحظة
         // =========================
@@ -270,6 +271,21 @@ public class RequestWorkflowService {
         return dto;
     }
 
+
+    public String mapStaffStatus(StaffRequestStatus status) {
+        return switch (status) {
+            case NEW -> "جديدة";
+            case RECEIVED -> "تم الاستلام";
+            case INSPECTION_IN_PROGRESS -> "جاري الفحص";
+            case TESTING -> "قيد التجربة";
+            case REPORT_WRITING -> "إرفاق التقرير";
+            case PARTS_REGISTERING -> "تسجيل القطع";
+            case PRICING -> "جاري تسعير القطع";
+            case REPAIRING -> "جاري الإصلاح";
+            case DELIVERED -> "تم التسليم";
+        };
+    }
+
     private String mapStageToArabic(WorkflowStage stage) {
 
             if (stage == null) return "غير محدد";
@@ -279,27 +295,16 @@ public class RequestWorkflowService {
                 case NEW_REQUEST -> "طلب جديد";
 
                 case ASSIGNED -> "تم الإسناد";
-
                 case RECEIVED -> "تم الاستلام";
-
                 case INSPECTION_IN_PROGRESS -> "قيد الفحص";
-
                 case TESTING -> "تجربة";
-
                 case REPORT_WRITING -> "كتابة التقرير";
-
                 case PARTS_REGISTERING -> "تسجيل القطع";
-
                 case PRICING -> "قيد التسعير";
-
                 case WAITING_APPROVAL -> "بانتظار الموافقة";
-
                 case REPAIRING -> "قيد الإصلاح";
-
                 case READY -> "جاهز";
-
                 case DELIVERED -> "تم التسليم";
-
                 case CANCELLED -> "ملغي";
             };
         }

@@ -39,9 +39,6 @@ public class CarServiceRequestService {
     private final RequestReviewRepository reviewRepository;
     private final RequestMapper requestMapper;
 
-    private static final int HYDRAULIC_EXTRA = 100;
-    private static final AtomicInteger ORDER_COUNTER = new AtomicInteger(1000);
-
     // ---------------------------
     // Step 1: Preview
     // ---------------------------
@@ -295,6 +292,16 @@ public class CarServiceRequestService {
                         : req.getEstimatedPrice()
         );
 
+        boolean reviewed =
+                reviewRepository.existsByRequestId(req.getId());
+
+        dto.setReviewed(reviewed);
+
+        dto.setCanReview(
+                req.getCustomerStatus() == CustomerRequestStatus.DELIVERED
+                        && !reviewed
+        );
+
         dto.setRequestState(
                 mapRequestState(req)
         );
@@ -465,16 +472,7 @@ public class CarServiceRequestService {
                         : null
         );
 
-        dto.setCanReview(
-                req.getCustomerStatus()
-                        == CustomerRequestStatus.DELIVERED
-        );
 
-        dto.setReviewed(
-                reviewRepository.existsByRequestId(
-                        req.getId()
-                )
-        );
 
         dto.setRequestState(
                 mapRequestState(req)
@@ -489,11 +487,9 @@ public class CarServiceRequestService {
 
 
         if (req.getLocation() != null) {
-            dto.setAddress(
-                    req.getLocation().getAddress()
-            );
-        }
+            dto.setLocation(mapLocation(req.getLocation()));
 
+        }
         if (req.getCar() != null) {
 
             dto.setPlateNumberArabic(
@@ -577,6 +573,8 @@ public class CarServiceRequestService {
 
         requestRepository.save(req);
     }
+
+
     @Transactional
     public void addReview(
             Integer customerId,

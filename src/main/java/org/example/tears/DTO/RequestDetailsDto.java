@@ -1,6 +1,8 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.InpDTO.LocationDto;
+import org.example.tears.Model.Location;
 
 @Data
 public class RequestDetailsDto {
@@ -20,8 +22,6 @@ public class RequestDetailsDto {
 
     private Double totalPrice;
 
-    private String address;
+    private LocationDto location;
 
-    private Boolean canReview;
-    private Boolean reviewed;
 }

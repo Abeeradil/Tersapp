@@ -82,8 +82,6 @@ public class CarServiceRequestController {
         );
     }
 
-
-
         // Get my requests
         @GetMapping("/my")
         public ResponseEntity<List<RequestResponseDto>> myRequests(HttpServletRequest request) {
