@@ -24,8 +24,6 @@ public class RequestHistoryDto {
     private Boolean canReview;
     private Boolean reviewed;
 
-    private LocationDto location;
-
     private String status;
 
     private String customerStatus;

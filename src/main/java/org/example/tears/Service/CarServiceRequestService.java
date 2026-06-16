@@ -307,7 +307,7 @@ public class CarServiceRequestService {
         );
 
         if (req.getCustomerStatus() != null) {
-            dto.setStatus(req.getCustomerStatus().name());
+            dto.setCustomerStatus(req.getCustomerStatus().name());
         }
 
         return dto;
