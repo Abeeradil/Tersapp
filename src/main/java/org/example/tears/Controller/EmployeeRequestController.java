@@ -53,7 +53,7 @@ import java.util.Map;
         workflowService.updateStatus(
                 id,
                 StaffRequestStatus.RECEIVED,
-                user.getId(),
+                user.getEmployee().getId(),
                 note,
                 imageUrl
         );
