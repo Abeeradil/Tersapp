@@ -4,24 +4,15 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.PartDto;
-import org.example.tears.DTO.ReportDto;
-import org.example.tears.DTO.UpdateStatusDTO;
 import org.example.tears.Enums.StaffRequestStatus;
-import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.User;
-import org.example.tears.OutDTO.RequestResponseDto;
-import org.example.tears.Service.PartsService;
-import org.example.tears.Service.ReportService;
-import org.example.tears.Service.RequestQueryService;
-import org.example.tears.Service.RequestWorkflowService;
+import org.example.tears.Service.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,6 +30,7 @@ import java.util.Map;
     private final PartsService partsService;
     private final ReportService reportService;
     private final RequestQueryService requestQueryService;
+    private final FileStorageService fileStorageService;
 
     @GetMapping("/my/requests")
     public List<EmployeeRequestResponseDto> myRequests(
@@ -48,13 +40,16 @@ import java.util.Map;
     }
 
 
-    @PostMapping("/{id}/receive")
+    @PostMapping(value = "/{id}/receive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse receiveCar(
             @PathVariable Integer id,
             @RequestParam(required = false) String note,
-            @RequestParam("imageUrl") String imageUrl,
+            @RequestParam("image") MultipartFile image,
             @AuthenticationPrincipal User user
     ) {
+
+        String imageUrl = fileStorageService.saveFile(image, "receipts");
+
         workflowService.updateStatus(
                 id,
                 StaffRequestStatus.RECEIVED,
@@ -62,7 +57,8 @@ import java.util.Map;
                 note,
                 imageUrl
         );
-        return new ApiResponse(true,"تم استلام السيارة ورفع الصورة بنجاح");
+
+        return new ApiResponse(true, "تم استلام السيارة ورفع الصورة بنجاح");
     }
 
 

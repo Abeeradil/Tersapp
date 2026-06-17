@@ -15,34 +15,40 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class FileStorageService {
 
-    String saveFile(MultipartFile file, String folder) {
+        public String saveFile(MultipartFile file, String folder) {
 
-        try {
+            try {
+                if (file == null || file.isEmpty()) {
+                    return null;
+                }
 
-            if (file == null || file.isEmpty())
-                return null;
+                Path uploadPath = Paths.get("uploads/" + folder);
 
-            Path uploadPath = Paths.get("uploads/" + folder);
+                if (!Files.exists(uploadPath)) {
+                    Files.createDirectories(uploadPath);
+                }
 
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+                String original = file.getOriginalFilename();
+                String extension = "";
+
+                if (original != null && original.contains(".")) {
+                    extension = original.substring(original.lastIndexOf("."));
+                }
+
+                String fileName = UUID.randomUUID() + extension;
+
+                Path filePath = uploadPath.resolve(fileName);
+
+                Files.copy(
+                        file.getInputStream(),
+                        filePath,
+                        StandardCopyOption.REPLACE_EXISTING
+                );
+
+                return "http://localhost:8080/uploads/" + folder + "/" + fileName;
+
+            } catch (Exception e) {
+                throw new ApiException("❌ فشل حفظ الملف: " + e.getMessage());
             }
-
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-
-            Path filePath = uploadPath.resolve(fileName);
-
-            Files.copy(
-                    file.getInputStream(),
-                    filePath,
-                    StandardCopyOption.REPLACE_EXISTING
-            );
-
-            return "/uploads/" + folder + "/" + fileName;
-
-        } catch (Exception e) {
-            throw new ApiException("❌ فشل حفظ الملف: " + e.getMessage());
         }
     }
-
-}

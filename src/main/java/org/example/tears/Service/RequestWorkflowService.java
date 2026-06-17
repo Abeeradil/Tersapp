@@ -122,6 +122,10 @@ public class RequestWorkflowService {
             saveNote(req, employeeId, note);
         }
 
+        if (rule.isRequiresImage()) {
+            req.setReceivedImageUrl(imageUrl);
+        }
+
         saveHistory(req, employeeId);
         requestRepo.save(req);
 

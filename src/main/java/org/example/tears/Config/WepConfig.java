@@ -15,13 +15,10 @@ public class WepConfig implements WebMvcConfigurer {
                 .allowedMethods("*");
     }
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/");
-
-        registry.addResourceHandler("/carimage/**")
-                .addResourceLocations("classpath:/static/carimage/");
-    }
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
+            registry.addResourceHandler("/uploads/**")
+                    .addResourceLocations("file:uploads/");
+        }
 }
