@@ -45,8 +45,7 @@ public class FileStorageService {
                         StandardCopyOption.REPLACE_EXISTING
                 );
 
-                return "http://localhost:8080/uploads/" + folder + "/" + fileName;
-
+                return "https://tersapp-production.up.railway.app/uploads/" + folder + "/" + fileName;
             } catch (Exception e) {
                 throw new ApiException("❌ فشل حفظ الملف: " + e.getMessage());
             }
