@@ -4,10 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.CancelRequestDto;
-import org.example.tears.DTO.CurrentRequestDto;
-import org.example.tears.DTO.RequestHistoryDto;
-import org.example.tears.DTO.RequestReviewDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
@@ -22,6 +19,7 @@ import org.example.tears.Service.CarServiceRequestService;
 import org.example.tears.Service.LocationService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -79,6 +77,18 @@ public class CarServiceRequestController {
 
         return ResponseEntity.ok(
                 requestService.updateRequest(request, requestId, dto)
+        );
+    }
+
+    @GetMapping("/{id}/received-image")
+    public ApiResponse getReceivedImage(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal User user
+    ) {
+        return new ApiResponse(
+                true,
+                "تم جلب الصورة",
+                requestService.getReceivedImage(id, user.getCustomer().getId())
         );
     }
 

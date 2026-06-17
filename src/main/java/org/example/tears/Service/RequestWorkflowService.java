@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.EmployeeSummaryDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.StaffRequestActionRule;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
@@ -75,51 +76,7 @@ public class RequestWorkflowService {
         return dto;
     }
 
-        // =========================
-        // تغيير حالة الموظف
-        // =========================
-        @Transactional
-        public void updateStaffStatus(
-                Integer requestId,
-                StaffRequestStatus status,
-                Integer employeeId,
-                String note
-        ) {
 
-            CarServiceRequest req = requestRepo.findById(requestId)
-                    .orElseThrow(() ->
-                            new RuntimeException("الطلب غير موجود")
-                    );
-            // تحقق أن الطلب مسند له
-            if (req.getAssignedEmployee() == null ||
-                    !employeeId.equals(req.getAssignedEmployee().getId())) {
-
-                throw new RuntimeException("غير مصرح لك");
-            }
-
-
-            // تحديث الحالة
-            req.setStaffStatus(status);
-            req.setLastUpdated(LocalDateTime.now());
-
-            updateStaffTimestamps(req, status);
-
-            // حفظ ملاحظة
-            if (note != null && !note.isBlank()) {
-                saveNote(req, employeeId, note);
-            }
-
-            // سجل التاريخ
-            saveHistory(req, employeeId);
-            requestRepo.save(req);
-
-            // إشعار العميل
-            notificationService.send(
-                    req.getCustomer().getUser(),
-                    "تم تحديث حالة طلبك رقم #" + req.getId()
-            );
-
-        }
 
     @Transactional
     public void updateStatus(
@@ -127,8 +84,9 @@ public class RequestWorkflowService {
             StaffRequestStatus status,
             Integer employeeId,
             String note,
-            String imageUrl  // رابط الصورة المرفوعة
+            String imageUrl
     ) {
+
         CarServiceRequest req = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
@@ -137,25 +95,28 @@ public class RequestWorkflowService {
             throw new RuntimeException("غير مصرح لك");
         }
 
-        if(status == StaffRequestStatus.RECEIVED
-                && (imageUrl == null || imageUrl.isBlank())) {
+        StaffRequestActionRule rule =
+                StaffRequestActionRule.fromStatus(status);
 
-            throw new RuntimeException(
-                    "يجب رفع صورة عند الاستلام"
-            );
+        // 🔥 RULE CHECK
+        if (rule.isRequiresImage() &&
+                (imageUrl == null || imageUrl.isBlank())) {
+            throw new RuntimeException("يجب رفع صورة لهذه الحالة");
         }
 
-        // تحديث الحالة
         req.setStaffStatus(status);
         req.setLastUpdated(LocalDateTime.now());
 
-        // حفظ الصورة فقط إذا كانت الحالة RECEIVED
-        if (status == StaffRequestStatus.RECEIVED && imageUrl != null) {
+        if (rule.isRequiresImage()) {
             req.setReceivedImageUrl(imageUrl);
         }
 
-
         updateStaffTimestamps(req, status);
+
+        if (rule.isRequiresNote() &&
+                (note == null || note.isBlank())) {
+            throw new RuntimeException("يجب إضافة ملاحظة لهذه الحالة");
+        }
 
         if (note != null && !note.isBlank()) {
             saveNote(req, employeeId, note);
@@ -164,14 +125,11 @@ public class RequestWorkflowService {
         saveHistory(req, employeeId);
         requestRepo.save(req);
 
-        // إشعار العميل
-        String msg = "تم تحديث حالة طلبك رقم #" + req.getId();
-        if (status == StaffRequestStatus.RECEIVED && imageUrl != null) {
-            msg += " وتم رفع صورة الاستلام.";
-        }
-        notificationService.send(req.getCustomer().getUser(), msg);
+        notificationService.send(
+                req.getCustomer().getUser(),
+                "تم تحديث حالة طلبك رقم #" + req.getId()
+        );
     }
-
 
 
     // =========================
@@ -271,7 +229,6 @@ public class RequestWorkflowService {
         return dto;
     }
 
-
     public String mapStaffStatus(StaffRequestStatus status) {
         return switch (status) {
             case NEW -> "جديدة";
@@ -293,7 +250,6 @@ public class RequestWorkflowService {
             return switch (stage) {
 
                 case NEW_REQUEST -> "طلب جديد";
-
                 case ASSIGNED -> "تم الإسناد";
                 case RECEIVED -> "تم الاستلام";
                 case INSPECTION_IN_PROGRESS -> "قيد الفحص";

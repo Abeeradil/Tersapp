@@ -210,6 +210,32 @@ public class CarServiceRequestService {
         return toResponseDto(updated);
     }
 
+    public ReceivedImageDto getReceivedImage(
+            Integer requestId,
+            Integer customerId
+    ) {
+
+        CarServiceRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+
+        // التأكد أن الطلب يخص هذا العميل
+        if (!request.getCustomer().getId().equals(customerId)) {
+            throw new RuntimeException("غير مصرح لك");
+        }
+
+        // التأكد أن الصورة موجودة
+        if (request.getReceivedImageUrl() == null ||
+                request.getReceivedImageUrl().isBlank()) {
+            throw new RuntimeException("لم يتم رفع صورة للسيارة بعد");
+        }
+
+        ReceivedImageDto dto = new ReceivedImageDto();
+        dto.setRequestId(request.getId());
+        dto.setImageUrl(request.getReceivedImageUrl());
+
+        return dto;
+    }
+
     public List<CurrentRequestDto> getCurrentRequests(Integer customerId) {
 
         return requestRepository
@@ -573,6 +599,8 @@ public class CarServiceRequestService {
 
         requestRepository.save(req);
     }
+
+
 
 
     @Transactional

@@ -7,6 +7,6 @@ import org.example.tears.Enums.CancelReason;
 public class CancelRequestDto {
 
 private CancelReason reason;
-
 private String otherReason;
+
 }

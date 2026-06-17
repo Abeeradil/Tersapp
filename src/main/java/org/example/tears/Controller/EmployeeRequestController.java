@@ -47,33 +47,6 @@ import java.util.Map;
         return requestQueryService.getMyRequests(user.getEmployee());
     }
 
-    @PutMapping("/request/{id}/status")
-    public ApiResponse updateStatus(
-            @PathVariable Integer id,
-            @RequestParam StaffRequestStatus status,
-            @RequestParam(required = false) String note
-    ) {
-        workflowService.updateStaffStatus(id, status, null, note);
-        return new ApiResponse(true, "تم التحديث");
-    }
-
-    //  تغيير حالة الطلب
-    @PutMapping("/{id}/status")
-    public ApiResponse updateStatus(
-            @PathVariable Integer id,
-            @RequestBody UpdateStatusDTO dto,
-            @AuthenticationPrincipal User user
-    ) {
-
-        workflowService.updateStaffStatus(
-                id,
-                dto.getStatus(),
-                user.getEmployee().getId(),
-                dto.getNote()
-        );
-
-        return new ApiResponse(true,"تم تحديث الحالة بنجاح");
-    }
 
     @PostMapping("/{id}/receive")
     public ApiResponse receiveCar(
@@ -91,6 +64,8 @@ import java.util.Map;
         );
         return new ApiResponse(true,"تم استلام السيارة ورفع الصورة بنجاح");
     }
+
+
 
     // إضافة قطعة
     @PostMapping("/{id}/parts")
