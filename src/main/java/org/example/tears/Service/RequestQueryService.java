@@ -1,11 +1,13 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.springframework.stereotype.Service;
 
@@ -38,6 +40,25 @@ public class RequestQueryService {
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
+    }
+
+    public EmployeeRequestDetailsDto getRequestDetails(
+            Integer requestId,
+            Employee employee
+    ){
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if(request.getAssignedEmployee()==null ||
+                !request.getAssignedEmployee().getId().equals(employee.getId())){
+
+            throw new ApiException("غير مصرح لك");
+        }
+
+        return requestMapper.toEmployeeDetailsDto(request);
     }
 
 

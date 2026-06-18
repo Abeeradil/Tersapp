@@ -7,6 +7,7 @@ import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.Location;
+import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -98,6 +99,58 @@ public class RequestMapper {
         }
 
         dto.setCreatedAt(r.getCreatedAt());
+
+        return dto;
+    }
+
+    public EmployeeRequestDetailsDto toEmployeeDetailsDto(CarServiceRequest r){
+
+        EmployeeRequestDetailsDto dto = new EmployeeRequestDetailsDto();
+
+        dto.setId(r.getId());
+        dto.setOrderNumber(r.getOrderNumber());
+
+        if (r.getStaffStatus() != null){
+            dto.setStatus(r.getStaffStatus().name());
+        }
+
+        if (r.getServiceOption() != null){
+            dto.setServiceOption(r.getServiceOption().getDisplayName());
+        }
+
+        dto.setProblemDescription(r.getProblemDescription());
+
+        if(r.getCustomer()!=null){
+
+            dto.setCustomerName(
+                    r.getCustomer().getUser().getFullName()
+            );
+        }
+
+        if(r.getCar()!=null){
+
+            dto.setCarModelName(
+                    r.getCar().getModel().getName()
+            );
+
+            dto.setCarModelNameAr(
+                    r.getCar().getModel().getNameAr()
+            );
+
+            dto.setPlateNumberArabic(
+                    formatArabicPlate(r.getCar().getPlateNumberArabic())
+            );
+
+            dto.setPlateNumberEnglish(
+                    formatEnglishPlate(r.getCar().getPlateNumberEnglish())
+            );
+        }
+
+        dto.setLocation(mapLocation(r.getLocation()));
+
+        dto.setCreatedAt(r.getCreatedAt());
+        dto.setLastUpdated(r.getLastUpdated());
+
 
         return dto;
     }

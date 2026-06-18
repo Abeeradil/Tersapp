@@ -7,6 +7,7 @@ import org.example.tears.DTO.PartDto;
 import org.example.tears.DTO.UpdateStatusDTO;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.User;
+import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Service.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,6 +39,18 @@ import java.util.Map;
             @AuthenticationPrincipal User user
     ) {
         return requestQueryService.getMyRequests(user.getEmployee());
+    }
+
+    @GetMapping("/{id}")
+    public EmployeeRequestDetailsDto getRequestDetails(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal User user
+    ){
+
+        return requestQueryService.getRequestDetails(
+                id,
+                user.getEmployee()
+        );
     }
 
 
