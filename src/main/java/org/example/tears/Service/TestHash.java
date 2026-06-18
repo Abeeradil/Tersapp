@@ -6,5 +6,6 @@ public class TestHash {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
         String hashed = encoder.encode("lala@1234");
         System.out.println(hashed);
+        
     }
 }
