@@ -61,6 +61,14 @@ public class AuthController {
         );
     }
 
+    @PutMapping("/auth/reset-password")
+    public ResponseEntity<String> resetPassword(@RequestParam String phone,
+                                                @RequestParam String newPassword) {
+
+        authService.resetPassword(phone, newPassword);
+        return ResponseEntity.ok("Password updated successfully");
+    }
+
     // ================= General Login =================
 
     // تسجيل دخول عميل

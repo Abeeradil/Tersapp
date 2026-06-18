@@ -75,6 +75,18 @@ public class AuthService {
         return new ApiResponse(true, "OTP sent to " + dto.getPhoneNumber());
     }
 
+    public void resetPassword(String phone, String newPassword) {
+
+        User user = userRepo.findByPhoneNumber(phone)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String hashedPassword = encoder.encode(newPassword);
+
+        user.setPassword(hashedPassword);
+
+        userRepo.save(user);
+    }
+
     // =========================================================
     // 2️⃣ التحقق من OTP
     // =========================================================
