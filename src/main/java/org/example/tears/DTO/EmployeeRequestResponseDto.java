@@ -1,5 +1,6 @@
 package org.example.tears.DTO;
 import lombok.Data;
+import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.CarModel;
 import org.example.tears.Model.Location;
 
@@ -19,7 +20,7 @@ import java.time.LocalTime;
         private String carModelName;
         private String carModelNameAr; // كامري
 
-        private Location location;
+        private LocationDto location;
         private String plateNumberArabic;
         private String plateNumberEnglish;
 

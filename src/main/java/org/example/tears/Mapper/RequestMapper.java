@@ -3,8 +3,10 @@ package org.example.tears.Mapper;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.Location;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -88,7 +90,7 @@ public class RequestMapper {
         }
 
         if (r.getLocation() != null) {
-            dto.setLocation(r.getLocation());
+            dto.setLocation(mapLocation(r.getLocation()));
         }
 
         if (r.getServiceOption() != null) {
@@ -96,6 +98,27 @@ public class RequestMapper {
         }
 
         dto.setCreatedAt(r.getCreatedAt());
+
+        return dto;
+    }
+
+    public LocationDto mapLocation(Location loc) {
+
+        if (loc == null) {
+            return null;
+        }
+
+        LocationDto dto = new LocationDto();
+
+        dto.setId(loc.getId());
+
+        dto.setLat(loc.getLat());
+
+        dto.setLng(loc.getLng());
+
+        dto.setAddress(loc.getAddress());
+
+        dto.setTitle(loc.getTitle());
 
         return dto;
     }
