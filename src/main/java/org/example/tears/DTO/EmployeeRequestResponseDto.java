@@ -1,6 +1,7 @@
 package org.example.tears.DTO;
 import lombok.Data;
 import org.example.tears.Model.CarModel;
+import org.example.tears.Model.Location;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -15,10 +16,10 @@ import java.time.LocalTime;
         private String serviceOption;    // نوع الخدمة
         private String ProblemDescription;
 
-        private Integer carId;
-         private CarModel carModel;         // كامري
-        private String address;
+        private String carModelName;
+        private String carModelNameAr; // كامري
 
+        private Location location;
         private String plateNumberArabic;
         private String plateNumberEnglish;
 

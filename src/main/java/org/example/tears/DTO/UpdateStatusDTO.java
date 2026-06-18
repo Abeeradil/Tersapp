@@ -5,6 +5,11 @@ import org.example.tears.Enums.StaffRequestStatus;
 
 @Data
 public class UpdateStatusDTO {
-    private StaffRequestStatus status; // مو String ❗
-    private String note;     // ملاحظة اختيارية
-}
+
+        private StaffRequestStatus status;
+
+        private String note;
+
+        private String imageUrl; // فقط إذا فيه صورة (RECEIVED مثلاً)
+
+    }

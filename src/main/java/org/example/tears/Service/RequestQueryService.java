@@ -36,7 +36,7 @@ public class RequestQueryService {
     public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
             return requestRepo.findByAssignedEmployee(employee)
                 .stream()
-                .map(requestMapper::toEmployeeDto)
+                .map(requestMapper::toEmployeeCardDto)
                 .toList();
     }
 

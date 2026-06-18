@@ -3,9 +3,6 @@ package org.example.tears.Mapper;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
-import org.example.tears.Enums.CustomerRequestStatus;
-import org.example.tears.Enums.StaffRequestStatus;
-import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.springframework.stereotype.Component;
@@ -58,7 +55,7 @@ public class RequestMapper {
         return dto;
     }
 
-    public EmployeeRequestResponseDto toEmployeeDto(CarServiceRequest r) {
+    public EmployeeRequestResponseDto toEmployeeCardDto(CarServiceRequest r) {
 
         EmployeeRequestResponseDto dto = new EmployeeRequestResponseDto();
 
@@ -71,21 +68,31 @@ public class RequestMapper {
 
         dto.setProblemDescription(r.getProblemDescription());
 
-        if (r.getCar() != null) {
+        if (r.getCar() != null && r.getCar().getModel() != null) {
 
-            dto.setCarModel(r.getCar().getModel());
+            dto.setCarModelName(
+                    r.getCar().getModel().getName()
+            );
+
+            dto.setCarModelNameAr(
+                    r.getCar().getModel().getNameAr()
+            );
 
             dto.setPlateNumberArabic(
-                    r.getCar().getPlateNumberArabic()
+                    formatArabicPlate(r.getCar().getPlateNumberArabic())
             );
 
             dto.setPlateNumberEnglish(
-                    r.getCar().getPlateNumberEnglish()
+                    formatEnglishPlate(r.getCar().getPlateNumberEnglish())
             );
         }
 
         if (r.getLocation() != null) {
-            dto.setAddress(r.getLocation().getAddress());
+            dto.setLocation(r.getLocation());
+        }
+
+        if (r.getServiceOption() != null) {
+            dto.setServiceOption(r.getServiceOption().getDisplayName());
         }
 
         dto.setCreatedAt(r.getCreatedAt());
@@ -121,6 +128,33 @@ public class RequestMapper {
         );
 
         return dto;
+    }
+
+    private String formatEnglishPlate(String plate) {
+
+        if (plate == null || plate.length() < 4) {
+            return plate;
+        }
+
+        String letters = plate.substring(0, 3);
+        String numbers = plate.substring(3);
+
+        return letters + "-" + numbers;
+    }
+
+    private String formatArabicPlate(String plate) {
+
+        if (plate == null || plate.isBlank()) {
+            return plate;
+        }
+
+        String[] parts = plate.trim().split("\\s+");
+
+        if (parts.length == 4) {
+            return parts[0] + " " + parts[1] + " " + parts[2] + " - " + parts[3];
+        }
+
+        return plate;
     }
 
 

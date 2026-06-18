@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.PartDto;
+import org.example.tears.DTO.UpdateStatusDTO;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.User;
 import org.example.tears.Service.*;
@@ -39,6 +40,23 @@ import java.util.Map;
         return requestQueryService.getMyRequests(user.getEmployee());
     }
 
+
+    @PutMapping("/{id}/status")
+    public ApiResponse updateStatus(
+            @PathVariable Integer id,
+            @RequestBody UpdateStatusDTO dto,
+            @AuthenticationPrincipal User user
+    ) {
+        workflowService.updateStatus(
+                id,
+                dto.getStatus(),
+                user.getEmployee().getId(),
+                dto.getNote(),
+                dto.getImageUrl() // ممكن null
+        );
+
+        return new ApiResponse(true, "تم تحديث الحالة بنجاح");
+    }
 
     @PostMapping(value = "/{id}/receive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse receiveCar(

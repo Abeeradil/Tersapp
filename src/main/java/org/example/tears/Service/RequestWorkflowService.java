@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.EmployeeSummaryDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestActionRule;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Enums.WorkflowStage;
@@ -75,9 +76,6 @@ public class RequestWorkflowService {
 
         return dto;
     }
-
-
-
     @Transactional
     public void updateStatus(
             Integer requestId,
@@ -90,6 +88,7 @@ public class RequestWorkflowService {
         CarServiceRequest req = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
+        // 🔐 تحقق الموظف
         if (req.getAssignedEmployee() == null ||
                 !employeeId.equals(req.getAssignedEmployee().getId())) {
             throw new RuntimeException("غير مصرح لك");
@@ -98,42 +97,52 @@ public class RequestWorkflowService {
         StaffRequestActionRule rule =
                 StaffRequestActionRule.fromStatus(status);
 
-        // 🔥 RULE CHECK
+        // 📸 تحقق الصورة إذا مطلوبة
         if (rule.isRequiresImage() &&
                 (imageUrl == null || imageUrl.isBlank())) {
             throw new RuntimeException("يجب رفع صورة لهذه الحالة");
         }
 
-        req.setStaffStatus(status);
-        req.setLastUpdated(LocalDateTime.now());
-
-        if (rule.isRequiresImage()) {
-            req.setReceivedImageUrl(imageUrl);
-        }
-
-        updateStaffTimestamps(req, status);
-
+        // 📝 تحقق الملاحظة إذا مطلوبة
         if (rule.isRequiresNote() &&
                 (note == null || note.isBlank())) {
             throw new RuntimeException("يجب إضافة ملاحظة لهذه الحالة");
         }
 
+        // 🔄 تحديث الحالة
+        req.setStaffStatus(status);
+        req.setLastUpdated(LocalDateTime.now());
+
+        // 📸 حفظ الصورة (إذا موجودة)
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            req.setReceivedImageUrl(imageUrl);
+        }
+
+        // 💰 لو الحالة تحولت للتسعير
+        if (status == StaffRequestStatus.PARTS_REGISTERING) {
+            req.setPricingStatus(PricingStatus.PRICING);
+        }
+
+        updateStaffTimestamps(req, status);
+
+        // 📝 حفظ ملاحظة
         if (note != null && !note.isBlank()) {
             saveNote(req, employeeId, note);
         }
 
-        if (rule.isRequiresImage()) {
-            req.setReceivedImageUrl(imageUrl);
-        }
-
+        // 📜 حفظ التاريخ
         saveHistory(req, employeeId);
+
         requestRepo.save(req);
 
+        // 🔔 إشعار العميل
         notificationService.send(
                 req.getCustomer().getUser(),
                 "تم تحديث حالة طلبك رقم #" + req.getId()
         );
     }
+
+
 
 
     // =========================
@@ -204,34 +213,6 @@ public class RequestWorkflowService {
             historyRepo.save(h);
         }
 
-    private EmployeeRequestResponseDto toEmployeeCardDto(CarServiceRequest r) {
-
-        EmployeeRequestResponseDto dto = new EmployeeRequestResponseDto();
-
-        dto.setId(r.getId());
-        dto.setOrderNumber(r.getOrderNumber());
-
-        // ✅ الحالة
-        dto.setStatus(mapStageToArabic(r.getStage()));
-
-        // ✅ نوع الخدمة (مرة وحدة فقط)
-        dto.setServiceOption(
-                r.getServiceOption() != null ? r.getServiceOption().name() : null
-        );
-
-        // ✅ بيانات السيارة (مؤقت)
-        dto.setCarId(r.getCar().getId());
-
-        // ✅ وصف المشكلة (مهم للموظف)
-        dto.setProblemDescription(r.getProblemDescription());
-
-        // ✅ الموقع
-        if (r.getLocation() != null) {
-            dto.setAddress(r.getLocation().getAddress());
-        }
-
-        return dto;
-    }
 
     public String mapStaffStatus(StaffRequestStatus status) {
         return switch (status) {
