@@ -41,7 +41,7 @@ import java.util.Map;
         return requestQueryService.getMyRequests(user.getEmployee());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/details/{id}")
     public EmployeeRequestDetailsDto getRequestDetails(
             @PathVariable Integer id,
             @AuthenticationPrincipal User user

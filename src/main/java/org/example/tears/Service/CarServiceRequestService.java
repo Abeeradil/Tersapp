@@ -428,11 +428,43 @@ public class CarServiceRequestService {
                 .orElse(null);
 
         if (car != null) {
-            dto.setPlateNumberArabic(car.getPlateNumberArabic());
-            dto.setPlateNumberEnglish(car.getPlateNumberEnglish());
+            dto.setPlateNumberArabic(
+                    formatArabicPlate(r.getCar().getPlateNumberArabic())
+            );
+
+            dto.setPlateNumberEnglish(
+                    formatEnglishPlate(r.getCar().getPlateNumberEnglish())
+            );
         }
 
         return dto;
+    }
+
+    private String formatEnglishPlate(String plate) {
+
+        if (plate == null || plate.length() < 4) {
+            return plate;
+        }
+
+        String letters = plate.substring(0, 3);
+        String numbers = plate.substring(3);
+
+        return letters + "-" + numbers;
+    }
+
+    private String formatArabicPlate(String plate) {
+
+        if (plate == null || plate.isBlank()) {
+            return plate;
+        }
+
+        String[] parts = plate.trim().split("\\s+");
+
+        if (parts.length == 4) {
+            return parts[0] + " " + parts[1] + " " + parts[2] + " - " + parts[3];
+        }
+
+        return plate;
     }
 
     public LocationDto mapLocation(Location loc) {
