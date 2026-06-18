@@ -14,6 +14,7 @@ import java.time.LocalTime;
         private String orderNumber;
 
         private String status;           // NEW_REQUEST مثلاً
+        private String requestState;
         private String serviceOption;    // نوع الخدمة
         private String ProblemDescription;
 

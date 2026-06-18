@@ -3,6 +3,8 @@ package org.example.tears.Mapper;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.RequestState;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
@@ -98,9 +100,34 @@ public class RequestMapper {
             dto.setServiceOption(r.getServiceOption().name());
         }
 
+        dto.setRequestState(
+                mapRequestState(r)
+        );
+
+
+
         dto.setCreatedAt(r.getCreatedAt());
 
         return dto;
+    }
+
+    private String mapRequestState(
+            CarServiceRequest req
+    ) {
+
+        if (req.getCustomerStatus()
+                == CustomerRequestStatus.CANCELED) {
+
+            return RequestState.CANCELLED.name();
+        }
+
+        if (req.getCustomerStatus()
+                == CustomerRequestStatus.DELIVERED) {
+
+            return RequestState.COMPLETED.name();
+        }
+
+        return RequestState.ACTIVE.name();
     }
 
     public EmployeeRequestDetailsDto toEmployeeDetailsDto(CarServiceRequest r){
@@ -159,26 +186,7 @@ public class RequestMapper {
         return dto;
     }
 
-    public LocationDto mapLocation(Location loc) {
 
-        if (loc == null) {
-            return null;
-        }
-
-        LocationDto dto = new LocationDto();
-
-        dto.setId(loc.getId());
-
-        dto.setLat(loc.getLat());
-
-        dto.setLng(loc.getLng());
-
-        dto.setAddress(loc.getAddress());
-
-        dto.setTitle(loc.getTitle());
-
-        return dto;
-    }
 
     public EmployeeListDto toEmployeeDto(Employee employee) {
 

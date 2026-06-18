@@ -18,7 +18,6 @@ import java.util.List;
 public class RequestQueryService {
 
     private final CarServiceRequestRepository requestRepo;
-    private final AdminService adminService;
     private final RequestMapper requestMapper;
 
     public List<RequestSummaryDto> getAllRequests() {
@@ -60,6 +59,7 @@ public class RequestQueryService {
 
         return requestMapper.toEmployeeDetailsDto(request);
     }
+
 
 
     public List<RequestSummaryDto> search(
