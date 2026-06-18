@@ -125,6 +125,7 @@ public class RequestMapper {
             dto.setCustomerName(
                     r.getCustomer().getUser().getFullName()
             );
+            dto.setCustomerPhone(r.getCustomer().getUser().getPhoneNumber());
         }
 
         if(r.getCar()!=null){
