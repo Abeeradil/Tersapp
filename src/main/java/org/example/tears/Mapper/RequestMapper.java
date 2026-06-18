@@ -91,7 +91,7 @@ public class RequestMapper {
         }
 
         if (r.getLocation() != null) {
-            dto.setLocation(mapLocation(r.getLocation()));
+            dto.setAddress(r.getLocation().getAddress());
         }
 
         if (r.getServiceOption() != null) {
@@ -145,9 +145,12 @@ public class RequestMapper {
             dto.setPlateNumberEnglish(
                     formatEnglishPlate(r.getCar().getPlateNumberEnglish())
             );
+
+            if (r.getLocation() != null) {
+                dto.setAddress(r.getLocation().getAddress());
+            }
         }
 
-        dto.setLocation(mapLocation(r.getLocation()));
 
         dto.setCreatedAt(r.getCreatedAt());
         dto.setLastUpdated(r.getLastUpdated());

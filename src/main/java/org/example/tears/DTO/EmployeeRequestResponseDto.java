@@ -20,7 +20,8 @@ import java.time.LocalTime;
         private String carModelName;
         private String carModelNameAr; // كامري
 
-        private LocationDto location;
+        private String address;
+
         private String plateNumberArabic;
         private String plateNumberEnglish;
 

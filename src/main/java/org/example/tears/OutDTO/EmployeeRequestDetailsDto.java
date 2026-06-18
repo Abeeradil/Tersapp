@@ -3,9 +3,7 @@ package org.example.tears.OutDTO;
 import lombok.Data;
 import org.example.tears.InpDTO.LocationDto;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Data
 public class EmployeeRequestDetailsDto {
@@ -26,7 +24,7 @@ public class EmployeeRequestDetailsDto {
     private String plateNumberArabic;
     private String plateNumberEnglish;
 
-    private LocationDto location;
+    private String address;
 
     private String problemDescription;
 
