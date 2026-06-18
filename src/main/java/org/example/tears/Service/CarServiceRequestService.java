@@ -551,11 +551,11 @@ public class CarServiceRequestService {
         if (req.getCar() != null) {
 
             dto.setPlateNumberArabic(
-                    req.getCar().getPlateNumberArabic()
+                    formatArabicPlate(req.getCar().getPlateNumberArabic())
             );
 
             dto.setPlateNumberEnglish(
-                    req.getCar().getPlateNumberEnglish()
+                    formatEnglishPlate(req.getCar().getPlateNumberEnglish())
             );
 
             dto.setRequestState(

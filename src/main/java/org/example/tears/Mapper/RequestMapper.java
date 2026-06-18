@@ -95,7 +95,7 @@ public class RequestMapper {
         }
 
         if (r.getServiceOption() != null) {
-            dto.setServiceOption(r.getServiceOption().getDisplayName());
+            dto.setServiceOption(r.getServiceOption().name());
         }
 
         dto.setCreatedAt(r.getCreatedAt());
