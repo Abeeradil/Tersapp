@@ -28,6 +28,10 @@ public class RequestQueryService {
                 .toList();
     }
 
+    public long getAllRequestsCount() {
+        return requestRepo.count();
+    }
+
     public List<RequestSummaryDto> getUnassigned() {
         return requestRepo.findByAssignedEmployeeIsNull()
                 .stream()
@@ -42,12 +46,12 @@ public class RequestQueryService {
                 .toList();
     }
 
-    public long getMyRequestsCount(Employee employee) {
-        return requestRepo.countByAssignedEmployee_Id(Long.valueOf(employee.getId()));
+    public long getMyRequestsCount(Employee employee){
+        return requestRepo.countByAssignedEmployee_Id(employee.getId());
     }
 
     public List<EmployeeRequestResponseDto> getMyRequestsByStatus(Employee employee, StaffRequestStatus status) {
-        return requestRepo.findByAssignedEmployeeAndStaffStatus(Long.valueOf(employee.getId()), status)
+        return requestRepo.findByAssignedEmployeeAndStaffStatus(employee, status)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();

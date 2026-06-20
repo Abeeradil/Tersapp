@@ -17,9 +17,16 @@ import java.util.Optional;
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
 
-    long countByAssignedEmployee_Id(Long id);
+    List<CarServiceRequest> findByAssignedEmployeeAndStaffStatus(
+            Employee employee,
+            StaffRequestStatus status
+    );
 
-    List<CarServiceRequest> findByAssignedEmployeeAndStaffStatus(Long employeeId, StaffRequestStatus status);
+    Optional<CarServiceRequest> findById(Integer id);
+
+    List<CarServiceRequest> findByAssignedEmployee_Id(Integer employeeId);
+
+    long countByAssignedEmployee_Id(Integer employeeId);
 
     boolean existsByAppointmentDateAndAppointmentTime(
             LocalDate appointmentDate,
@@ -74,36 +81,13 @@ WHERE r.assignedEmployee IS NULL
 
     List<CarServiceRequest> findAllByOrderByIdDesc();
 
-    List<CarServiceRequest> findByAssignedEmployeeIdOrderByCreatedAtDesc(Integer employeeId);
     @Query("""
-    SELECT ra.request FROM RequestAssignment ra
-    WHERE ra.employee.id = :employeeId
-      AND ra.status = 'ACTIVE'
+SELECT r.appointmentTime
+FROM CarServiceRequest r
+WHERE r.appointmentDate = :date
 """)
-    List<CarServiceRequest> findAssignedTo(@Param("employeeId") Integer employeeId);
+    List<LocalTime> findBookedTimesByDate(
+            @Param("date") LocalDate date
+    );
 
-    @Query("""
-    SELECT r.appointmentTime
-    FROM CarServiceRequest r
-    WHERE r.appointmentDate = :date
-""")
-    List<String> findBookedTimesByDate(String date);
-
-    @Modifying
-    @Query("""
-            UPDATE CarServiceRequest r
-            SET r.assignedEmployee = null,
-                r.assignedPricingEmployee = null,
-                r.currentEmployee = null
-            WHERE r.assignedEmployee.id = :employeeId
-               OR r.assignedPricingEmployee.id = :employeeId
-               OR r.currentEmployee.id = :employeeId
-            """)
-    void clearEmployeeReferences(@Param("employeeId") Integer employeeId);
-
-    List<CarServiceRequest> findByAssignedEmployeeId(Integer staffId);
-
-    List<CarServiceRequest> findByCustomerId(Integer customerId);
-
-    Optional<CarServiceRequest> findByInitialTransactionId(String transactionId);
 }

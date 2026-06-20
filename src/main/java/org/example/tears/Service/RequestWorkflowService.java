@@ -279,20 +279,18 @@ public class RequestWorkflowService {
 
     private void notifyCustomer(CarServiceRequest req) {
 
+        if (req.getCustomer() == null) return;
+
         notificationService.send(
                 req.getCustomer().getUser(),
-                "تم تحديث حالة طلبك رقم #" + req.getOrderNumber()
+                "تم تحديث طلبك #" + req.getOrderNumber()
         );
     }
 
-    private void validateWorkshopEmployee(
-            CarServiceRequest req,
-            Integer employeeId
-    ) {
+    private void validateWorkshopEmployee(CarServiceRequest req, Integer employeeId) {
 
         if (req.getAssignedEmployee() == null ||
                 !req.getAssignedEmployee().getId().equals(employeeId)) {
-
             throw new RuntimeException("غير مصرح لك");
         }
     }
@@ -378,17 +376,18 @@ public class RequestWorkflowService {
     }
 
     private void assignPricingEmployee(CarServiceRequest req) {
+        List<Employee> employees =
+                employeeRepo.findPricingEmployees();
 
-        List<Employee> employees = employeeRepo.findPricingEmployees();
+        if(employees.isEmpty()){
+            throw new RuntimeException("لا يوجد موظف تسعير");
+        }
 
         Employee emp = employees.stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("لا يوجد موظف تسعير"));
-
-        notificationService.send(
-                emp.getUser(),
-                "طلب تسعير جديد #" + req.getOrderNumber()
-        );
+                .min(Comparator.comparingLong(
+                        e -> requestRepo.countByAssignedEmployee_Id(e.getId())
+                ))
+                .orElseThrow();
     }
 
     public ReportDto preview(Integer requestId){

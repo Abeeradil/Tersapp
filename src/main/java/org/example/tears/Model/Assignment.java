@@ -10,7 +10,7 @@ public class Assignment {
 
         @Id
         @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Long id;
+        private Integer id;
 
         @ManyToOne
         private CarServiceRequest request;

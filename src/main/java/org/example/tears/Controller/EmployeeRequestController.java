@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.PartDto;
+import org.example.tears.DTO.UpdateStatusDTO;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
@@ -14,12 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 
 @RestController
     @RequestMapping("/api/v1/tears/employee/requests")
@@ -52,10 +48,11 @@ import java.util.Map;
         );
 
     }
-//    @GetMapping("/requests/count/all")
-//    public ResponseEntity<Long> getAllCount() {
-//        return ResponseEntity.ok(requestQueryService.getAllRequestsCount());
-//    }
+
+    @GetMapping("/requests/count/all")
+    public ResponseEntity<Long> getAllCount() {
+        return ResponseEntity.ok(requestQueryService.getAllRequestsCount());
+    }
 
     @GetMapping("/my/requests/count")
     public long myRequestsCount(@AuthenticationPrincipal User user) {
@@ -97,22 +94,22 @@ import java.util.Map;
     }
 
 
-//    @PutMapping("/{id}/status")
-//    public ApiResponse updateStatus(
-//            @PathVariable Integer id,
-//            @RequestBody UpdateStatusDTO dto,
-//            @AuthenticationPrincipal User user
-//    ) {
-//        workflowService.updateStatus(
-//                id,
-//                dto.getStatus(),
-//                user.getEmployee().getId(),
-//                dto.getNote(),
-//                dto.getImageUrl() // ممكن null
-//        );
-//
-//        return new ApiResponse(true, "تم تحديث الحالة بنجاح");
-//    }
+    @PutMapping("/{id}/status")
+    public ApiResponse updateStatus(
+            @PathVariable Integer id,
+            @RequestBody UpdateStatusDTO dto,
+            @AuthenticationPrincipal User user
+    ) {
+        workflowService.updateStatus(
+                id,
+                dto.getStatus(),
+                user.getEmployee().getId(),
+                dto.getNote(),
+                dto.getImageUrl() // ممكن null
+        );
+
+        return new ApiResponse(true, "تم تحديث الحالة بنجاح");
+    }
 
     @PostMapping(value = "/{id}/receive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse receiveCar(
