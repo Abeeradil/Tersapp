@@ -65,7 +65,7 @@ public class RequestMapper {
         if (r.getStaffStatus() != null) {
             dto.setStatus(r.getStaffStatus().name());
         }
-        
+
         if (r.getCar() != null && r.getCar().getModel() != null) {
 
             dto.setCarModelName(

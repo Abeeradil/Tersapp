@@ -82,7 +82,7 @@ import java.util.List;
     }
 
     @GetMapping("/my/search")
-    public List<EmployeeRequestResponseDto> searchMyRequests(
+    public List<RequestSummaryDto> searchMyRequests(
             @AuthenticationPrincipal User user,
             @RequestParam(required = false) String orderNumber,
             @RequestParam(required = false) String plateArabic,
