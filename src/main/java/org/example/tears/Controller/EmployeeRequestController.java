@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.PartDto;
+import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.DTO.UpdateStatusDTO;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.User;
@@ -57,6 +58,27 @@ import java.util.List;
     @GetMapping("/my/requests/count")
     public long myRequestsCount(@AuthenticationPrincipal User user) {
         return requestQueryService.getMyRequestsCount(user.getEmployee());
+    }
+
+
+    @GetMapping("/requests/search")
+    public List<RequestSummaryDto> search(
+
+            @RequestParam(required = false)
+            String orderNumber,
+
+            @RequestParam(required = false)
+            String plateArabic,
+
+            @RequestParam(required = false)
+            String plateEnglish
+    ) {
+
+        return requestQueryService.search(
+                orderNumber,
+                plateArabic,
+                plateEnglish
+        );
     }
 
     @GetMapping("/my/status/requests")
