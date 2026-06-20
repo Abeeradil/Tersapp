@@ -32,16 +32,17 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             LocalDate appointmentDate,
             LocalTime appointmentTime
     );
+
     @Query("""
 SELECT r
 FROM CarServiceRequest r
 JOIN r.car c
 WHERE
-(:orderNumber IS NULL OR r.orderNumber = :orderNumber)
+(:orderNumber IS NULL OR LOWER(r.orderNumber) LIKE LOWER(CONCAT('%', :orderNumber, '%')))
 AND
-(:plateArabic IS NULL OR c.plateNumberArabic LIKE %:plateArabic%)
+(:plateArabic IS NULL OR REPLACE(c.plateNumberArabic, ' ', '') LIKE CONCAT('%', REPLACE(:plateArabic, ' ', ''), '%'))
 AND
-(:plateEnglish IS NULL OR c.plateNumberEnglish LIKE %:plateEnglish%)
+(:plateEnglish IS NULL OR LOWER(c.plateNumberEnglish) LIKE LOWER(CONCAT('%', :plateEnglish, '%')))
 """)
     List<CarServiceRequest> search(
             @Param("orderNumber") String orderNumber,
