@@ -94,7 +94,7 @@ public class RequestQueryService {
                 .toList();
     }
 
-    public List<RequestSummaryDto> searchMyRequests(
+    public List<EmployeeRequestResponseDto> searchMyRequests(
             Employee employee,
             String orderNumber,
             String plateArabic,
@@ -117,7 +117,7 @@ public class RequestQueryService {
                                 r.getCar().getPlateNumberEnglish().toLowerCase()
                                         .contains(plateEnglish.toLowerCase())
                 )
-                .map(requestMapper::toSummaryDto)
+                .map(requestMapper::toEmployeeCardDto)
                 .toList();
     }
 
