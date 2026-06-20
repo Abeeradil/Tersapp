@@ -15,8 +15,6 @@ public interface EmployeeRepository extends JpaRepository<Employee , Integer> {
     @Query("""
 SELECT e FROM Employee e
 WHERE e.employeeRole = 'PRICING'
-ORDER BY e.currentAssignedRequests ASC
 """)
-    Optional<Employee> findLeastBusyPricingEmployee();
-
+    List<Employee> findPricingEmployees();
 }

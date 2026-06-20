@@ -379,10 +379,11 @@ public class RequestWorkflowService {
 
     private void assignPricingEmployee(CarServiceRequest req) {
 
-        Employee emp = employeeRepo.findLeastBusyPricingEmployee()
-                .orElseThrow(() -> new RuntimeException("لا يوجد موظف تسعير"));
+        List<Employee> employees = employeeRepo.findPricingEmployees();
 
-        req.setAssignedPricingEmployee(emp);
+        Employee emp = employees.stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("لا يوجد موظف تسعير"));
 
         notificationService.send(
                 emp.getUser(),
