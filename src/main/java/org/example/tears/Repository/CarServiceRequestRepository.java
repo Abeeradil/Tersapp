@@ -17,10 +17,9 @@ import java.util.Optional;
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
 
-    long countByEmployeeId(Long employeeId);
+    long countByAssignedEmployee_Id(Long id);
 
-
-    List<CarServiceRequest> findByEmployeeIdAndStatus(Long employeeId, StaffRequestStatus status);
+    List<CarServiceRequest> findByAssignedEmployeeAndStaffStatus(Long employeeId, StaffRequestStatus status);
 
     boolean existsByAppointmentDateAndAppointmentTime(
             LocalDate appointmentDate,

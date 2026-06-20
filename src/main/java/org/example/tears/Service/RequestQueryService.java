@@ -43,11 +43,11 @@ public class RequestQueryService {
     }
 
     public long getMyRequestsCount(Employee employee) {
-        return requestRepo.countByEmployeeId(Long.valueOf(employee.getId()));
+        return requestRepo.countByAssignedEmployee_Id(Long.valueOf(employee.getId()));
     }
 
     public List<EmployeeRequestResponseDto> getMyRequestsByStatus(Employee employee, StaffRequestStatus status) {
-        return requestRepo.findByEmployeeIdAndStatus(Long.valueOf(employee.getId()), status)
+        return requestRepo.findByAssignedEmployeeAndStaffStatus(Long.valueOf(employee.getId()), status)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
