@@ -81,6 +81,22 @@ import java.util.List;
         );
     }
 
+    @GetMapping("/my/search")
+    public List<EmployeeRequestResponseDto> searchMyRequests(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) String orderNumber,
+            @RequestParam(required = false) String plateArabic,
+            @RequestParam(required = false) String plateEnglish
+    ) {
+
+        return requestQueryService.searchMyRequests(
+                user.getEmployee(),
+                orderNumber,
+                plateArabic,
+                plateEnglish
+        );
+    }
+
     @GetMapping("/my/status/requests")
     public List<EmployeeRequestResponseDto> myRequests(
             @AuthenticationPrincipal User user,

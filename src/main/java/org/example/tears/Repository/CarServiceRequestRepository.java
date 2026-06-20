@@ -22,6 +22,11 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             StaffRequestStatus status
     );
 
+    List<CarServiceRequest> findByAssignedEmployeeAndOrderNumberContainingIgnoreCase(
+            Employee employee,
+            String orderNumber
+    );
+
     Optional<CarServiceRequest> findById(Integer id);
 
     List<CarServiceRequest> findByAssignedEmployee_Id(Integer employeeId);

@@ -94,4 +94,31 @@ public class RequestQueryService {
                 .toList();
     }
 
+    public List<EmployeeRequestResponseDto> searchMyRequests(
+            Employee employee,
+            String orderNumber,
+            String plateArabic,
+            String plateEnglish
+    ) {
+
+        return requestRepo.findByAssignedEmployee(employee)
+                .stream()
+                .filter(r ->
+                        orderNumber == null ||
+                                r.getOrderNumber().toLowerCase().contains(orderNumber.toLowerCase())
+                )
+                .filter(r ->
+                        plateArabic == null ||
+                                r.getCar().getPlateNumberArabic().replace(" ", "")
+                                        .contains(plateArabic.replace(" ", ""))
+                )
+                .filter(r ->
+                        plateEnglish == null ||
+                                r.getCar().getPlateNumberEnglish().toLowerCase()
+                                        .contains(plateEnglish.toLowerCase())
+                )
+                .map(requestMapper::toEmployeeCardDto)
+                .toList();
+    }
+
 }
