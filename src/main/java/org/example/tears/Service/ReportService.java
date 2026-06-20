@@ -2,6 +2,7 @@ package org.example.tears.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
@@ -11,6 +12,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.example.tears.Repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -18,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -26,45 +29,37 @@ public class ReportService {
         private final RequestReportRepository reportRepo;
         private final CarServiceRequestRepository requestRepo;
         private final NotificationService notificationService;
+        private final RequestPartRepository partRepo;
          private final UserRepository userRepo;
 
+    @Value("${app.upload-dir:uploads}")
+    private String uploadsDir;
 
     @Transactional
-        public void uploadReport(Integer requestId, String url, String desc) {
+    public void uploadReport(
+            Integer requestId,
+            Integer employeeId,
+            String fileUrl,
+            String description
+    ) {
 
-            // 1️⃣ جلب الطلب
-            CarServiceRequest req = requestRepo.findById(requestId)
-                    .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+        CarServiceRequest req =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
-            // 2️⃣ جلب المستخدم الحالي من Spring Security
-            String username = SecurityContextHolder.getContext().getAuthentication().getName();
-
-            User currentUser = userRepo.findByPhoneNumber(username) // أو email حسب ما تستخدم كاسم مستخدم
-                    .orElseThrow(() -> new RuntimeException("المستخدم غير موجود"));
-
-            if (currentUser.getEmployee() == null) {
-                throw new RuntimeException("المستخدم الحالي ليس موظف");
-            }
-
-            Integer currentEmployeeId = currentUser.getEmployee().getId();
-
-            // 3️⃣ تحقق أن الموظف مسند لهذا الطلب
-            if (req.getAssignedEmployee() == null ||
-                    !req.getAssignedEmployee().getId().equals(currentEmployeeId)) {
-                throw new RuntimeException("غير مصرح لك برفع تقرير لهذا الطلب");
-            }
-
-            // 4️⃣ رفع التقرير
-            RequestReport r = new RequestReport();
-            r.setRequest(req);
-            r.setFileUrl(url);
-            r.setDescription(desc);
-            r.setCreatedAt(LocalDateTime.now());
-
-            reportRepo.save(r);
+        if (req.getAssignedEmployee() == null ||
+                !req.getAssignedEmployee().getId().equals(employeeId)) {
+            throw new RuntimeException("غير مصرح");
         }
 
-    private final String uploadsDir = "C:\\Users\\progects\\Tears\\uploads\\forms\\";
+        RequestReport report = new RequestReport();
+        report.setRequest(req);
+        report.setFileUrl(fileUrl);
+        report.setDescription(description);
+        report.setCreatedAt(LocalDateTime.now());
+
+        reportRepo.save(report);
+    }
 
     @Transactional
     public void handleReportUpload(Integer requestId, Integer employeeId,
@@ -103,4 +98,98 @@ public class ReportService {
         // 6️⃣ إرسال إشعار للعميل
         notificationService.send(req.getCustomer().getUser(),
                 "تم استلام سيارتك، وسيتم متابعة الطلب قريبًا.");    }
+
+    public String generateReport(Integer requestId) {
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("Request not found"));
+
+        List<RequestPart> parts =
+                partRepo.findByRequestId(requestId);
+
+        StringBuilder report = new StringBuilder();
+
+        report.append("===== تقرير فحص السيارة =====\n\n");
+
+        report.append("رقم الطلب : ")
+                .append(request.getOrderNumber())
+                .append("\n");
+
+        report.append("اسم العميل : ")
+                .append(request.getCustomer().getUser().getFullName())
+                .append("\n");
+
+        report.append("رقم الجوال : ")
+                .append(request.getCustomer().getUser().getPhoneNumber())
+                .append("\n\n");
+
+        report.append("السيارة : ")
+                .append(request.getCar().getBrand().getNameAr())
+                .append(" ")
+                .append(request.getCar().getModel().getNameAr())
+                .append("\n");
+
+        report.append("اللوحة : ")
+                .append(request.getCar().getPlateNumberArabic())
+                .append("\n\n");
+
+        report.append("المشكلة:\n");
+
+        report.append(request.getProblemDescription());
+
+        report.append("\n\n");
+
+        report.append("القطع المطلوبة:\n\n");
+
+        for(RequestPart p : parts){
+
+            report.append("- ");
+
+            report.append(p.getName());
+
+            report.append(" | الكمية : ");
+
+            report.append(p.getQuantity());
+
+            report.append(" | السعر : ");
+
+            report.append(p.getFinalPrice());
+
+            report.append(" ريال");
+
+            report.append("\n");
+        }
+
+        report.append("\n");
+
+        report.append("الإجمالي : ");
+
+        report.append(request.getFinalPrice());
+
+        report.append(" ريال");
+
+        return report.toString();
+
+    }
+
+    @Transactional
+    public void createReport(Integer requestId){
+
+        String reportText =
+                generateReport(requestId);
+
+        RequestReport report = new RequestReport();
+
+        report.setRequest(
+                requestRepo.findById(requestId).get());
+
+        report.setReportContent(reportText);
+
+        report.setCreatedAt(LocalDateTime.now());
+
+        reportRepo.save(report);
+
+    }
 }

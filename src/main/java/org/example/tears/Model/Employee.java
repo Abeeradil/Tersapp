@@ -33,7 +33,7 @@ public class Employee {
     @Column(nullable = false)
     private EmployeeRole employeeRole;
 
-
+    private Integer assignedRequestsCount = 0;
 
     @OneToOne
     @JoinColumn(name = "user_id",nullable = false)

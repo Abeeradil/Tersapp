@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.PartDto;
-import org.example.tears.DTO.UpdateStatusDTO;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
@@ -51,25 +50,69 @@ import java.util.Map;
                 id,
                 user.getEmployee()
         );
+
+    }
+//    @GetMapping("/requests/count/all")
+//    public ResponseEntity<Long> getAllCount() {
+//        return ResponseEntity.ok(requestQueryService.getAllRequestsCount());
+//    }
+
+    @GetMapping("/my/requests/count")
+    public long myRequestsCount(@AuthenticationPrincipal User user) {
+        return requestQueryService.getMyRequestsCount(user.getEmployee());
+    }
+
+    @GetMapping("/my/status/requests")
+    public List<EmployeeRequestResponseDto> myRequests(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) StaffRequestStatus status
+    ) {
+
+        if (status == null) {
+            return requestQueryService.getMyRequests(user.getEmployee());
+        }
+
+        return requestQueryService.getMyRequestsByStatus(user.getEmployee(), status);
     }
 
 
-    @PutMapping("/{id}/status")
-    public ApiResponse updateStatus(
+    @PostMapping("/{id}/report")
+    public ApiResponse uploadReport(
             @PathVariable Integer id,
-            @RequestBody UpdateStatusDTO dto,
+            @RequestParam MultipartFile file,
+            @RequestParam String description,
             @AuthenticationPrincipal User user
     ) {
-        workflowService.updateStatus(
+
+        String url = fileStorageService.saveFile(file, "reports");
+
+        reportService.uploadReport(
                 id,
-                dto.getStatus(),
                 user.getEmployee().getId(),
-                dto.getNote(),
-                dto.getImageUrl() // ممكن null
+                url,
+                description
         );
 
-        return new ApiResponse(true, "تم تحديث الحالة بنجاح");
+        return new ApiResponse(true, "تم رفع التقرير");
     }
+
+
+//    @PutMapping("/{id}/status")
+//    public ApiResponse updateStatus(
+//            @PathVariable Integer id,
+//            @RequestBody UpdateStatusDTO dto,
+//            @AuthenticationPrincipal User user
+//    ) {
+//        workflowService.updateStatus(
+//                id,
+//                dto.getStatus(),
+//                user.getEmployee().getId(),
+//                dto.getNote(),
+//                dto.getImageUrl() // ممكن null
+//        );
+//
+//        return new ApiResponse(true, "تم تحديث الحالة بنجاح");
+//    }
 
     @PostMapping(value = "/{id}/receive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse receiveCar(
@@ -107,57 +150,4 @@ import java.util.Map;
     }
 
 
-    // رفع تقرير
-        @PostMapping("/{requestId}/report")
-        public ResponseEntity<?> uploadReport(
-                @PathVariable Integer requestId,
-                @RequestPart("file") MultipartFile file,
-                @RequestPart("description") String description
-        ) {
-            try {
-                // هنا نرفع التقرير
-                String fileUrl = saveFileAndGetUrl(file); // دالة تحفظ الملف وترجع الرابط
-                reportService.uploadReport(requestId, fileUrl, description);
-
-                return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "message", "تم رفع التقرير بنجاح"
-                ));
-            } catch (RuntimeException e) {
-                return ResponseEntity.status(403).body(Map.of(
-                        "success", false,
-                        "message", e.getMessage()
-                ));
-            }
-        }
-
-        // مثال بسيط لحفظ الملف (تقدر تعدل حسب مشروعك)
-        private String saveFileAndGetUrl(MultipartFile file) {
-            // حفظ الملف في السيرفر أو رفعه للسحابة
-            // وإرجاع رابط الوصول له
-            String filename = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-            Path path = Paths.get("uploads/" + filename);
-            try {
-                Files.createDirectories(path.getParent());
-                file.transferTo(path);
-            } catch (IOException e) {
-                throw new RuntimeException("فشل رفع الملف");
-            }
-            return "/uploads/" + filename; // رابط للوصول للملف
-        }
-    @PostMapping(value = "/{requestId}/report", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadReport(
-            @PathVariable Integer requestId,
-            @RequestPart("file") MultipartFile file,
-            @RequestPart("description") String description,
-            @RequestParam Integer employeeId   // ID الموظف
-    ) {
-        try {
-            reportService.handleReportUpload(requestId, employeeId, file, description);
-            return ResponseEntity.ok(Map.of("success", true, "message", "تم رفع التقرير وتحديث الحالة"));
-        } catch (Exception e) {
-            return ResponseEntity.status(500)
-                    .body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
 }

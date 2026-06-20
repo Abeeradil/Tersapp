@@ -49,6 +49,8 @@ public class CarServiceRequestController {
             return ResponseEntity.ok(requestService.createRequest(request, dto));
         }
 
+
+
     @GetMapping("/availability")
     public ResponseEntity<?> getAvailability(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date

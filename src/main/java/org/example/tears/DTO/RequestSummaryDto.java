@@ -15,8 +15,6 @@ public class RequestSummaryDto {
         private String status;
         private String stage;
 
-        private Double totalPrice;
-
         private String customerName;
 
         private String assignedEmployee;

@@ -1,9 +1,6 @@
 package org.example.tears.Model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -18,9 +15,16 @@ public class RequestReport {
 
         private String fileUrl;
 
-        private String description;
+
+        @Column(columnDefinition = "TEXT")
+        private String reportContent;
+
 
         private LocalDateTime createdAt;
+
+        private boolean sent;
+
+        private String description;
 
         @ManyToOne
         private CarServiceRequest request;

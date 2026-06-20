@@ -1,6 +1,7 @@
 package org.example.tears.Repository;
 
 import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,11 @@ import java.util.Optional;
 
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
+
+    long countByEmployeeId(Long employeeId);
+
+
+    List<CarServiceRequest> findByEmployeeIdAndStatus(Long employeeId, StaffRequestStatus status);
 
     boolean existsByAppointmentDateAndAppointmentTime(
             LocalDate appointmentDate,

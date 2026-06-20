@@ -34,11 +34,6 @@ public class RequestMapper {
                         : null
         );
 
-        dto.setTotalPrice(req.getFinalPrice() != null
-                        ? req.getFinalPrice().doubleValue()
-                        : req.getEstimatedPrice()
-        );
-
         dto.setCreatedAt(req.getCreatedAt());
 
         if (req.getCustomer() != null) {

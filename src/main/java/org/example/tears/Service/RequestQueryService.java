@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
@@ -36,6 +37,17 @@ public class RequestQueryService {
 
     public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
             return requestRepo.findByAssignedEmployee(employee)
+                .stream()
+                .map(requestMapper::toEmployeeCardDto)
+                .toList();
+    }
+
+    public long getMyRequestsCount(Employee employee) {
+        return requestRepo.countByEmployeeId(Long.valueOf(employee.getId()));
+    }
+
+    public List<EmployeeRequestResponseDto> getMyRequestsByStatus(Employee employee, StaffRequestStatus status) {
+        return requestRepo.findByEmployeeIdAndStatus(Long.valueOf(employee.getId()), status)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
