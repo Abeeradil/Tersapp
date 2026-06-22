@@ -30,7 +30,8 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
     Optional<CarServiceRequest> findById(Integer id);
 
     List<CarServiceRequest> findByAssignedEmployee_Id(Integer employeeId);
-    long countByCustomerIdAndCustomerStatus(Integer customerId, CustomerRequestStatus status);    long countByAssignedEmployee_Id(Integer employeeId);
+    long countByCustomerIdAndCustomerStatus(Integer customerId, CustomerRequestStatus status);
+    long countByAssignedEmployee_Id(Integer employeeId);
 
     long countByAssignedEmployee_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
 

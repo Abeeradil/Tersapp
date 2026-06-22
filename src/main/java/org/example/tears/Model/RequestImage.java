@@ -26,6 +26,8 @@ public class RequestImage {
 
     private String imageUrl;
 
+    private boolean visibleToCustomer = true;
+
     @Enumerated(EnumType.STRING)
     private StaffRequestStatus uploadedAtStatus;
 
