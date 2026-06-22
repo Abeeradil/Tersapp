@@ -1,6 +1,7 @@
 package org.example.tears.OutDTO;
 
 import lombok.Data;
+import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.LocationDto;
 
 import java.time.LocalDateTime;

@@ -104,18 +104,26 @@ public class RequestQueryService {
         return requestRepo.findByAssignedEmployee(employee)
                 .stream()
                 .filter(r ->
-                        orderNumber == null ||
-                                r.getOrderNumber().toLowerCase().contains(orderNumber.toLowerCase())
-                )
+                orderNumber == null ||
+                        r.getOrderNumber()
+                                .toLowerCase()
+                                .startsWith(orderNumber.toLowerCase())
+        )
                 .filter(r ->
                         plateArabic == null ||
-                                r.getCar().getPlateNumberArabic().replace(" ", "")
-                                        .contains(plateArabic.replace(" ", ""))
+                                r.getCar()
+                                        .getPlateNumberArabic()
+                                        .replace(" ","")
+                                        .startsWith(
+                                                plateArabic.replace(" ","")
+                                        )
                 )
                 .filter(r ->
                         plateEnglish == null ||
-                                r.getCar().getPlateNumberEnglish().toLowerCase()
-                                        .contains(plateEnglish.toLowerCase())
+                                r.getCar()
+                                        .getPlateNumberEnglish()
+                                        .toLowerCase()
+                                        .startsWith(plateEnglish.toLowerCase())
                 )
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
