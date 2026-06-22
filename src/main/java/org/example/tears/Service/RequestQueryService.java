@@ -46,8 +46,11 @@ public class RequestQueryService {
                 .toList();
     }
 
-    public long getMyRequestsCount(Employee employee){
-        return requestRepo.countByAssignedEmployee_Id(employee.getId());
+    public long getMyNewRequestsCount(Employee employee) {
+        return requestRepo.countByAssignedEmployee_IdAndStaffStatus(
+                employee.getId(),
+                StaffRequestStatus.NEW
+        );
     }
 
     public List<EmployeeRequestResponseDto> getMyRequestsByStatus(Employee employee, StaffRequestStatus status) {

@@ -31,7 +31,7 @@ public class RequestWorkflowService {
     private final RequestReportRepository reportRepo;
     private final RequestStatusHistoryRepository historyRepo;
     private final NotificationService notificationService;
-    private final ReportService reportService;
+    private final RequestImageRepository imageRepo;
     private final RequestPartRepository partRepo;
     private final FileStorageService fileStorageService;
 
@@ -48,7 +48,6 @@ public class RequestWorkflowService {
         CarServiceRequest req = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
-        // 🔐 تحقق الموظف
         if (req.getAssignedEmployee() == null ||
                 !employeeId.equals(req.getAssignedEmployee().getId())) {
             throw new RuntimeException("غير مصرح لك");
@@ -57,45 +56,50 @@ public class RequestWorkflowService {
         StaffRequestActionRule rule =
                 StaffRequestActionRule.fromStatus(status);
 
-        // 📸 تحقق الصورة إذا مطلوبة
-        if (rule.isRequiresImage() &&
-                (imageUrl == null || imageUrl.isBlank())) {
-            throw new RuntimeException("يجب رفع صورة لهذه الحالة");
-        }
-
-        // 📝 تحقق الملاحظة إذا مطلوبة
+        // 📝 ملاحظة
         if (rule.isRequiresNote() &&
                 (note == null || note.isBlank())) {
             throw new RuntimeException("يجب إضافة ملاحظة لهذه الحالة");
         }
 
-        // 🔄 تحديث الحالة
+        // 📸 صور (كل الصور تروح للـ Table)
+        if (imageUrl != null && !imageUrl.isBlank()) {
+
+            RequestImage image = new RequestImage();
+            image.setRequest(req);
+            image.setImageUrl(imageUrl);
+            image.setUploadedAt(LocalDateTime.now());
+            image.setUploadedAtStatus(status);
+
+            imageRepo.save(image);
+
+            // صورة رئيسية فقط للاستلام
+            if (status == StaffRequestStatus.RECEIVED
+                    && req.getReceivedImageUrl() == null) {
+                req.setReceivedImageUrl(imageUrl);
+            }
+        }
+
+        // 🔄 الحالة
         req.setStaffStatus(status);
         req.setLastUpdated(LocalDateTime.now());
 
-        // 📸 حفظ الصورة (إذا موجودة)
-        if (imageUrl != null && !imageUrl.isBlank()) {
-            req.setReceivedImageUrl(imageUrl);
-        }
-
-        // 💰 لو الحالة تحولت للتسعير
+        // 💰 التسعير
         if (status == StaffRequestStatus.PARTS_REGISTERING) {
             req.setPricingStatus(PricingStatus.PRICING);
         }
 
         updateStaffTimestamps(req, status);
 
-        // 📝 حفظ ملاحظة
+        // 📝 ملاحظة
         if (note != null && !note.isBlank()) {
             saveNote(req, employeeId, note);
         }
 
-        // 📜 حفظ التاريخ
         saveHistory(req, employeeId);
 
         requestRepo.save(req);
 
-        // 🔔 إشعار العميل
         notificationService.send(
                 req.getCustomer().getUser(),
                 "تم تحديث حالة طلبك رقم #" + req.getId()

@@ -90,7 +90,7 @@ public class CarServiceRequestController {
         return new ApiResponse(
                 true,
                 "تم جلب الصورة",
-                requestService.getReceivedImage(id, user.getCustomer().getId())
+                requestService.getRequestImages(id, user.getCustomer().getId())
         );
     }
 

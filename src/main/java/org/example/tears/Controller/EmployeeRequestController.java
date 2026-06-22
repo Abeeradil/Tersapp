@@ -57,7 +57,7 @@ import java.util.List;
 
     @GetMapping("/my/requests/count")
     public long myRequestsCount(@AuthenticationPrincipal User user) {
-        return requestQueryService.getMyRequestsCount(user.getEmployee());
+        return requestQueryService.getMyNewRequestsCount(user.getEmployee());
     }
 
 
@@ -155,7 +155,7 @@ import java.util.List;
             @RequestParam(required = false) String note,
             @RequestParam("image") MultipartFile image,
             @AuthenticationPrincipal User user
-    ) {
+    ){
 
         String imageUrl = fileStorageService.saveFile(image, "receipts");
 
@@ -167,7 +167,7 @@ import java.util.List;
                 imageUrl
         );
 
-        return new ApiResponse(true, "تم استلام السيارة ورفع الصورة بنجاح");
+        return new ApiResponse(true,"تم استلام السيارة");
     }
 
 

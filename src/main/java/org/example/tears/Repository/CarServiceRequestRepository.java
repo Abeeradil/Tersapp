@@ -30,8 +30,9 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
     Optional<CarServiceRequest> findById(Integer id);
 
     List<CarServiceRequest> findByAssignedEmployee_Id(Integer employeeId);
+    long countByCustomerIdAndCustomerStatus(Integer customerId, CustomerRequestStatus status);    long countByAssignedEmployee_Id(Integer employeeId);
 
-    long countByAssignedEmployee_Id(Integer employeeId);
+    long countByAssignedEmployee_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
 
     boolean existsByAppointmentDateAndAppointmentTime(
             LocalDate appointmentDate,
@@ -43,17 +44,18 @@ SELECT r
 FROM CarServiceRequest r
 JOIN r.car c
 WHERE
-(:orderNumber IS NULL OR LOWER(r.orderNumber) LIKE LOWER(CONCAT('%', :orderNumber, '%')))
+(:orderNumber IS NULL OR r.orderNumber LIKE CONCAT(:orderNumber, '%'))
 AND
-(:plateArabic IS NULL OR REPLACE(c.plateNumberArabic, ' ', '') LIKE CONCAT('%', REPLACE(:plateArabic, ' ', ''), '%'))
+(:plateArabic IS NULL OR c.plateNumberArabic LIKE CONCAT(:plateArabic, '%'))
 AND
-(:plateEnglish IS NULL OR LOWER(c.plateNumberEnglish) LIKE LOWER(CONCAT('%', :plateEnglish, '%')))
+(:plateEnglish IS NULL OR c.plateNumberEnglish LIKE CONCAT(:plateEnglish, '%'))
 """)
     List<CarServiceRequest> search(
             @Param("orderNumber") String orderNumber,
             @Param("plateArabic") String plateArabic,
             @Param("plateEnglish") String plateEnglish
     );
+
 
     List<CarServiceRequest> findByAssignedEmployee (Employee emp);
     List<CarServiceRequest> findByAssignedEmployeeIsNull();

@@ -35,6 +35,7 @@ public class CarServiceRequestService {
     private final LocationService locationService;
     private final LocationRepository locationRepository;
     private final AppointmentService appointmentService;
+    private final RequestImageRepository imageRepo;
     private final PricingCalculationService pricingCalculationService;
     private final RequestReviewRepository reviewRepository;
     private final RequestMapper requestMapper;
@@ -211,30 +212,19 @@ public class CarServiceRequestService {
         return toResponseDto(updated);
     }
 
-    public ReceivedImageDto getReceivedImage(
-            Integer requestId,
-            Integer customerId
-    ) {
+    public List<String> getRequestImages(Integer requestId, Integer customerId) {
 
-        CarServiceRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+        CarServiceRequest req = requestRepository.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("غير موجود"));
 
-        // التأكد أن الطلب يخص هذا العميل
-        if (!request.getCustomer().getId().equals(customerId)) {
-            throw new RuntimeException("غير مصرح لك");
+        if (!req.getCustomer().getId().equals(customerId)) {
+            throw new RuntimeException("غير مصرح");
         }
 
-        // التأكد أن الصورة موجودة
-        if (request.getReceivedImageUrl() == null ||
-                request.getReceivedImageUrl().isBlank()) {
-            throw new RuntimeException("لم يتم رفع صورة للسيارة بعد");
-        }
-
-        ReceivedImageDto dto = new ReceivedImageDto();
-        dto.setRequestId(request.getId());
-        dto.setImageUrl(request.getReceivedImageUrl());
-
-        return dto;
+        return imageRepo.findByRequestIdAndVisibleToCustomerTrue(requestId)
+                .stream()
+                .map(RequestImage::getImageUrl)
+                .toList();
     }
 
     public List<CurrentRequestDto> getCurrentRequests(Integer customerId) {

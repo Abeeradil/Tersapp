@@ -159,4 +159,9 @@ public class CarServiceRequest {
 
     private String paymentId;
 
+    @OneToMany(mappedBy = "request",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    private List<RequestImage> images;
+
         }
