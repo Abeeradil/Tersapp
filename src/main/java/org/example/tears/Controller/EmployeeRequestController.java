@@ -142,9 +142,7 @@ import java.util.List;
                 id,
                 dto.getStatus(),
                 user.getEmployee().getId(),
-                dto.getNote(),
-                dto.getImageUrl() // ممكن null
-        );
+                dto.getNote());
 
         return new ApiResponse(true, "تم تحديث الحالة بنجاح");
     }
@@ -153,21 +151,18 @@ import java.util.List;
     public ApiResponse receiveCar(
             @PathVariable Integer id,
             @RequestParam(required = false) String note,
-            @RequestParam("image") MultipartFile image,
+            @RequestParam("images") List<MultipartFile> images,
             @AuthenticationPrincipal User user
-    ){
+    ) {
 
-        String imageUrl = fileStorageService.saveFile(image, "receipts");
-
-        workflowService.updateStatus(
+        workflowService.receiveCar(
                 id,
-                StaffRequestStatus.RECEIVED,
                 user.getEmployee().getId(),
                 note,
-                imageUrl
+                images
         );
 
-        return new ApiResponse(true,"تم استلام السيارة");
+        return new ApiResponse(true, "تم استلام السيارة");
     }
 
 

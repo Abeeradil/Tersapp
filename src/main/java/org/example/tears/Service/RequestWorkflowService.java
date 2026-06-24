@@ -15,6 +15,7 @@ import org.example.tears.Model.*;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.Comparator;
@@ -40,9 +41,7 @@ public class RequestWorkflowService {
             Integer requestId,
             StaffRequestStatus status,
             Integer employeeId,
-            String note,
-            String imageUrl
-    ) {
+            String note) {
 
         CarServiceRequest req = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
@@ -62,27 +61,6 @@ public class RequestWorkflowService {
         }
 
         // 📸 صور
-        if (imageUrl != null && !imageUrl.isBlank()) {
-
-            long count = imageRepo.countByRequest_Id(req.getId());
-
-            if (count >= 5) {
-                throw new RuntimeException("لا يمكن رفع أكثر من 5 صور");
-            }
-
-            RequestImage image = new RequestImage();
-            image.setRequest(req);
-            image.setImageUrl(imageUrl);
-            image.setUploadedAt(LocalDateTime.now());
-            image.setUploadedAtStatus(status);
-
-            imageRepo.save(image);
-
-            if (status == StaffRequestStatus.RECEIVED
-                    && req.getReceivedImageUrl() == null) {
-                req.setReceivedImageUrl(imageUrl);
-            }
-        }
 
         // 🔄 الحالة
         req.setStaffStatus(status);
@@ -106,6 +84,71 @@ public class RequestWorkflowService {
                 req.getCustomer().getUser(),
                 "تم تحديث حالة طلبك رقم #" + req.getId()
         );
+    }
+
+    @Transactional
+    public void receiveCar(
+            Integer requestId,
+            Integer employeeId,
+            String note,
+            List<MultipartFile> images
+    ) {
+
+        CarServiceRequest req = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+
+        if (req.getAssignedEmployee() == null ||
+                !employeeId.equals(req.getAssignedEmployee().getId())) {
+            throw new RuntimeException("غير مصرح لك");
+        }
+
+        // حد أقصى 5 ملفات
+        if (images != null && images.size() > 5) {
+            throw new RuntimeException("الحد الأقصى 5 ملفات");
+        }
+
+        if (images != null) {
+
+            for (MultipartFile file : images) {
+
+                // التحقق من النوع
+                String contentType = file.getContentType();
+
+                if (contentType == null ||
+                        !(contentType.startsWith("image/")
+                                || contentType.equals("application/pdf"))) {
+
+                    throw new RuntimeException("يسمح فقط بالصور أو PDF");
+                }
+
+                String fileUrl =
+                        fileStorageService.saveFile(file, "receipts");
+
+                RequestImage image = new RequestImage();
+                image.setRequest(req);
+                image.setImageUrl(fileUrl);
+                image.setUploadedAt(LocalDateTime.now());
+                image.setUploadedAtStatus(StaffRequestStatus.RECEIVED);
+
+                imageRepo.save(image);
+
+                // أول صورة نخزنها كصورة رئيسية
+                if (req.getReceivedImageUrl() == null) {
+                    req.setReceivedImageUrl(fileUrl);
+                }
+            }
+        }
+
+        req.setStaffStatus(StaffRequestStatus.RECEIVED);
+        req.setLastUpdated(LocalDateTime.now());
+
+        if (note != null && !note.isBlank()) {
+            saveNote(req, employeeId, note);
+        }
+
+        saveHistory(req, employeeId);
+
+        requestRepo.save(req);
     }
 
 
