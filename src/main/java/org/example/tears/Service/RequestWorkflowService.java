@@ -35,7 +35,6 @@ public class RequestWorkflowService {
     private final RequestPartRepository partRepo;
     private final FileStorageService fileStorageService;
 
-
     @Transactional
     public void updateStatus(
             Integer requestId,
@@ -62,8 +61,14 @@ public class RequestWorkflowService {
             throw new RuntimeException("يجب إضافة ملاحظة لهذه الحالة");
         }
 
-        // 📸 صور (كل الصور تروح للـ Table)
+        // 📸 صور
         if (imageUrl != null && !imageUrl.isBlank()) {
+
+            long count = imageRepo.countByRequest_Id(req.getId());
+
+            if (count >= 5) {
+                throw new RuntimeException("لا يمكن رفع أكثر من 5 صور");
+            }
 
             RequestImage image = new RequestImage();
             image.setRequest(req);
@@ -73,7 +78,6 @@ public class RequestWorkflowService {
 
             imageRepo.save(image);
 
-            // صورة رئيسية فقط للاستلام
             if (status == StaffRequestStatus.RECEIVED
                     && req.getReceivedImageUrl() == null) {
                 req.setReceivedImageUrl(imageUrl);
@@ -84,14 +88,12 @@ public class RequestWorkflowService {
         req.setStaffStatus(status);
         req.setLastUpdated(LocalDateTime.now());
 
-        // 💰 التسعير
         if (status == StaffRequestStatus.PARTS_REGISTERING) {
             req.setPricingStatus(PricingStatus.PRICING);
         }
 
         updateStaffTimestamps(req, status);
 
-        // 📝 ملاحظة
         if (note != null && !note.isBlank()) {
             saveNote(req, employeeId, note);
         }
@@ -105,7 +107,6 @@ public class RequestWorkflowService {
                 "تم تحديث حالة طلبك رقم #" + req.getId()
         );
     }
-
 
 
 

@@ -1,10 +1,12 @@
 package org.example.tears.OutDTO;
 
 import lombok.Data;
+import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.LocationDto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 public class EmployeeRequestDetailsDto {
@@ -26,6 +28,8 @@ public class EmployeeRequestDetailsDto {
     private String plateNumberEnglish;
 
     private String address;
+
+    private List<RequestImageDto> images;
 
     private String problemDescription;
 

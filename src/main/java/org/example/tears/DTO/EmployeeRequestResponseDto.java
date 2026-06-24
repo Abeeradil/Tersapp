@@ -7,6 +7,7 @@ import org.example.tears.Model.Location;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Data
     public class EmployeeRequestResponseDto {
@@ -22,6 +23,8 @@ import java.time.LocalTime;
         private String carModelNameAr; // كامري
 
         private String address;
+
+        private List<RequestImageDto> images;
 
         private String plateNumberArabic;
         private String plateNumberEnglish;
