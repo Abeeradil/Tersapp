@@ -13,6 +13,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,8 +31,9 @@ public class PartsService {
             CarServiceRequest req = requestRepo.findById(requestId)
                     .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
-            if(req.getStaffStatus() != StaffRequestStatus.PARTS_REGISTERING &&
-                    req.getStaffStatus() != StaffRequestStatus.REPAIRING){
+            if (req.getStaffStatus() != StaffRequestStatus.TESTING &&
+                    req.getStaffStatus() != StaffRequestStatus.REPAIRING) {
+
 
                 throw new RuntimeException("لا يمكن تسجيل القطع في هذه المرحلة");
             }
@@ -48,6 +50,9 @@ public class PartsService {
             }
 
             req.setProblemDescription(dto.getProblemDescription());
+            req.setStaffStatus(StaffRequestStatus.PARTS_REGISTERING);
+            updateStaffTimestamps(req, StaffRequestStatus.PARTS_REGISTERING);
+            req.setLastUpdated(LocalDateTime.now());
 
             for (PartDto p : dto.getParts()) {
 
@@ -71,12 +76,15 @@ public class PartsService {
                 part.setQuantity(p.getQuantity());
                 part.setEstimatedPrice(p.getEstimatedPrice());
 
+
+
                 part.setLaborCost(
                         calculateLaborCost(p.getQuantity())
                 );
 
                 partRepo.save(part);
             }
+
 
             requestRepo.save(req);
         }
@@ -141,5 +149,27 @@ public class PartsService {
         }
 
         return quantity * 25;
+    }
+
+    private void updateStaffTimestamps(
+            CarServiceRequest req,
+            StaffRequestStatus status
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+
+        switch (status) {
+
+            case RECEIVED -> req.setReceivedAt(now);
+
+            case INSPECTION_IN_PROGRESS -> req.setInspectionAt(now);
+
+            case TESTING -> req.setTestingAt(now);
+
+            case PRICING -> req.setPricingAt(now);
+
+            case REPAIRING -> req.setRepairAt(now);
+
+            case DELIVERED -> req.setDeliveredAt(now);
+        }
     }
 }

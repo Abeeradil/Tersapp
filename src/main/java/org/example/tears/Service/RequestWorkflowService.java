@@ -129,22 +129,21 @@ public class RequestWorkflowService {
         switch (current){
 
             case NEW -> {
-                if(next != StaffRequestStatus.RECEIVED)
-                    throw new RuntimeException("انتقال غير صحيح");
-            }
-
-            case RECEIVED -> {
-                if(next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
+                if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
                     throw new RuntimeException("انتقال غير صحيح");
             }
 
             case INSPECTION_IN_PROGRESS -> {
-                if(next != StaffRequestStatus.TESTING)
+                if (next != StaffRequestStatus.TESTING)
                     throw new RuntimeException("انتقال غير صحيح");
             }
 
             case TESTING -> {
-                if(next != StaffRequestStatus.REPORT_WRITING)
+                throw new RuntimeException("بعد التجربة استخدم Endpoint تسجيل القطع");
+            }
+
+            case PARTS_REGISTERING -> {
+                if (next != StaffRequestStatus.REPORT_WRITING)
                     throw new RuntimeException("انتقال غير صحيح");
             }
 
