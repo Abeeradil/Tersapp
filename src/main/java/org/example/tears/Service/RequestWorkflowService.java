@@ -110,12 +110,14 @@ public class RequestWorkflowService {
                 "تم تحديث حالة طلبك رقم #" + req.getId()
         );
     }
+
+
     private void validateStatusTransition(
             StaffRequestStatus current,
             StaffRequestStatus next
     ) {
 
-        // هذه لها endpoints خاصة
+        // الحالات التي لها Endpoints خاصة
         if (next == StaffRequestStatus.RECEIVED ||
                 next == StaffRequestStatus.PARTS_REGISTERING ||
                 next == StaffRequestStatus.PRICING ||
@@ -127,6 +129,11 @@ public class RequestWorkflowService {
         switch (current){
 
             case NEW -> {
+                if(next != StaffRequestStatus.RECEIVED)
+                    throw new RuntimeException("انتقال غير صحيح");
+            }
+
+            case RECEIVED -> {
                 if(next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
                     throw new RuntimeException("انتقال غير صحيح");
             }
@@ -142,8 +149,7 @@ public class RequestWorkflowService {
             }
 
             case REPORT_WRITING -> {
-                if(next != StaffRequestStatus.DELIVERED)
-                    throw new RuntimeException("انتقال غير صحيح");
+                throw new RuntimeException("بعد التقرير يتم استخدام Endpoint تسجيل القطع");
             }
 
             case DELIVERED ->
