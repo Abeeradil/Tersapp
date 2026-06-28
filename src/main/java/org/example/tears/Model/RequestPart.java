@@ -10,18 +10,28 @@ import lombok.Setter;
 @Setter
 @Entity
 public class RequestPart {
-        @Id
-        @GeneratedValue
-        private Integer id;
+                @Id
+                @GeneratedValue(strategy = GenerationType.IDENTITY)
+                private Integer id;
 
-        private String name;             // اسم القطعة
-        private String type;             // نوعها / تصنيفها
-        private Integer quantity;        // عدد القطع
-        private Integer estimatedPrice;  // السعر التقديري لكل وحدة
-        private Integer finalPrice;      // السعر النهائي بعد الموافقة
-        private Integer laborCost;       // تكلفة التركيب / العمل
+                private String name;
 
-        @ManyToOne
-        @JoinColumn(name = "request_id")
-        private CarServiceRequest request;
-    }
+                private String type;
+
+                private Integer quantity;
+
+                // يدخلها موظف الورشة بالبداية
+                private Integer estimatedPrice;
+
+                // يعدلها موظف التسعير
+                private Integer finalPrice;
+
+                // محسوبة تلقائي
+                private Integer laborCost;
+
+                private Boolean priced = false;
+
+                @ManyToOne
+                @JoinColumn(name = "request_id")
+                private CarServiceRequest request;
+        }

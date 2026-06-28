@@ -31,9 +31,13 @@ public class PartsService {
             part.setQuantity(dto.getQuantity());
             part.setEstimatedPrice(dto.getEstimatedPrice());
             part.setLaborCost(dto.getLaborCost());
+            part.setLaborCost(
+                    calculateLaborCost(dto.getType())
+            );
 
             partRepo.save(part);
         }
+
 
 
         // عرض القطع
@@ -41,4 +45,13 @@ public class PartsService {
 
             return partRepo.findByRequestId(requestId);
         }
+
+    private Integer calculateLaborCost(String type){
+
+        if(type.equalsIgnoreCase("مساعدات")){
+            return 50;
+        }
+
+        return 25;
+    }
     }

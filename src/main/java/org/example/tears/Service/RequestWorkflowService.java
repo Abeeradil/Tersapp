@@ -7,10 +7,7 @@ import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.EmployeeSummaryDto;
 import org.example.tears.DTO.ReportDto;
 import org.example.tears.DTO.RequestSummaryDto;
-import org.example.tears.Enums.PricingStatus;
-import org.example.tears.Enums.StaffRequestActionRule;
-import org.example.tears.Enums.StaffRequestStatus;
-import org.example.tears.Enums.WorkflowStage;
+import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Repository.*;
@@ -21,6 +18,8 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.example.tears.Enums.CustomerRequestStatus.UNDER_REPAIR;
 
 @Service
 @RequiredArgsConstructor
@@ -51,14 +50,42 @@ public class RequestWorkflowService {
             throw new RuntimeException("غير مصرح لك");
         }
 
-        StaffRequestActionRule rule =
+        req.setCustomerStatus(
+                mapCustomerStatus(status)
+        );
+
+        if (
+                status == StaffRequestStatus.RECEIVED ||
+                        status == StaffRequestStatus.PARTS_REGISTERING ||
+                        status == StaffRequestStatus.PRICING ||
+                        status == StaffRequestStatus.REPAIRING||
+                        status == StaffRequestStatus.DELIVERY_IN_PROGRESS
+        ) {
+            throw new RuntimeException(
+                    "هذه الحالة لها إجراء خاص"
+            );
+        }        StaffRequestActionRule rule =
                 StaffRequestActionRule.fromStatus(status);
+
+        if(
+                status.ordinal()
+                        <= req.getStaffStatus().ordinal()
+        ){
+            throw new RuntimeException(
+                    "لا يمكن الرجوع لحالة سابقة"
+            );
+        }
 
         // 📝 ملاحظة
         if (rule.isRequiresNote() &&
                 (note == null || note.isBlank())) {
             throw new RuntimeException("يجب إضافة ملاحظة لهذه الحالة");
         }
+
+        validateStatusTransition(
+                req.getStaffStatus(),
+                status
+        );
 
         // 📸 صور
 
@@ -84,6 +111,52 @@ public class RequestWorkflowService {
                 req.getCustomer().getUser(),
                 "تم تحديث حالة طلبك رقم #" + req.getId()
         );
+    }
+    private void validateStatusTransition(
+            StaffRequestStatus current,
+            StaffRequestStatus next
+    ) {
+
+        switch (current) {
+
+            case NEW -> {
+                if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS) {
+                    throw new RuntimeException("يجب إجراء استلام السيارة أولاً");
+                }
+            }
+
+            case INSPECTION_IN_PROGRESS -> {
+                if (next != StaffRequestStatus.TESTING) {
+                    throw new RuntimeException("الحالة التالية يجب أن تكون قيد التجربة");
+                }
+            }
+
+            case TESTING -> {
+                if (next != StaffRequestStatus.REPORT_WRITING) {
+                    throw new RuntimeException("الحالة التالية يجب أن تكون إعداد التقرير");
+                }
+            }
+
+            case REPORT_WRITING -> {
+                throw new RuntimeException("يجب تسجيل القطع من خلال شاشة القطع");
+            }
+
+            case PARTS_REGISTERING -> {
+                throw new RuntimeException("التسعير يتم من شاشة التسعير");
+            }
+
+            case PRICING -> {
+                throw new RuntimeException("بانتظار موافقة العميل");
+            }
+
+            case REPAIRING -> {
+                throw new RuntimeException("يتم التسليم من شاشة التسليم");
+            }
+
+            case DELIVERED -> {
+                throw new RuntimeException("تم إغلاق الطلب");
+            }
+        }
     }
 
     @Transactional
@@ -139,7 +212,12 @@ public class RequestWorkflowService {
             }
         }
 
+
+
         req.setStaffStatus(StaffRequestStatus.RECEIVED);
+        req.setReceivedAt(LocalDateTime.now());
+        req.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED);
+        req.setStage(WorkflowStage.RECEIVED);
         req.setLastUpdated(LocalDateTime.now());
 
         if (note != null && !note.isBlank()) {
@@ -222,6 +300,27 @@ public class RequestWorkflowService {
 
             historyRepo.save(h);
         }
+    private CustomerRequestStatus mapCustomerStatus(StaffRequestStatus status) {
+
+        return switch (status) {
+
+            case NEW -> CustomerRequestStatus.REQUEST_CREATED;
+
+            case RECEIVED -> CustomerRequestStatus.CAR_RECEIVED;
+
+            case INSPECTION_IN_PROGRESS,
+                 TESTING, PARTS_REGISTERING, PRICING -> CustomerRequestStatus.CAR_INSPECTION;
+
+            case REPORT_WRITING -> CustomerRequestStatus.WAITING_APPROVAL;
+
+            case REPAIRING -> UNDER_REPAIR;
+
+            case DELIVERY_IN_PROGRESS -> CustomerRequestStatus.READY_FOR_DELIVERY;
+
+            case DELIVERED -> CustomerRequestStatus.DELIVERED;
+        };
+    }
+            
 
 
     public String mapStaffStatus(StaffRequestStatus status) {
@@ -234,6 +333,7 @@ public class RequestWorkflowService {
             case PARTS_REGISTERING -> "تسجيل القطع";
             case PRICING -> "جاري تسعير القطع";
             case REPAIRING -> "جاري الإصلاح";
+            case DELIVERY_IN_PROGRESS -> "جاري التسليم";
             case DELIVERED -> "تم التسليم";
         };
     }
@@ -264,66 +364,6 @@ public class RequestWorkflowService {
                 .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
     }
 
-    private void validateEmployee(CarServiceRequest req, Integer employeeId) {
-        if (req.getAssignedEmployee() == null ||
-                !req.getAssignedEmployee().getId().equals(employeeId)) {
-            throw new RuntimeException("غير مصرح لك");
-        }
-    }
-
-    @Transactional
-    public void updateWorkshopStatus(
-            Integer requestId,
-            StaffRequestStatus status,
-            Integer employeeId,
-            String note,
-            String imageUrl
-    ) {
-
-        CarServiceRequest req = getRequest(requestId);
-
-        validateWorkshopEmployee(req, employeeId);
-
-        req.setStaffStatus(status);
-        req.setLastUpdated(LocalDateTime.now());
-
-        switch (status) {
-
-            case RECEIVED -> {
-                if (imageUrl == null)
-                    throw new RuntimeException("صورة مطلوبة");
-
-                req.setReceivedImageUrl(imageUrl);
-                req.setReceivedAt(LocalDateTime.now());
-            }
-
-            case INSPECTION_IN_PROGRESS -> req.setInspectionAt(LocalDateTime.now());
-
-            case TESTING -> req.setTestingAt(LocalDateTime.now());
-
-            case REPORT_WRITING -> {
-                req.setLastUpdated(LocalDateTime.now());
-            }
-
-            case PARTS_REGISTERING -> {
-                req.setLastUpdated(LocalDateTime.now());
-
-                // 🔥 تحويل للتسعير
-                req.setPricingStatus(PricingStatus.PRICING);
-
-                assignPricingEmployee(req);
-            }
-        }
-
-        if (note != null && !note.isBlank()) {
-            saveNote(req, employeeId, note);
-        }
-
-        saveHistory(req, employeeId);
-        requestRepo.save(req);
-
-        notifyCustomer(req);
-    }
 
     private void notifyCustomer(CarServiceRequest req) {
 
@@ -344,85 +384,6 @@ public class RequestWorkflowService {
     }
 
 
-    private void applyWorkshopLogic(
-            CarServiceRequest req,
-            StaffRequestStatus status,
-            String imageUrl
-    ) {
-
-        LocalDateTime now = LocalDateTime.now();
-
-        switch (status) {
-
-            case RECEIVED -> {
-                if (imageUrl == null) {
-                    throw new RuntimeException("صورة الاستلام مطلوبة");
-                }
-                req.setReceivedImageUrl(imageUrl);
-                req.setReceivedAt(now);
-            }
-
-            case INSPECTION_IN_PROGRESS -> req.setInspectionAt(now);
-
-            case TESTING -> req.setTestingAt(now);
-
-            case PARTS_REGISTERING -> {
-
-                req.setRepairAt(now);
-
-                // 🔥 تحويل للتسعير
-                req.setPricingStatus(PricingStatus.PRICING);
-
-                assignPricingEmployee(req);
-            }
-
-            case REPAIRING -> req.setRepairAt(now);
-
-            case DELIVERED -> req.setDeliveredAt(now);
-        }
-    }
-
-    private void validateTransition(StaffRequestStatus current, StaffRequestStatus next) {
-
-        if (current == null) return;
-
-        switch (current) {
-
-            case NEW -> {
-                if (next != StaffRequestStatus.RECEIVED)
-                    throw new RuntimeException("يجب استلام السيارة أولاً");
-            }
-
-            case RECEIVED -> {
-                if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
-                    throw new RuntimeException("ابدأ الفحص أولاً");
-            }
-
-            case INSPECTION_IN_PROGRESS -> {
-                if (next != StaffRequestStatus.TESTING)
-                    throw new RuntimeException("يجب التجربة أولاً");
-            }
-
-            case TESTING -> {
-                if (next != StaffRequestStatus.PARTS_REGISTERING)
-                    throw new RuntimeException("سجل القطع أولاً");
-            }
-
-            case PARTS_REGISTERING -> {
-                throw new RuntimeException("الطلب انتقل للتسعير");
-            }
-
-            case REPAIRING -> {
-                if (next != StaffRequestStatus.DELIVERED)
-                    throw new RuntimeException("يجب إكمال الإصلاح");
-            }
-
-            case DELIVERED -> {
-                throw new RuntimeException("الطلب مكتمل");
-            }
-        }
-    }
-
     private void assignPricingEmployee(CarServiceRequest req) {
         List<Employee> employees =
                 employeeRepo.findPricingEmployees();
@@ -436,6 +397,9 @@ public class RequestWorkflowService {
                         e -> requestRepo.countByAssignedEmployee_Id(e.getId())
                 ))
                 .orElseThrow();
+        req.setAssignedPricingEmployee(emp);
+
+        requestRepo.save(req);
     }
 
     public ReportDto preview(Integer requestId){
@@ -478,19 +442,6 @@ public class RequestWorkflowService {
                 request.getCustomer().getUser(),
                 "تم إرسال تقرير الفحص لطلبك #" + request.getOrderNumber()
         );
-    }
-
-
-    private void saveNoteIfNeeded(CarServiceRequest req, Integer empId, String note) {
-        if (note == null || note.isBlank()) return;
-
-        RequestNote n = new RequestNote();
-        n.setRequest(req);
-        n.setEmployeeId(empId);
-        n.setNote(note);
-        n.setCreatedAt(LocalDateTime.now());
-
-        noteRepo.save(n);
     }
 
 

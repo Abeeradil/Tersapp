@@ -10,7 +10,6 @@ import java.util.List;
 public interface RequestPartRepository extends JpaRepository<RequestPart,Integer> {
     List<RequestPart> findByRequestId(Integer requestId);
 
-    RequestPart deleteByRequestId(Integer requestId);
-
+    void deleteByRequestId(Integer requestId);
 
     }

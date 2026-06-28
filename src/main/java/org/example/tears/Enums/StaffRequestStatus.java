@@ -9,5 +9,6 @@ public enum StaffRequestStatus {
         PARTS_REGISTERING,      // تسجيل القطع
         PRICING,                // جاري التسعير
         REPAIRING,              // جاري الإصلاح
+        DELIVERY_IN_PROGRESS, //جاري التسليم
         DELIVERED               // تم التسليم
 }

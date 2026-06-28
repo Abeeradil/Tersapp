@@ -53,6 +53,13 @@ public class CarServiceRequest {
                 @Column(name = "received_image")
                 private String receivedImageUrl;  // رابط الصورة بعد الرفع
 
+                @OneToMany(mappedBy = "request",
+                        cascade = CascadeType.ALL,
+                        orphanRemoval = true)
+                private List<RequestPart> parts;
+
+
+
                 // ========================
                 // Appointment
                 // ========================
@@ -94,6 +101,9 @@ public class CarServiceRequest {
 
     @Enumerated(EnumType.STRING)
     private PaymentStatus nextPaymentStatus;
+
+    private LocalDateTime partsRegisteredAt;
+    private LocalDateTime reportWrittenAt;
 
                 // الدفع
                 private boolean initialPaid = false;       // هل دفعت المرحلة الأولى؟
