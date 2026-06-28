@@ -175,7 +175,7 @@ import java.util.List;
 
 
     // إضافة قطعة
-    @PostMapping("/{id}/parts")
+    @PostMapping("/{id}/add-parts")
     public ApiResponse addParts(
             @PathVariable Integer id,
             @RequestBody AddPartsDto dto
@@ -184,6 +184,15 @@ import java.util.List;
         partsService.addParts(id, dto);
 
         return new ApiResponse(true, "تم تسجيل القطع بنجاح");
+    }
+    @GetMapping("/{id}/get-parts")
+    public ApiResponse getParts(@PathVariable Integer id){
+
+        return new ApiResponse(
+                true,
+                "تم جلب القطع",
+                partsService.getParts(id)
+        );
     }
 
 
