@@ -66,6 +66,8 @@ public class CarServiceRequest {
                 private LocalDate appointmentDate;
                 private LocalTime appointmentTime;
 
+    private LocalDateTime partsRegisteredAt;
+
                 // ========================
                 // Pricing & Payment
                 // ========================
@@ -102,7 +104,6 @@ public class CarServiceRequest {
     @Enumerated(EnumType.STRING)
     private PaymentStatus nextPaymentStatus;
 
-    private LocalDateTime partsRegisteredAt;
     private LocalDateTime reportWrittenAt;
 
                 // الدفع

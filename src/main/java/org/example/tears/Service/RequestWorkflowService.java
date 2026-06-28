@@ -225,7 +225,92 @@ public class RequestWorkflowService {
     }
 
 
+    public List<TimelineItemDto> getTimeline(Integer requestId){
 
+        CarServiceRequest req = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+
+        List<TimelineItemDto> timeline = new ArrayList<>();
+
+        timeline.add(new TimelineItemDto(
+                "إنشاء الطلب",
+                StaffRequestStatus.NEW,
+                req.getCreatedAt(),
+                req.getCreatedAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.NEW
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "تم استلام السيارة",
+                StaffRequestStatus.RECEIVED,
+                req.getReceivedAt(),
+                req.getReceivedAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.RECEIVED
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "جاري الفحص",
+                StaffRequestStatus.INSPECTION_IN_PROGRESS,
+                req.getInspectionAt(),
+                req.getInspectionAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.INSPECTION_IN_PROGRESS
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "قيد التجربة",
+                StaffRequestStatus.TESTING,
+                req.getTestingAt(),
+                req.getTestingAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.TESTING
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "تسجيل القطع",
+                StaffRequestStatus.PARTS_REGISTERING,
+                req.getLastUpdated(),
+                req.getStaffStatus().ordinal() >= StaffRequestStatus.PARTS_REGISTERING.ordinal(),
+                req.getStaffStatus() == StaffRequestStatus.PARTS_REGISTERING
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "جاري التسعير",
+                StaffRequestStatus.PRICING,
+                req.getPricingAt(),
+                req.getPricingAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.PRICING
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "جاري الإصلاح",
+                StaffRequestStatus.REPAIRING,
+                req.getRepairAt(),
+                req.getRepairAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.REPAIRING
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "تم التسليم",
+                StaffRequestStatus.DELIVERED,
+                req.getDeliveredAt(),
+                req.getDeliveredAt() != null,
+                req.getStaffStatus() == StaffRequestStatus.DELIVERED
+        ));
+
+        return timeline;
+    }
+
+    private TimelineItemDto createTimeline(
+            String title,
+            StaffRequestStatus status,
+            LocalDateTime date) {
+
+        TimelineItemDto dto = new TimelineItemDto();
+
+        dto.setTitle(title);
+        dto.setStatus(status);
+        dto.setCompleted(date != null);
+        return dto;
+    }
 
 
     // =========================
@@ -314,58 +399,6 @@ public class RequestWorkflowService {
 
             case DELIVERED -> CustomerRequestStatus.DELIVERED;
         };
-    }
-
-    public List<TimelineItemDto> getTimeline(Integer requestId){
-
-        CarServiceRequest req = requestRepo.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
-
-        List<TimelineItemDto> timeline = new ArrayList<>();
-
-        timeline.add(new TimelineItemDto(
-                "إنشاء الطلب",
-                req.getCreatedAt(),
-                req.getCreatedAt() != null
-        ));
-
-        timeline.add(new TimelineItemDto(
-                "تم استلام السيارة",
-                req.getReceivedAt(),
-                req.getReceivedAt() != null
-        ));
-
-        timeline.add(new TimelineItemDto(
-                "جاري الفحص",
-                req.getInspectionAt(),
-                req.getInspectionAt() != null
-        ));
-
-        timeline.add(new TimelineItemDto(
-                "قيد التجربة",
-                req.getTestingAt(),
-                req.getTestingAt() != null
-        ));
-
-        timeline.add(new TimelineItemDto(
-                "جاري التسعير",
-                req.getPricingAt(),
-                req.getPricingAt() != null
-        ));
-
-        timeline.add(new TimelineItemDto(
-                "جاري الإصلاح",
-                req.getRepairAt(),
-                req.getRepairAt() != null
-        ));
-
-        timeline.add(new TimelineItemDto(
-                "تم التسليم",
-                req.getDeliveredAt(),
-                req.getDeliveredAt() != null
-        ));
-
-        return timeline;
     }
             
 

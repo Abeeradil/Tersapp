@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TimelineItemDto {
-    private String title;
-    private StaffRequestStatus status;
-    private LocalDateTime time;
-    private boolean completed;
-}
+        private String title;              // اسم المرحلة
+        private StaffRequestStatus status; // الستاتس الحقيقي
+        private LocalDateTime date;
+        private Boolean completed;
+        private Boolean current;
+    }

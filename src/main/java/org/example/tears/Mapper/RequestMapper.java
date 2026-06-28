@@ -196,56 +196,64 @@ public class RequestMapper {
                 "تم إنشاء الطلب",
                 StaffRequestStatus.NEW,
                 r.getCreatedAt(),
-                r.getCreatedAt() != null
+                r.getCreatedAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.NEW
         ));
 
         list.add(new TimelineItemDto(
                 "تم استلام السيارة",
                 StaffRequestStatus.RECEIVED,
                 r.getReceivedAt(),
-                r.getReceivedAt() != null
+                r.getReceivedAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.RECEIVED
         ));
 
         list.add(new TimelineItemDto(
                 "جاري الفحص",
                 StaffRequestStatus.INSPECTION_IN_PROGRESS,
                 r.getInspectionAt(),
-                r.getInspectionAt() != null
+                r.getInspectionAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.INSPECTION_IN_PROGRESS
         ));
 
         list.add(new TimelineItemDto(
                 "قيد التجربة",
                 StaffRequestStatus.TESTING,
                 r.getTestingAt(),
-                r.getTestingAt() != null
+                r.getTestingAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.TESTING
         ));
 
         list.add(new TimelineItemDto(
                 "تسجيل القطع",
                 StaffRequestStatus.PARTS_REGISTERING,
-                r.getPricingAt(),
-                r.getPricingAt() != null
+                r.getPartsRegisteredAt(),
+                r.getPartsRegisteredAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.PARTS_REGISTERING
         ));
 
         list.add(new TimelineItemDto(
                 "جاري التسعير",
                 StaffRequestStatus.PRICING,
                 r.getPricingAt(),
-                r.getPricingAt() != null
+                r.getPricingAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.PRICING
         ));
 
         list.add(new TimelineItemDto(
                 "جاري الإصلاح",
                 StaffRequestStatus.REPAIRING,
                 r.getRepairAt(),
-                r.getRepairAt() != null
+                r.getRepairAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.REPAIRING
         ));
 
         list.add(new TimelineItemDto(
                 "تم التسليم",
                 StaffRequestStatus.DELIVERED,
                 r.getDeliveredAt(),
-                r.getDeliveredAt() != null
+                r.getDeliveredAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.DELIVERED
         ));
 
         return list;
