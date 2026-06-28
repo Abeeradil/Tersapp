@@ -4,6 +4,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.AddPartsDto;
 import org.example.tears.DTO.PartDto;
+import org.example.tears.DTO.PartReportDto;
+import org.example.tears.DTO.PartsDetailsDto;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.RequestPart;
@@ -11,6 +13,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -81,9 +84,54 @@ public class PartsService {
 
 
         // عرض القطع
-        public List<RequestPart> getParts(Integer requestId) {
+        public PartsDetailsDto getParts(Integer requestId){
 
-            return partRepo.findByRequestId(requestId);
+            CarServiceRequest req = requestRepo.findById(requestId)
+                    .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+
+            List<RequestPart> parts = partRepo.findByRequestId(requestId);
+
+            PartsDetailsDto dto = new PartsDetailsDto();
+
+            dto.setProblemDescription(req.getProblemDescription());
+
+            List<PartReportDto> list = new ArrayList<>();
+
+            int totalQuantity = 0;
+            int totalLabor = 0;
+            int totalPrice = 0;
+
+            for(RequestPart part : parts){
+
+                PartReportDto p = new PartReportDto();
+
+                p.setName(part.getName());
+                p.setType(part.getType());
+                p.setQuantity(part.getQuantity());
+
+                Integer unitPrice = part.getFinalPrice() != null
+                        ? part.getFinalPrice()
+                        : part.getEstimatedPrice();
+
+                p.setUnitPrice(unitPrice);
+
+                p.setLaborCost(part.getLaborCost());
+
+                p.setTotalPrice(unitPrice * part.getQuantity());
+
+                totalQuantity += part.getQuantity();
+                totalLabor += part.getLaborCost();
+                totalPrice += p.getTotalPrice();
+
+                list.add(p);
+            }
+
+            dto.setParts(list);
+            dto.setTotalParts(totalQuantity);
+            dto.setTotalLabor(totalLabor);
+            dto.setGrandTotal(totalPrice + totalLabor);
+
+            return dto;
         }
 
     private Integer calculateLaborCost(Integer quantity){

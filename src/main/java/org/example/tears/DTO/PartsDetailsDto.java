@@ -9,7 +9,7 @@ public class PartsDetailsDto {
 
     private String problemDescription;
 
-    private List<PartDetailsDto> parts;
+    private List<PartReportDto> parts;
 
     private Integer totalParts;
 
