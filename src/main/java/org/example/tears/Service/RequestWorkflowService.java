@@ -3,10 +3,7 @@ package org.example.tears.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.EmployeeRequestResponseDto;
-import org.example.tears.DTO.EmployeeSummaryDto;
-import org.example.tears.DTO.ReportDto;
-import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -15,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -117,45 +115,42 @@ public class RequestWorkflowService {
             StaffRequestStatus next
     ) {
 
-        switch (current) {
+        // هذه لها endpoints خاصة
+        if (next == StaffRequestStatus.RECEIVED ||
+                next == StaffRequestStatus.PARTS_REGISTERING ||
+                next == StaffRequestStatus.PRICING ||
+                next == StaffRequestStatus.REPAIRING) {
+
+            throw new RuntimeException("هذه الحالة لها عملية خاصة");
+        }
+
+        switch (current){
 
             case NEW -> {
-                if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS) {
-                    throw new RuntimeException("يجب إجراء استلام السيارة أولاً");
-                }
+                if(next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
+                    throw new RuntimeException("انتقال غير صحيح");
             }
 
             case INSPECTION_IN_PROGRESS -> {
-                if (next != StaffRequestStatus.TESTING) {
-                    throw new RuntimeException("الحالة التالية يجب أن تكون قيد التجربة");
-                }
+                if(next != StaffRequestStatus.TESTING)
+                    throw new RuntimeException("انتقال غير صحيح");
             }
 
             case TESTING -> {
-                if (next != StaffRequestStatus.REPORT_WRITING) {
-                    throw new RuntimeException("الحالة التالية يجب أن تكون إعداد التقرير");
-                }
+                if(next != StaffRequestStatus.REPORT_WRITING)
+                    throw new RuntimeException("انتقال غير صحيح");
             }
 
             case REPORT_WRITING -> {
-                throw new RuntimeException("يجب تسجيل القطع من خلال شاشة القطع");
+                if(next != StaffRequestStatus.DELIVERED)
+                    throw new RuntimeException("انتقال غير صحيح");
             }
 
-            case PARTS_REGISTERING -> {
-                throw new RuntimeException("التسعير يتم من شاشة التسعير");
-            }
+            case DELIVERED ->
+                    throw new RuntimeException("تم إغلاق الطلب");
 
-            case PRICING -> {
-                throw new RuntimeException("بانتظار موافقة العميل");
-            }
-
-            case REPAIRING -> {
-                throw new RuntimeException("يتم التسليم من شاشة التسليم");
-            }
-
-            case DELIVERED -> {
-                throw new RuntimeException("تم إغلاق الطلب");
-            }
+            default ->
+                    throw new RuntimeException("لا يمكن تحديث هذه الحالة من هنا");
         }
     }
 
@@ -319,6 +314,58 @@ public class RequestWorkflowService {
 
             case DELIVERED -> CustomerRequestStatus.DELIVERED;
         };
+    }
+
+    public List<TimelineItemDto> getTimeline(Integer requestId){
+
+        CarServiceRequest req = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+
+        List<TimelineItemDto> timeline = new ArrayList<>();
+
+        timeline.add(new TimelineItemDto(
+                "إنشاء الطلب",
+                req.getCreatedAt(),
+                req.getCreatedAt() != null
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "تم استلام السيارة",
+                req.getReceivedAt(),
+                req.getReceivedAt() != null
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "جاري الفحص",
+                req.getInspectionAt(),
+                req.getInspectionAt() != null
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "قيد التجربة",
+                req.getTestingAt(),
+                req.getTestingAt() != null
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "جاري التسعير",
+                req.getPricingAt(),
+                req.getPricingAt() != null
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "جاري الإصلاح",
+                req.getRepairAt(),
+                req.getRepairAt() != null
+        ));
+
+        timeline.add(new TimelineItemDto(
+                "تم التسليم",
+                req.getDeliveredAt(),
+                req.getDeliveredAt() != null
+        ));
+
+        return timeline;
     }
             
 

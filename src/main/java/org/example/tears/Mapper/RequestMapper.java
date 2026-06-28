@@ -3,14 +3,19 @@ package org.example.tears.Mapper;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.DTO.TimelineItemDto;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.RequestState;
+import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.Location;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class RequestMapper {
@@ -142,6 +147,8 @@ public class RequestMapper {
             dto.setServiceOption(r.getServiceOption().name());
         }
 
+        dto.setTimeline(buildTimeline(r));
+
         dto.setProblemDescription(r.getProblemDescription());
 
         if(r.getCustomer()!=null){
@@ -178,9 +185,70 @@ public class RequestMapper {
 
         dto.setCreatedAt(r.getCreatedAt());
         dto.setLastUpdated(r.getLastUpdated());
-
-
         return dto;
+    }
+
+    private List<TimelineItemDto> buildTimeline(CarServiceRequest r){
+
+        List<TimelineItemDto> list = new ArrayList<>();
+
+        list.add(new TimelineItemDto(
+                "تم إنشاء الطلب",
+                StaffRequestStatus.NEW,
+                r.getCreatedAt(),
+                r.getCreatedAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "تم استلام السيارة",
+                StaffRequestStatus.RECEIVED,
+                r.getReceivedAt(),
+                r.getReceivedAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "جاري الفحص",
+                StaffRequestStatus.INSPECTION_IN_PROGRESS,
+                r.getInspectionAt(),
+                r.getInspectionAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "قيد التجربة",
+                StaffRequestStatus.TESTING,
+                r.getTestingAt(),
+                r.getTestingAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "تسجيل القطع",
+                StaffRequestStatus.PARTS_REGISTERING,
+                r.getPricingAt(),
+                r.getPricingAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "جاري التسعير",
+                StaffRequestStatus.PRICING,
+                r.getPricingAt(),
+                r.getPricingAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "جاري الإصلاح",
+                StaffRequestStatus.REPAIRING,
+                r.getRepairAt(),
+                r.getRepairAt() != null
+        ));
+
+        list.add(new TimelineItemDto(
+                "تم التسليم",
+                StaffRequestStatus.DELIVERED,
+                r.getDeliveredAt(),
+                r.getDeliveredAt() != null
+        ));
+
+        return list;
     }
 
 

@@ -2,6 +2,7 @@ package org.example.tears.OutDTO;
 
 import lombok.Data;
 import org.example.tears.DTO.RequestImageDto;
+import org.example.tears.DTO.TimelineItemDto;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.InpDTO.LocationDto;
 
@@ -30,6 +31,7 @@ public class EmployeeRequestDetailsDto {
     private String address;
 
     private List<RequestImageDto> images;
+    private List<TimelineItemDto> timeline;
 
     private String problemDescription;
 

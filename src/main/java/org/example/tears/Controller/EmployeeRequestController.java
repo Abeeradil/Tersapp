@@ -165,6 +165,16 @@ import java.util.List;
         return new ApiResponse(true, "تم استلام السيارة");
     }
 
+    @GetMapping("/{id}/timeline")
+    public ApiResponse getTimeline(@PathVariable Integer id){
+
+        return new ApiResponse(
+                true,
+                "تم جلب التسلسل الزمني",
+                workflowService.getTimeline(id)
+        );
+    }
+
 
 
     // إضافة قطعة
