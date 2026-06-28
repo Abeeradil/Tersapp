@@ -19,8 +19,10 @@ public class RequestPart {
                 private String type;
 
                 private Integer quantity;
+                private String problemDescription;
 
-                // يدخلها موظف الورشة بالبداية
+
+    // يدخلها موظف الورشة بالبداية
                 private Integer estimatedPrice;
 
                 // يعدلها موظف التسعير

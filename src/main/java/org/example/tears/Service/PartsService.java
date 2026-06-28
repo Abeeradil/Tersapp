@@ -1,7 +1,10 @@
 package org.example.tears.Service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.DTO.AddPartsDto;
 import org.example.tears.DTO.PartDto;
+import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.RequestPart;
 import org.example.tears.Repository.CarServiceRequestRepository;
@@ -18,24 +21,61 @@ public class PartsService {
 
 
         // إضافة قطعة
-        public void addPart(Integer requestId, PartDto dto) {
+        @Transactional
+        public void addParts(Integer requestId, AddPartsDto dto) {
 
             CarServiceRequest req = requestRepo.findById(requestId)
-                    .orElseThrow();
+                    .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
-            RequestPart part = new RequestPart();
+            if(req.getStaffStatus() != StaffRequestStatus.PARTS_REGISTERING &&
+                    req.getStaffStatus() != StaffRequestStatus.REPAIRING){
 
-            part.setRequest(req);
-            part.setName(dto.getName());
-            part.setType(dto.getType());
-            part.setQuantity(dto.getQuantity());
-            part.setEstimatedPrice(dto.getEstimatedPrice());
-            part.setLaborCost(dto.getLaborCost());
-            part.setLaborCost(
-                    calculateLaborCost(dto.getType())
-            );
+                throw new RuntimeException("لا يمكن تسجيل القطع في هذه المرحلة");
+            }
 
-            partRepo.save(part);
+            if(dto.getProblemDescription() == null ||
+                    dto.getProblemDescription().isBlank()){
+
+                throw new RuntimeException("وصف المشكلة مطلوب");
+            }
+
+            if(dto.getParts() == null || dto.getParts().isEmpty()){
+
+                throw new RuntimeException("يجب إضافة قطعة واحدة على الأقل");
+            }
+
+            req.setProblemDescription(dto.getProblemDescription());
+
+            for (PartDto p : dto.getParts()) {
+
+                if(p.getName() == null || p.getName().isBlank()){
+                    throw new RuntimeException("اسم القطعة مطلوب");
+                }
+
+                if(p.getQuantity() == null || p.getQuantity() <= 0){
+                    throw new RuntimeException("الكمية غير صحيحة");
+                }
+
+                if(p.getEstimatedPrice() == null || p.getEstimatedPrice() < 0){
+                    throw new RuntimeException("السعر غير صحيح");
+                }
+
+                RequestPart part = new RequestPart();
+
+                part.setRequest(req);
+                part.setName(p.getName());
+                part.setType(p.getType());
+                part.setQuantity(p.getQuantity());
+                part.setEstimatedPrice(p.getEstimatedPrice());
+
+                part.setLaborCost(
+                        calculateLaborCost(p.getQuantity())
+                );
+
+                partRepo.save(part);
+            }
+
+            requestRepo.save(req);
         }
 
 
@@ -46,12 +86,12 @@ public class PartsService {
             return partRepo.findByRequestId(requestId);
         }
 
-    private Integer calculateLaborCost(String type){
+    private Integer calculateLaborCost(Integer quantity){
 
-        if(type.equalsIgnoreCase("مساعدات")){
-            return 50;
+        if(quantity == null || quantity <= 0){
+            return 0;
         }
 
-        return 25;
+        return quantity * 25;
     }
-    }
+}

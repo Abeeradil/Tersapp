@@ -2,10 +2,7 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.EmployeeRequestResponseDto;
-import org.example.tears.DTO.PartDto;
-import org.example.tears.DTO.RequestSummaryDto;
-import org.example.tears.DTO.UpdateStatusDTO;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
@@ -179,14 +176,14 @@ import java.util.List;
 
     // إضافة قطعة
     @PostMapping("/{id}/parts")
-    public ApiResponse addPart(
+    public ApiResponse addParts(
             @PathVariable Integer id,
-            @RequestBody PartDto dto
+            @RequestBody AddPartsDto dto
     ) {
 
-        partsService.addPart(id, dto);
+        partsService.addParts(id, dto);
 
-        return new ApiResponse(true,"تمت إضافة القطعة");
+        return new ApiResponse(true, "تم تسجيل القطع بنجاح");
     }
 
 
