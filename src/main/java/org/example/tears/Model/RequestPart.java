@@ -21,10 +21,6 @@ public class RequestPart {
                 private Integer quantity;
                 private String problemDescription;
 
-
-    // يدخلها موظف الورشة بالبداية
-                private Integer estimatedPrice;
-
                 // يعدلها موظف التسعير
                 private Integer finalPrice;
 

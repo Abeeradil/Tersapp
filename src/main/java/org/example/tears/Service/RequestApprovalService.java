@@ -51,13 +51,10 @@ import java.time.LocalDateTime;
                 part.setName(p.getName());
                 part.setType(p.getType());  // لو عندك نوع القطعة
                 part.setQuantity(p.getQuantity());
-                part.setEstimatedPrice(p.getEstimatedPrice());
                 part.setRequest(request);
 
                 partRepo.save(part);
 
-                total += (p.getEstimatedPrice() != null ? p.getEstimatedPrice() : 0) *
-                        (p.getQuantity() != null ? p.getQuantity() : 0);
             }
 
 

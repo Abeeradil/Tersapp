@@ -6,7 +6,6 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
-import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -52,23 +51,32 @@ public class RequestWorkflowService {
                 mapCustomerStatus(status)
         );
 
+        // ❌ الحالات التي تُدخل عبر Endpoint خاص (RECEIVED أُزيلت — صارت تُدخل عبر /status)
         if (
-                status == StaffRequestStatus.RECEIVED ||
-                        status == StaffRequestStatus.PARTS_REGISTERING ||
+                status == StaffRequestStatus.PARTS_REGISTERING ||
                         status == StaffRequestStatus.PRICING ||
-                        status == StaffRequestStatus.REPAIRING||
+                        status == StaffRequestStatus.REPAIRING ||
                         status == StaffRequestStatus.DELIVERY_IN_PROGRESS
         ) {
             throw new RuntimeException(
                     "هذه الحالة لها إجراء خاص"
             );
-        }        StaffRequestActionRule rule =
+        }
+
+        // 🚫 الخروج من RECEIVED يكون عبر زر الاستلام (/receive) فقط — لا عبر /status
+        if (req.getStaffStatus() == StaffRequestStatus.RECEIVED) {
+            throw new RuntimeException(
+                    "هذه الحالة لها إجراء خاص"
+            );
+        }
+
+        StaffRequestActionRule rule =
                 StaffRequestActionRule.fromStatus(status);
 
-        if(
+        if (
                 status.ordinal()
                         <= req.getStaffStatus().ordinal()
-        ){
+        ) {
             throw new RuntimeException(
                     "لا يمكن الرجوع لحالة سابقة"
             );
@@ -117,21 +125,23 @@ public class RequestWorkflowService {
             StaffRequestStatus next
     ) {
 
-        // الحالات التي لها Endpoints خاصة
-        if (next == StaffRequestStatus.RECEIVED ||
-                next == StaffRequestStatus.PARTS_REGISTERING ||
+        // الحالات التي لها Endpoints خاصة (RECEIVED أُزيلت — تُدخل عبر /status)
+        if (next == StaffRequestStatus.PARTS_REGISTERING ||
                 next == StaffRequestStatus.PRICING ||
                 next == StaffRequestStatus.REPAIRING) {
 
             throw new RuntimeException("هذه الحالة لها عملية خاصة");
         }
 
-        switch (current){
+        switch (current) {
 
             case NEW -> {
-                if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
+                if (next != StaffRequestStatus.RECEIVED)
                     throw new RuntimeException("انتقال غير صحيح");
             }
+
+            case RECEIVED ->
+                    throw new RuntimeException("استخدم زر استلام السيارة");
 
             case INSPECTION_IN_PROGRESS -> {
                 if (next != StaffRequestStatus.TESTING)
@@ -159,6 +169,7 @@ public class RequestWorkflowService {
         }
     }
 
+
     @Transactional
     public void receiveCar(
             Integer requestId,
@@ -173,6 +184,11 @@ public class RequestWorkflowService {
         if (req.getAssignedEmployee() == null ||
                 !employeeId.equals(req.getAssignedEmployee().getId())) {
             throw new RuntimeException("غير مصرح لك");
+        }
+
+        // ✅ لازم يكون الطلب فعلاً في حالة الاستلام (دخلها عبر /status من NEW)
+        if (req.getStaffStatus() != StaffRequestStatus.RECEIVED) {
+            throw new RuntimeException("الطلب ليس في حالة الاستلام");
         }
 
         // حد أقصى 5 ملفات
@@ -212,12 +228,11 @@ public class RequestWorkflowService {
             }
         }
 
-
-
-        req.setStaffStatus(StaffRequestStatus.RECEIVED);
+        // 🔄 الصور = إجراء الخروج من received → نتقدّم للفحص
+        req.setStaffStatus(StaffRequestStatus.INSPECTION_IN_PROGRESS);
         req.setReceivedAt(LocalDateTime.now());
-        req.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED);
-        req.setStage(WorkflowStage.RECEIVED);
+        req.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED); // عدّلها حسب enum عميلك
+        req.setStage(WorkflowStage.RECEIVED);                        // عدّلها حسب enum مراحلك
         req.setLastUpdated(LocalDateTime.now());
 
         if (note != null && !note.isBlank()) {
@@ -227,6 +242,12 @@ public class RequestWorkflowService {
         saveHistory(req, employeeId);
 
         requestRepo.save(req);
+
+        // (اختياري) إشعار للعميل بتغيّر الحالة
+        notificationService.send(
+                req.getCustomer().getUser(),
+                "تم تحديث حالة طلبك رقم #" + req.getId()
+        );
     }
 
 
