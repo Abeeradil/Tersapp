@@ -2,6 +2,7 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.DTO.PricingRequestDto;
 import org.example.tears.Model.Employee;
 import org.example.tears.Service.PricingCalculationService;
 import org.example.tears.Service.RequestPartService;
@@ -23,15 +24,15 @@ public class PricingController {
         // =========================
         // Start Pricing
         // =========================
-        @PutMapping("/requests/{id}/start")
-        public ApiResponse startPricing(
-                @PathVariable Integer id,
-                @AuthenticationPrincipal Employee pricingEmp
-        ) {
+        @PutMapping("/requests/{requestId}/pricing")
+        public ApiResponse pricingRequest(
+                @PathVariable Integer requestId,
+                @RequestBody PricingRequestDto dto
+        ){
 
-            requestPricingService.startPricing(id, pricingEmp);
+            requestPricingService.pricingParts(requestId, dto);
 
-            return new ApiResponse(true, "تم استلام الطلب للتسعير");
+            return new ApiResponse(true,"تم حفظ الأسعار");
         }
 
         // =========================
