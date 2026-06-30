@@ -1,5 +1,6 @@
 package org.example.tears.Repository;
 
+import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,6 @@ SELECT e FROM Employee e
 WHERE e.employeeRole = 'PRICING'
 """)
     List<Employee> findPricingEmployees();
+
+    List<Employee> findByEmployeeRole(EmployeeRole employeeRole);
 }

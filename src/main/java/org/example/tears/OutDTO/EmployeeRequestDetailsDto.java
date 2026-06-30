@@ -37,4 +37,8 @@ public class EmployeeRequestDetailsDto {
 
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdated;
+
+    private String pricingEmployeeName;
+    private String pricingEmployeePhone;
+
 }

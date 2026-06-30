@@ -12,9 +12,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.example.tears.Enums.CustomerRequestStatus.UNDER_REPAIR;
 
@@ -495,22 +493,36 @@ public class RequestWorkflowService {
     }
 
 
-    private void assignPricingEmployee(CarServiceRequest req) {
-        List<Employee> employees =
-                employeeRepo.findPricingEmployees();
+    public Employee getLeastBusyPricingEmployee() {
 
-        if(employees.isEmpty()){
+        List<Employee> pricingEmployees =
+                employeeRepo.findByEmployeeRole(EmployeeRole.PRICING);
+
+        if (pricingEmployees.isEmpty()) {
             throw new RuntimeException("لا يوجد موظف تسعير");
         }
 
-        Employee emp = employees.stream()
-                .min(Comparator.comparingLong(
-                        e -> requestRepo.countByAssignedEmployee_Id(e.getId())
-                ))
-                .orElseThrow();
-        req.setAssignedPricingEmployee(emp);
+        Employee selected = null;
+        long min = Long.MAX_VALUE;
 
-        requestRepo.save(req);
+        for (Employee employee : pricingEmployees) {
+
+            long count = requestRepo
+                    .countByAssignedPricingEmployee_IdAndPricingStatusIn(
+                            employee.getId(),
+                            List.of(
+                                    PricingStatus.NEW,
+                                    PricingStatus.PRICING
+                            )
+                    );
+
+            if (count < min) {
+                min = count;
+                selected = employee;
+            }
+        }
+
+        return selected;
     }
 
     public ReportDto preview(Integer requestId){

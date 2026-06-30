@@ -180,6 +180,21 @@ public class RequestMapper {
             if (r.getLocation() != null) {
                 dto.setAddress(r.getLocation().getAddress());
             }
+
+            if (r.getAssignedPricingEmployee() != null) {
+
+                dto.setPricingEmployeeName(
+                        r.getAssignedPricingEmployee()
+                                .getUser()
+                                .getFullName()
+                );
+
+                dto.setPricingEmployeePhone(
+                        r.getAssignedPricingEmployee()
+                                .getUser()
+                                .getPhoneNumber()
+                );
+            }
         }
 
 

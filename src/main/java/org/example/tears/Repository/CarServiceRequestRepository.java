@@ -1,6 +1,7 @@
 package org.example.tears.Repository;
 
 import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
@@ -22,9 +23,9 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             StaffRequestStatus status
     );
 
-    List<CarServiceRequest> findByAssignedEmployeeAndOrderNumberContainingIgnoreCase(
-            Employee employee,
-            String orderNumber
+    long countByAssignedPricingEmployee_IdAndPricingStatusIn(
+            Integer employeeId,
+            List<PricingStatus> statuses
     );
 
     Optional<CarServiceRequest> findById(Integer id);

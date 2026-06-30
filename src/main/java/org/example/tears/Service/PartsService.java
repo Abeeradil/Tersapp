@@ -6,10 +6,13 @@ import org.example.tears.DTO.AddPartsDto;
 import org.example.tears.DTO.PartDto;
 import org.example.tears.DTO.PartReportDto;
 import org.example.tears.DTO.PartsDetailsDto;
+import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.RequestPart;
 import org.example.tears.Repository.CarServiceRequestRepository;
+import org.example.tears.Repository.EmployeeRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
@@ -21,10 +24,15 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PartsService {
     private final RequestPartRepository partRepo;
-        private final CarServiceRequestRepository requestRepo;
+    private final CarServiceRequestRepository requestRepo;
+    private final EmployeeRepository employeeRepo;
+    private final NotificationService notificationService;
+    private final RequestWorkflowService workflowService;
 
 
-        // إضافة قطعة
+
+
+    // إضافة قطعة
         @Transactional
         public void addParts(Integer requestId, AddPartsDto dto) {
 
@@ -117,6 +125,23 @@ public class PartsService {
             dto.setParts(list);
             dto.setTotalParts(totalQuantity);
             dto.setTotalLabor(totalLabor);
+
+
+            Employee pricingEmployee =
+                    workflowService.getLeastBusyPricingEmployee();
+
+            req.setAssignedPricingEmployee(pricingEmployee);
+            req.setCurrentEmployee(pricingEmployee);
+
+            req.setStaffStatus(StaffRequestStatus.PRICING);
+            req.setPricingStatus(PricingStatus.NEW);
+
+            requestRepo.save(req);
+
+            notificationService.send(
+                    pricingEmployee.getUser(),
+                    "تم إسناد طلب جديد للتسعير رقم #" + req.getId()
+            );
 
             return dto;
         }

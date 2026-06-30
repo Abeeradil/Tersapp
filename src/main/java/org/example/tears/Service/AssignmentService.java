@@ -18,8 +18,6 @@ public class AssignmentService {
 
     private final CarServiceRequestRepository requestRepo;
     private final UserRepository userRepo;
-    private final AssignmentRepository assignmentRepo;
-    private final RequestAssignmentRepository reqAssignmentRepo;
     private final NotificationService notificationService;
 
     @Transactional
