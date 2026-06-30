@@ -5,6 +5,7 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
@@ -44,7 +45,16 @@ public class RequestQueryService {
     }
 
     public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
-            return requestRepo.findByAssignedEmployee(employee)
+
+        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+
+            return requestRepo.findByAssignedPricingEmployee(employee)
+                    .stream()
+                    .map(requestMapper::toEmployeeCardDto)
+                    .toList();
+        }
+
+        return requestRepo.findByAssignedEmployee(employee)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();

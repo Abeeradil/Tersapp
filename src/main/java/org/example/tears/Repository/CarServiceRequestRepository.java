@@ -17,7 +17,7 @@ import java.util.Optional;
 
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
-
+    List<CarServiceRequest> findByAssignedPricingEmployee(Employee employee);
     List<CarServiceRequest> findByAssignedEmployeeAndStaffStatus(
             Employee employee,
             StaffRequestStatus status
