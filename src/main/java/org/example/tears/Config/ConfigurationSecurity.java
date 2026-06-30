@@ -91,7 +91,7 @@ public class ConfigurationSecurity {
 
                         // ================= PRICING =================
                         .requestMatchers("/api/v1/tears/pricing/**")
-                        .hasRole("PRICING")
+                        .hasRole("EMPLOYEE")
 
                         // ================= ADMIN =================
                         .requestMatchers(
