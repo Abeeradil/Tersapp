@@ -84,9 +84,21 @@ public class PartsService {
 
                 partRepo.save(part);
             }
+            Employee pricingEmployee =
+                    workflowService.getLeastBusyPricingEmployee();
 
+            req.setAssignedPricingEmployee(pricingEmployee);
+            req.setCurrentEmployee(pricingEmployee);
+
+            req.setStaffStatus(StaffRequestStatus.PRICING);
+            req.setPricingStatus(PricingStatus.NEW);
 
             requestRepo.save(req);
+
+            notificationService.send(
+                    pricingEmployee.getUser(),
+                    "تم إسناد طلب جديد للتسعير رقم #" + req.getId()
+            );
         }
 
 
@@ -126,22 +138,6 @@ public class PartsService {
             dto.setTotalParts(totalQuantity);
             dto.setTotalLabor(totalLabor);
 
-
-            Employee pricingEmployee =
-                    workflowService.getLeastBusyPricingEmployee();
-
-            req.setAssignedPricingEmployee(pricingEmployee);
-            req.setCurrentEmployee(pricingEmployee);
-
-            req.setStaffStatus(StaffRequestStatus.PRICING);
-            req.setPricingStatus(PricingStatus.NEW);
-
-            requestRepo.save(req);
-
-            notificationService.send(
-                    pricingEmployee.getUser(),
-                    "تم إسناد طلب جديد للتسعير رقم #" + req.getId()
-            );
 
             return dto;
         }

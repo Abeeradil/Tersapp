@@ -15,5 +15,4 @@ public class PartsDetailsDto {
 
     private Integer totalLabor;
 
-    private Integer grandTotal;
 }
