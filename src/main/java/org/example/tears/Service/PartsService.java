@@ -99,7 +99,6 @@ public class PartsService {
 
             int totalQuantity = 0;
             int totalLabor = 0;
-            int totalPrice = 0;
 
             for(RequestPart part : parts){
 
@@ -108,7 +107,7 @@ public class PartsService {
                 p.setName(part.getName());
                 p.setType(part.getType());
                 p.setQuantity(part.getQuantity());
-
+                p.setLaborCost(part.getLaborCost());
 
                 totalQuantity += part.getQuantity();
                 totalLabor += part.getLaborCost();
@@ -118,7 +117,6 @@ public class PartsService {
             dto.setParts(list);
             dto.setTotalParts(totalQuantity);
             dto.setTotalLabor(totalLabor);
-            dto.setGrandTotal(totalPrice + totalLabor);
 
             return dto;
         }
