@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/tears/pricing")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('PRICING')")
 public class PricingController {
 
 
