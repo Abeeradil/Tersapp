@@ -57,7 +57,6 @@ public class RequestWorkflowService {
         // ❌ الحالات التي تُدخل عبر Endpoint خاص (RECEIVED أُزيلت — صارت تُدخل عبر /status)
         if (
                 status == StaffRequestStatus.PARTS_REGISTERING ||
-                        status == StaffRequestStatus.PRICING ||
                         status == StaffRequestStatus.REPAIRING ||
                         status == StaffRequestStatus.DELIVERY_IN_PROGRESS
         ) {
@@ -152,7 +151,14 @@ public class RequestWorkflowService {
             }
 
             case TESTING -> {
-                throw new RuntimeException("بعد التجربة استخدم Endpoint تسجيل القطع");
+                if(next != StaffRequestStatus.PRICING)
+                    throw new RuntimeException("انتقال غير صحيح");
+            }
+
+            case PRICING -> {
+                throw new RuntimeException(
+                        "بعد التسعير استخدم Endpoint إنهاء التسعير"
+                );
             }
 
             case PARTS_REGISTERING -> {
