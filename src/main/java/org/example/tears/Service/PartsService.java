@@ -56,6 +56,7 @@ public class PartsService {
                 throw new RuntimeException("يجب إضافة قطعة واحدة على الأقل");
             }
 
+
             req.setProblemDescription(dto.getProblemDescription());
             req.setStaffStatus(StaffRequestStatus.PARTS_REGISTERING);
             req.setLastUpdated(LocalDateTime.now());
@@ -119,25 +120,41 @@ public class PartsService {
 
             int totalQuantity = 0;
             int totalLabor = 0;
+            int totalPartsPrice = 0;
 
             for(RequestPart part : parts){
 
                 PartReportDto p = new PartReportDto();
 
+                p.setPartId(part.getId());
                 p.setName(part.getName());
                 p.setType(part.getType());
                 p.setQuantity(part.getQuantity());
+
+                p.setFinalPrice(part.getFinalPrice());
+
                 p.setLaborCost(part.getLaborCost());
+
+                Integer totalPrice = null;
+
+                if(part.getFinalPrice() != null){
+                    totalPrice = part.getFinalPrice() * part.getQuantity();
+                    totalPartsPrice += totalPrice;
+                }
+
+                p.setTotalPrice(totalPrice);
 
                 totalQuantity += part.getQuantity();
                 totalLabor += part.getLaborCost();
+
                 list.add(p);
             }
 
             dto.setParts(list);
             dto.setTotalParts(totalQuantity);
             dto.setTotalLabor(totalLabor);
-
+            dto.setTotalPartsPrice(totalPartsPrice);
+            dto.setGrandTotal(totalPartsPrice + totalLabor);
 
             return dto;
         }

@@ -170,7 +170,13 @@ public class RequestWorkflowService {
 
 
             case REPORT_WRITING -> {
-                throw new RuntimeException("بعد التقرير يتم استخدام Endpoint تسجيل القطع");
+                if (next != StaffRequestStatus.REPAIRING)
+                throw new RuntimeException("انتقال غير صحيح");
+            }
+
+            case REPAIRING -> {
+                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS)
+                    throw new RuntimeException("انتقال غير صحيح");
             }
 
             case DELIVERED ->

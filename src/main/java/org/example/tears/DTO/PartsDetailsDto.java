@@ -11,8 +11,11 @@ public class PartsDetailsDto {
 
     private List<PartReportDto> parts;
 
-    private Integer totalParts;
+    private Integer totalParts;       // مجموع عدد القطع
 
-    private Integer totalLabor;
+    private Integer totalLabor;       // مجموع الأجور
 
+    private Integer totalPartsPrice;  // مجموع أسعار القطع
+
+    private Integer grandTotal;       // القطع + الأجور
 }

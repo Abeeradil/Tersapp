@@ -14,6 +14,7 @@ import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -91,13 +92,24 @@ public class RequestPricingService {
         requestRepo.save(request);
     }
 
-        public void finishPricing(Integer requestId) {
+    @Transactional
+    public void finishPricing(Integer requestId) {
 
-            CarServiceRequest request = requestRepo.findById(requestId)
-                    .orElseThrow(() -> new RuntimeException("Request not found"));
+        CarServiceRequest request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
-            request.setPricingStatus(PricingStatus.PRICED);
+        List<RequestPart> parts = partRepo.findByRequestId(requestId);
 
-            requestRepo.save(request);
+        if (parts.isEmpty()) {
+            throw new RuntimeException("لا توجد قطع لهذا الطلب");
         }
+
+        if (parts.stream().anyMatch(part -> part.getFinalPrice() == null)) {
+            throw new RuntimeException("يجب تسعير جميع القطع قبل إنهاء التسعير");
+        }
+
+        request.setPricingStatus(PricingStatus.PRICED);
+
+        requestRepo.save(request);
     }
+}
