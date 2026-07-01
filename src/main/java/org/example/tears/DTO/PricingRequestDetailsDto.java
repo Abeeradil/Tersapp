@@ -26,13 +26,4 @@ public class PricingRequestDetailsDto {
 
         private String plateNumberEnglish;
 
-        private List<PartReportDto> parts;
-
-        private Integer totalParts;
-
-        private Integer totalLabor;
-
-        private Integer totalPartsPrice;
-
-        private Integer grandTotal;
     }
