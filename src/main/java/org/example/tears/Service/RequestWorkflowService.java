@@ -163,11 +163,12 @@ public class RequestWorkflowService {
             }
 
             case PRICING -> {
-                throw new RuntimeException(
-                        "بعد التسعير استخدم Endpoint إنهاء التسعير"
+                if (next != StaffRequestStatus.REPORT_WRITING)
+
+                    throw new RuntimeException(
+                        "انتقال غير صحصيح"
                 );
             }
-
 
             case REPORT_WRITING -> {
                 if (next != StaffRequestStatus.REPAIRING)

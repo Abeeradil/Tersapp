@@ -9,11 +9,21 @@ import java.time.LocalDateTime;
 public class PricingRequestCardDto {
 
     private Integer id;
+
     private String orderNumber;
+
+    private String pricingStatus;
+
     private String customerName;
-    private String carModel;
-    private PricingStatus pricingStatus;
-    private String problemDescription;
-    private LocalDateTime assignedAt;
+
+    private String carModelName;
+
+    private String carModelNameAr;
+
+    private String plateNumberArabic;
+
+    private String plateNumberEnglish;
+
+    private LocalDateTime createdAt;
 
 }

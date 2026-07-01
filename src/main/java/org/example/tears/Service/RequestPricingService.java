@@ -23,92 +23,72 @@ public class RequestPricingService {
     private final CarServiceRequestRepository requestRepo;
     private final RequestPartRepository partRepo;
 
-//    @Transactional
-//    public void startPricing(Integer requestId, Employee employee) {
-//
-//        CarServiceRequest request = requestRepo.findById(requestId)
-//                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
-//
-//        // التأكد أن الطلب مسند لهذا الموظف
-//        if (request.getAssignedPricingEmployee() == null ||
-//                !request.getAssignedPricingEmployee().getId().equals(employee.getId())) {
-//
-//            throw new RuntimeException("الطلب غير مسند لك");
-//        }
-//
-//        // لا يبدأ إلا إذا كان جديد
-//        if (request.getPricingStatus() != PricingStatus.NEW) {
-//
-//            throw new RuntimeException("تم بدء التسعير مسبقاً");
-//        }
-//
-//        request.setPricingStatus(PricingStatus.PRICING);
-//
-//        // هذه الحالة أصلاً تكون PRICING بعد إسناد الطلب،
-//        // لكن نعيد ضبطها احتياطاً
-//        request.setStaffStatus(StaffRequestStatus.PRICING);
-//
-//        request.setCurrentEmployee(employee);
-//
-//        request.setLastUpdated(LocalDateTime.now());
-//
-//        requestRepo.save(request);
-//    }
-
     @Transactional
-    public void pricingParts(
+    public void pricingRequest(
             Integer requestId,
-            PricingRequestDto dto
-    ){
+            PricingRequestDto dto,
+            Employee pricingEmployee
+    ) {
 
         CarServiceRequest request = requestRepo.findById(requestId)
                 .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
 
-        if(request.getPricingStatus() != PricingStatus.PRICING){
-            throw new RuntimeException("الطلب ليس في مرحلة التسعير");
+        // الطلب لازم يكون مسند لهذا المسعر
+        if (request.getAssignedPricingEmployee() == null ||
+                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
+
+            throw new RuntimeException("الطلب غير مسند لك");
         }
 
-        int totalParts = 0;
+        // يبدأ التسعير أول مرة
+        if (request.getPricingStatus() == PricingStatus.NEW) {
+
+            request.setPricingStatus(PricingStatus.PRICING);
+        }
+
+        int totalPartsPrice = 0;
         int totalLabor = 0;
 
-        for(PricingPartDto item : dto.getParts()){
+        for (PricingPartDto item : dto.getParts()) {
 
             RequestPart part = partRepo.findById(item.getPartId())
                     .orElseThrow(() -> new RuntimeException("القطعة غير موجودة"));
+
+            // نتأكد أن القطعة لهذا الطلب
+            if (!part.getRequest().getId().equals(requestId)) {
+                throw new RuntimeException("القطعة لا تتبع هذا الطلب");
+            }
 
             part.setFinalPrice(item.getFinalPrice());
             part.setPriced(true);
 
             partRepo.save(part);
 
-            totalParts +=
-                    part.getFinalPrice() * part.getQuantity();
+            totalPartsPrice +=
+                    item.getFinalPrice() * part.getQuantity();
 
             totalLabor += part.getLaborCost();
         }
 
-        request.setFinalPrice(totalParts + totalLabor);
+        request.setFinalPrice(
+                totalPartsPrice + totalLabor
+        );
 
-        requestRepo.save(request);
-    }
+        request.setLastUpdated(LocalDateTime.now());
 
-    @Transactional
-    public void finishPricing(Integer requestId) {
+        List<RequestPart> parts =
+                partRepo.findByRequestId(requestId);
 
-        CarServiceRequest request = requestRepo.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+        boolean allPriced =
+                parts.stream()
+                        .allMatch(RequestPart::getPriced);
 
-        List<RequestPart> parts = partRepo.findByRequestId(requestId);
+        if (allPriced) {
 
-        if (parts.isEmpty()) {
-            throw new RuntimeException("لا توجد قطع لهذا الطلب");
+            request.setPricingStatus(
+                    PricingStatus.PRICED
+            );
         }
-
-        if (parts.stream().anyMatch(part -> part.getFinalPrice() == null)) {
-            throw new RuntimeException("يجب تسعير جميع القطع قبل إنهاء التسعير");
-        }
-
-        request.setPricingStatus(PricingStatus.PRICED);
 
         requestRepo.save(request);
     }
