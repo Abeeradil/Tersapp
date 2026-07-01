@@ -31,10 +31,6 @@ public class RequestWorkflowService {
     private final FileStorageService fileStorageService;
 
 
-
-
-
-
     @Transactional
     public void updateStatus(
             Integer requestId,
@@ -141,7 +137,6 @@ public class RequestWorkflowService {
 
         // الحالات التي لها Endpoints خاصة (RECEIVED أُزيلت — تُدخل عبر /status)
         if (next == StaffRequestStatus.PARTS_REGISTERING ||
-                next == StaffRequestStatus.PRICING ||
                 next == StaffRequestStatus.REPAIRING) {
 
             throw new RuntimeException("هذه الحالة لها عملية خاصة");
