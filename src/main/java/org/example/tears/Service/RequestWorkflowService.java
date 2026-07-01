@@ -101,8 +101,20 @@ public class RequestWorkflowService {
         req.setStaffStatus(status);
         req.setLastUpdated(LocalDateTime.now());
 
-        if (status == StaffRequestStatus.PARTS_REGISTERING) {
+        if (status == StaffRequestStatus.PRICING) {
+
+            Employee pricingEmployee =
+                    getLeastBusyPricingEmployee();
+
+            req.setAssignedPricingEmployee(pricingEmployee);
+            req.setCurrentEmployee(pricingEmployee);
+
             req.setPricingStatus(PricingStatus.PRICING);
+
+            notificationService.send(
+                    pricingEmployee.getUser(),
+                    "تم إسناد طلب جديد للتسعير رقم #" + req.getId()
+            );
         }
 
         updateStaffTimestamps(req, status);
