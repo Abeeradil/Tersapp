@@ -153,11 +153,11 @@ public class RequestWorkflowService {
                     throw new RuntimeException("استخدم زر استلام السيارة");
 
             case INSPECTION_IN_PROGRESS -> {
-                if (next != StaffRequestStatus.TESTING)
+                if (next != StaffRequestStatus.PARTS_REGISTERING)
                     throw new RuntimeException("انتقال غير صحيح");
             }
 
-            case TESTING -> {
+            case PARTS_REGISTERING -> {
                 if(next != StaffRequestStatus.PRICING)
                     throw new RuntimeException("انتقال غير صحيح");
             }
@@ -168,10 +168,6 @@ public class RequestWorkflowService {
                 );
             }
 
-            case PARTS_REGISTERING -> {
-                if (next != StaffRequestStatus.REPORT_WRITING)
-                    throw new RuntimeException("انتقال غير صحيح");
-            }
 
             case REPORT_WRITING -> {
                 throw new RuntimeException("بعد التقرير يتم استخدام Endpoint تسجيل القطع");
