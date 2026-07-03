@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Enums.*;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
-import org.example.tears.Model.RequestAssignment;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;

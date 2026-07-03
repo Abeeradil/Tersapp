@@ -1,8 +1,6 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
-import org.example.tears.Enums.PricingStatus;
-
 import java.time.LocalDateTime;
 
 @Data

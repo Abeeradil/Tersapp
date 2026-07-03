@@ -1,8 +1,6 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
-
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 

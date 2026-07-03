@@ -3,8 +3,6 @@ package org.example.tears.OutDTO;
 import lombok.Data;
 import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.DTO.TimelineItemDto;
-import org.example.tears.Enums.ServiceOption;
-import org.example.tears.InpDTO.LocationDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
