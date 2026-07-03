@@ -196,10 +196,7 @@ public class RequestMapper {
                 );
             }
         }
-
-
         dto.setCreatedAt(r.getCreatedAt());
-        dto.setLastUpdated(r.getLastUpdated());
         return dto;
     }
 

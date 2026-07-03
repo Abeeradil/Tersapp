@@ -36,8 +36,6 @@ public class PricingRequestDetailsDto {
                 // ملاحظات الفني
                 private List<RequestNoteDTO> notes;
 
-                // الصور
-                private List<RequestImageDto> images;
 
                 // Timeline
                 private List<TimelineItemDto> timeline;

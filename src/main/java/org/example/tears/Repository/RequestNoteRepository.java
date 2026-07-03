@@ -7,11 +7,11 @@ import org.example.tears.Model.RequestNote;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface RequestNoteRepository
         extends JpaRepository<RequestNote, Integer> {
 
-    RequestNote findTopByRequestOrderByCreatedAtDesc(
-            CarServiceRequest request
-    );
+    List<RequestNote> findByRequestOrderByCreatedAtDesc(CarServiceRequest request);
 }

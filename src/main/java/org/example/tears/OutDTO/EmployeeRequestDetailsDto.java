@@ -36,7 +36,6 @@ public class EmployeeRequestDetailsDto {
     private String problemDescription;
 
     private LocalDateTime createdAt;
-    private LocalDateTime lastUpdated;
 
     private String pricingEmployeeName;
     private String pricingEmployeePhone;

@@ -3,6 +3,7 @@ package org.example.tears.Mapper;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.PricingRequestCardDto;
 import org.example.tears.DTO.PricingRequestDetailsDto;
+import org.example.tears.DTO.RequestNoteDTO;
 import org.example.tears.DTO.TimelineItemDto;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
@@ -58,9 +59,7 @@ public class PricingRequestMapper {
                     )
             );
         }
-
         dto.setCreatedAt(request.getCreatedAt());
-
         return dto;
     }
 
@@ -81,16 +80,19 @@ public class PricingRequestMapper {
 
         dto.setTimeline(buildTimeline(request));
 
+        dto.setNotes(
+                noteRepo.findByRequestOrderByCreatedAtDesc(request)
+                        .stream()
+                        .map(note -> {
+                            RequestNoteDTO dtoNote = new RequestNoteDTO();
 
-        RequestNote lastNote = noteRepo
-                .findTopByRequestOrderByCreatedAtDesc(request);
+                            dtoNote.setNote(note.getNote());
+                            dtoNote.setEmployeeId(note.getEmployeeId());
+                            dtoNote.setCreatedAt(note.getCreatedAt());
 
-        dto.setTechnicianNote(
-                lastNote != null ? lastNote.getNote() : null
-        );
-
-        dto.setTechnicianName(
-                request.getAssignedEmployee().getUser().getFullName()
+                            return dtoNote;
+                        })
+                        .toList()
         );
 
         dto.setServiceOption(
