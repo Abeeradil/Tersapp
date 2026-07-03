@@ -219,6 +219,10 @@ public class RequestPricingService {
         PdfRendererBuilder builder =
                 new PdfRendererBuilder();
 
+        String baseUrl = new ClassPathResource("").getURL().toExternalForm();
+
+        builder.withHtmlContent(html, baseUrl);
+
         builder.withHtmlContent(html, null);
 
         builder.toStream(output);

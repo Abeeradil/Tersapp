@@ -6,9 +6,14 @@
 
     <style>
 
+        @font-face{
+            font-family:'Cairo';
+            src:url("fonts/Cairo-Regular.ttf");
+        }
+
         body{
             direction:rtl;
-            font-family:Arial;
+            font-family:'Cairo';
             padding:40px;
         }
 
@@ -49,13 +54,11 @@
 <table>
 
     <tr>
-
         <th>القطعة</th>
         <th>الكمية</th>
         <th>سعر القطعة</th>
         <th>الأجور</th>
         <th>الإجمالي</th>
-
     </tr>
 
     ${rows}
@@ -63,10 +66,7 @@
 </table>
 
 <h3>
-
-    الإجمالي النهائي :
-    ${grandTotal} ريال
-
+    الإجمالي النهائي: ${grandTotal} ريال
 </h3>
 
 </body>
