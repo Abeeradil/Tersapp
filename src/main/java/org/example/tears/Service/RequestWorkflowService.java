@@ -541,18 +541,23 @@ public class RequestWorkflowService {
         return selected;
     }
 
-    public ReportDto preview(Integer requestId){
+    public ReportDto preview(Integer requestId) {
 
-        RequestReport report =
-                reportRepo.findByRequest_Id(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("No report"));
+        RequestReport report = reportRepo.findByRequest_Id(requestId)
+                .orElseThrow(() -> new ApiException("No report"));
+
+        CarServiceRequest request = report.getRequest();
 
         ReportDto dto = new ReportDto();
 
-        dto.setContent(report.getReportContent());
-        dto.setFileUrl(report.getFileUrl());
-        dto.setCreatedAt(report.getCreatedAt());
+        dto.setCustomerName(request.getCustomer().getUser().getFullName());
+        dto.setOrderNumber(request.getOrderNumber());
+        dto.setCarModel(request.getCar().getModel().getName());
+        dto.setProblemDescription(request.getProblemDescription());
+
+        dto.setInspectionResult(report.getInspectionResult());
+        dto.setTechnicianNotes(report.getTechnicianNotes());
+        dto.setRecommendations(report.getRecommendations());
 
         return dto;
     }
@@ -567,19 +572,18 @@ public class RequestWorkflowService {
 
         CarServiceRequest request = report.getRequest();
 
-        // 1. إرسال التقرير
         report.setSent(true);
+
+        request.setStaffStatus(StaffRequestStatus.REPAIRING);
+        request.setCurrentEmployee(request.getAssignedEmployee());
+        request.setLastUpdated(LocalDateTime.now());
+
         reportRepo.save(report);
-
-        // 2. تحديث حالة الطلب
-        request.setPricingStatus(PricingStatus.PRICED);
-
         requestRepo.save(request);
 
-        // 3. إشعار العميل
         notificationService.send(
                 request.getCustomer().getUser(),
-                "تم إرسال تقرير الفحص لطلبك #" + request.getOrderNumber()
+                "تم إصدار تقرير الفحص لطلبك #" + request.getOrderNumber()
         );
     }
 

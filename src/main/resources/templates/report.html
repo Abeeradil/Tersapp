@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <!DOCTYPE html>
+    <html dir="rtl">
+
+    <head>
+        <meta charset="UTF-8">
+        <title>تقرير الفحص</title>
+    </head>
+
+    <body>
+
+    <h1>شركة TERS</h1>
+
+    <h2>تقرير فحص المركبة</h2>
+
+    <hr>
+
+    رقم الطلب :
+    ${orderNumber}
+
+    <br>
+
+    اسم العميل :
+    ${customerName}
+
+    <br>
+
+    السيارة :
+    ${carModel}
+
+    <br>
+
+    وصف المشكلة :
+
+    <p>
+        ${problemDescription}
+    </p>
+
+    <table>
+
+        <thead>
+
+        <tr>
+
+            <th>القطعة</th>
+
+            <th>النوع</th>
+
+            <th>الكمية</th>
+
+            <th>السعر</th>
+
+            <th>الإجمالي</th>
+
+        </tr>
+
+        </thead>
+
+        <tbody>
+
+        ${parts}
+
+        </tbody>
+
+    </table>
+
+    <hr>
+
+    إجمالي القطع :
+    ${totalPartsPrice}
+
+    <br>
+
+    الأجور :
+    ${totalLabor}
+
+    <br>
+
+    الإجمالي :
+    ${grandTotal}
+
+    </body>
+
+    </html>

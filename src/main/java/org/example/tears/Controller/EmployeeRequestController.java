@@ -197,4 +197,46 @@ import java.util.List;
     }
 
 
+    // إنشاء / تعديل التقرير
+    @PostMapping("/requests/{requestId}/report")
+    public ApiResponse createReport(
+            @PathVariable Integer requestId,
+            @RequestBody CreateReportDto dto
+    ) {
+
+        reportService.createReport(requestId, dto);
+
+        return new ApiResponse(
+                true,
+                "تم حفظ التقرير بنجاح"
+        );
+    }
+
+        // معاينة التقرير
+        @GetMapping("/requests/{requestId}/report")
+        public ApiResponse preview(
+                @PathVariable Integer requestId
+        ) {
+
+            return new ApiResponse(
+                    true,
+                    "تم جلب التقرير",
+                    workflowService.preview(requestId)
+            );
+        }
+
+        // إرسال التقرير للعميل
+        @PostMapping("/requests/{requestId}/report/send")
+        public ApiResponse sendReport(
+                @PathVariable Integer requestId
+        ) {
+
+            workflowService.sendReport(requestId);
+
+            return new ApiResponse(
+                    true,
+                    "تم إرسال التقرير للعميل"
+            );
+        }
+
 }

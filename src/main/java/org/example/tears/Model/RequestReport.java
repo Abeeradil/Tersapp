@@ -9,23 +9,25 @@ import java.time.LocalDateTime;
 @Data
 public class RequestReport {
 
-        @Id
-        @GeneratedValue
-        private Integer id;
 
-        private String fileUrl;
+                @Id
+                @GeneratedValue(strategy = GenerationType.IDENTITY)
+                private Integer id;
 
+                @Column(columnDefinition = "TEXT")
+                private String inspectionResult;
 
-        @Column(columnDefinition = "TEXT")
-        private String reportContent;
+                @Column(columnDefinition = "TEXT")
+                private String technicianNotes;
 
+                @Column(columnDefinition = "TEXT")
+                private String recommendations;
 
-        private LocalDateTime createdAt;
+                private LocalDateTime createdAt;
 
-        private boolean sent;
+                private Boolean sent = false;
 
-        private String description;
-
-        @ManyToOne
-        private CarServiceRequest request;
-    }
+                @OneToOne
+                @JoinColumn(name = "request_id")
+                private CarServiceRequest request;
+        }

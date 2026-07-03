@@ -3,6 +3,7 @@ package org.example.tears.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
+import org.example.tears.DTO.CreateReportDto;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
@@ -54,8 +55,6 @@ public class ReportService {
 
         RequestReport report = new RequestReport();
         report.setRequest(req);
-        report.setFileUrl(fileUrl);
-        report.setDescription(description);
         report.setCreatedAt(LocalDateTime.now());
 
         reportRepo.save(report);
@@ -85,8 +84,6 @@ public class ReportService {
         // 4️⃣ رفع التقرير في قاعدة البيانات
         RequestReport report = new RequestReport();
         report.setRequest(req);
-        report.setFileUrl(destination.getAbsolutePath());
-        report.setDescription(description);
         report.setCreatedAt(LocalDateTime.now());
         reportRepo.save(report);
 
@@ -175,21 +172,31 @@ public class ReportService {
     }
 
     @Transactional
-    public void createReport(Integer requestId){
+    public void createReport(
+            Integer requestId,
+            CreateReportDto dto
+    ) {
 
-        String reportText =
-                generateReport(requestId);
+        CarServiceRequest request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
 
-        RequestReport report = new RequestReport();
+        if (request.getPricingStatus() != PricingStatus.PRICED) {
+            throw new ApiException("يجب إنهاء التسعير أولاً");
+        }
 
-        report.setRequest(
-                requestRepo.findById(requestId).get());
+        RequestReport report = reportRepo.findByRequest_Id(requestId)
+                .orElse(new RequestReport());
 
-        report.setReportContent(reportText);
+        report.setRequest(request);
 
-        report.setCreatedAt(LocalDateTime.now());
+        report.setInspectionResult(dto.getInspectionResult());
+        report.setTechnicianNotes(dto.getTechnicianNotes());
+        report.setRecommendations(dto.getRecommendations());
+
+        if (report.getCreatedAt() == null) {
+            report.setCreatedAt(LocalDateTime.now());
+        }
 
         reportRepo.save(report);
-
     }
 }

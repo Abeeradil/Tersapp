@@ -2,18 +2,12 @@ package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.PricingRequestCardDto;
 import org.example.tears.DTO.PricingRequestDetailsDto;
-import org.example.tears.DTO.RequestImageDto;
-import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Mapper.PricingRequestMapper;
-import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
-import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.RequestImageRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
