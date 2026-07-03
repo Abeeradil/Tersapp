@@ -344,19 +344,6 @@ public class RequestWorkflowService {
         return timeline;
     }
 
-    private TimelineItemDto createTimeline(
-            String title,
-            StaffRequestStatus status,
-            LocalDateTime date) {
-
-        TimelineItemDto dto = new TimelineItemDto();
-
-        dto.setTitle(title);
-        dto.setStatus(status);
-        dto.setCompleted(date != null);
-        return dto;
-    }
-
 
     // =========================
         // حفظ الأوقات

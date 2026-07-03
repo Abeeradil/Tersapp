@@ -14,12 +14,18 @@ public class PricingRequestCardDto {
 
     private String pricingStatus;
 
-    private String customerName;
+    // نوع الخدمة
+    private String serviceOption;
 
+    // موقع الاستلام
+    private String address;
+
+    // السيارة
     private String carModelName;
 
     private String carModelNameAr;
 
+    // اللوحة
     private String plateNumberArabic;
 
     private String plateNumberEnglish;

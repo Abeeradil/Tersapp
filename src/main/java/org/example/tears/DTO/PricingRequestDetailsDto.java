@@ -1,29 +1,47 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.Model.RequestNote;
 
+import java.time.LocalDateTime;
 import java.util.List;
 @Data
 public class PricingRequestDetailsDto {
 
-        private Integer id;
+                private Integer id;
+                private String orderNumber;
 
-        private String orderNumber;
+                private String pricingStatus;
+                private String serviceOption;
 
-        private String pricingStatus;
+                // الفني
+                private String technicianName;
+                private String technicianPhone;
 
-        private String customerName;
+                // السيارة
+                private String carModelName;
+                private String carModelNameAr;
 
-        private String customerPhone;
+                private String plateNumberArabic;
+                private String plateNumberEnglish;
 
-        private String problemDescription;
+                // الموقع
+                private String address;
 
-        private String carModelName;
+                // المشكلة
+                private String problemDescription;
 
-        private String carModelNameAr;
+                private String technicianNote;
 
-        private String plateNumberArabic;
+                // ملاحظات الفني
+                private List<RequestNoteDTO> notes;
 
-        private String plateNumberEnglish;
+                // الصور
+                private List<RequestImageDto> images;
 
-    }
+                // Timeline
+                private List<TimelineItemDto> timeline;
+
+                private LocalDateTime createdAt;
+                private LocalDateTime lastUpdated;
+}

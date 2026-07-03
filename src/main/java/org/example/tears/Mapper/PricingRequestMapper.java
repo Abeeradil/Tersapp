@@ -1,12 +1,19 @@
 package org.example.tears.Mapper;
 
+import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.PricingRequestCardDto;
 import org.example.tears.DTO.PricingRequestDetailsDto;
 import org.example.tears.Model.CarServiceRequest;
+import org.example.tears.Model.RequestNote;
+import org.example.tears.Repository.RequestNoteRepository;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class PricingRequestMapper {
+
+    private final RequestNoteRepository noteRepo;
+
 
     public PricingRequestCardDto toPricingCardDto(CarServiceRequest request){
 
@@ -19,11 +26,6 @@ public class PricingRequestMapper {
             dto.setPricingStatus(request.getPricingStatus().name());
         }
 
-        if(request.getCustomer()!=null){
-            dto.setCustomerName(
-                    request.getCustomer().getUser().getFullName()
-            );
-        }
 
         if(request.getCar()!=null){
 
@@ -34,6 +36,10 @@ public class PricingRequestMapper {
             dto.setCarModelNameAr(
                     request.getCar().getModel().getNameAr()
             );
+
+            dto.setServiceOption(request.getServiceOption().name());
+
+            dto.setAddress(request.getLocation().getAddress());
 
             dto.setPlateNumberArabic(
                     formatArabicPlate(
@@ -68,13 +74,24 @@ public class PricingRequestMapper {
                 request.getProblemDescription()
         );
 
-        dto.setCustomerName(
-                request.getCustomer().getUser().getFullName()
+        RequestNote lastNote = noteRepo
+                .findTopByRequestOrderByCreatedAtDesc(request);
+
+        dto.setTechnicianNote(
+                lastNote != null ? lastNote.getNote() : null
         );
 
-        dto.setCustomerPhone(
-                request.getCustomer().getUser().getPhoneNumber()
+        dto.setTechnicianName(
+                request.getAssignedEmployee().getUser().getFullName()
         );
+
+        dto.setTechnicianPhone(
+                request.getAssignedEmployee().getUser().getPhoneNumber()
+        );
+        dto.setAddress(
+                request.getLocation().getAddress()
+        );
+
 
         dto.setCarModelName(
                 request.getCar().getModel().getName()

@@ -5,6 +5,7 @@ import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.RequestNote;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
