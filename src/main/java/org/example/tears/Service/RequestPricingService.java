@@ -107,7 +107,9 @@ public class RequestPricingService {
 
                 reportRepo.save(oldReport);
 
-                version = oldReport.getVersion() + 1;
+                version = oldReport.getVersion() == null
+                        ? 1
+                        : oldReport.getVersion() + 1;
             }
 
             RequestReport report = new RequestReport();
@@ -222,8 +224,6 @@ public class RequestPricingService {
         String baseUrl = new ClassPathResource("").getURL().toExternalForm();
 
         builder.withHtmlContent(html, baseUrl);
-
-        builder.withHtmlContent(html, null);
 
         builder.toStream(output);
 
