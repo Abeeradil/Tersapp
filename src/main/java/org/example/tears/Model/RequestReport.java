@@ -8,26 +8,21 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 public class RequestReport {
-
-
-                @Id
+                    @Id
                 @GeneratedValue(strategy = GenerationType.IDENTITY)
                 private Integer id;
+    private Integer version;
 
-                @Column(columnDefinition = "TEXT")
-                private String inspectionResult;
+    private boolean latest;
 
-                @Column(columnDefinition = "TEXT")
-                private String technicianNotes;
+    private boolean sent;
 
-                @Column(columnDefinition = "TEXT")
-                private String recommendations;
+    private LocalDateTime createdAt;
 
-                private LocalDateTime createdAt;
+    @ManyToOne
+    private Employee createdBy;
 
-                private Boolean sent = false;
+    @ManyToOne
+    private CarServiceRequest request;
 
-                @OneToOne
-                @JoinColumn(name = "request_id")
-                private CarServiceRequest request;
         }

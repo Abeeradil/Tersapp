@@ -5,9 +5,7 @@ import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
-import org.example.tears.Model.RequestNote;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -31,9 +29,6 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
 
     Optional<CarServiceRequest> findById(Integer id);
 
-    List<CarServiceRequest> findByAssignedEmployee_Id(Integer employeeId);
-    long countByCustomerIdAndCustomerStatus(Integer customerId, CustomerRequestStatus status);
-    long countByAssignedEmployee_Id(Integer employeeId);
 
     long countByAssignedEmployee_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
 
@@ -63,15 +58,6 @@ AND
     List<CarServiceRequest> findByAssignedEmployee (Employee emp);
     List<CarServiceRequest> findByAssignedEmployeeIsNull();
 
-
-    @Query("""
-SELECT r FROM CarServiceRequest r
-WHERE r.assignedEmployee IS NULL
-""")
-    List<CarServiceRequest> findUnassignedRequests();
-
-
-
     List<CarServiceRequest>
     findByCustomerIdAndCustomerStatusInOrderByIdDesc(
             Integer customerId,
@@ -84,21 +70,8 @@ WHERE r.assignedEmployee IS NULL
             List<CustomerRequestStatus> statuses
     );
 
-    @Query("SELECT MAX(r.id) FROM CarServiceRequest r")
-    Integer findMaxId();
-
-
     List<CarServiceRequest> findByAppointmentDate(LocalDate appointmentDate);
 
     List<CarServiceRequest> findAllByOrderByIdDesc();
-
-    @Query("""
-SELECT r.appointmentTime
-FROM CarServiceRequest r
-WHERE r.appointmentDate = :date
-""")
-    List<LocalTime> findBookedTimesByDate(
-            @Param("date") LocalDate date
-    );
 
 }

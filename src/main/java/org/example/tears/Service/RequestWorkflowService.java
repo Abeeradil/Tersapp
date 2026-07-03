@@ -27,7 +27,6 @@ public class RequestWorkflowService {
     private final RequestStatusHistoryRepository historyRepo;
     private final NotificationService notificationService;
     private final RequestImageRepository imageRepo;
-    private final RequestPartRepository partRepo;
     private final FileStorageService fileStorageService;
 
 
@@ -544,9 +543,6 @@ public class RequestWorkflowService {
         dto.setCarModel(request.getCar().getModel().getName());
         dto.setProblemDescription(request.getProblemDescription());
 
-        dto.setInspectionResult(report.getInspectionResult());
-        dto.setTechnicianNotes(report.getTechnicianNotes());
-        dto.setRecommendations(report.getRecommendations());
 
         return dto;
     }

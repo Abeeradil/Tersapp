@@ -23,9 +23,7 @@ import java.util.List;
 
     private final RequestWorkflowService workflowService;
     private final PartsService partsService;
-    private final ReportService reportService;
     private final RequestQueryService requestQueryService;
-    private final FileStorageService fileStorageService;
 
     @GetMapping("/my/requests")
     public List<EmployeeRequestResponseDto> myRequests(

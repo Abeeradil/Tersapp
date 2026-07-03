@@ -25,7 +25,6 @@ import java.util.List;
 public class PartsService {
     private final RequestPartRepository partRepo;
     private final CarServiceRequestRepository requestRepo;
-    private final EmployeeRepository employeeRepo;
     private final NotificationService notificationService;
     private final RequestWorkflowService workflowService;
 
