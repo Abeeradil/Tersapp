@@ -46,14 +46,6 @@ public class RequestQueryService {
 
     public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
 
-        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
-
-            return requestRepo.findByAssignedPricingEmployee(employee)
-                    .stream()
-                    .map(requestMapper::toEmployeeCardDto)
-                    .toList();
-        }
-
         return requestRepo.findByAssignedEmployee(employee)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)

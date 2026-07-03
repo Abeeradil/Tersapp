@@ -41,7 +41,4 @@ public class PricingRequestDetailsDto {
 
                 // Timeline
                 private List<TimelineItemDto> timeline;
-
-                private LocalDateTime createdAt;
-                private LocalDateTime lastUpdated;
 }
