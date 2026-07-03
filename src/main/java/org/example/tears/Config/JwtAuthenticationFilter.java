@@ -32,6 +32,10 @@ import java.util.List;
 
             String header = request.getHeader("Authorization");
 
+            System.out.println("=================================");
+            System.out.println("URL = " + request.getRequestURI());
+            System.out.println("HEADER = " + header);
+
             if (header == null || !header.startsWith("Bearer ")) {
                 filterChain.doFilter(request, response);
                 return;
