@@ -7,7 +7,9 @@ import org.example.tears.DTO.PricingRequestDetailsDto;
 import org.example.tears.Mapper.PricingRequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.RequestReport;
 import org.example.tears.Repository.CarServiceRequestRepository;
+import org.example.tears.Repository.RequestReportRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,6 +19,8 @@ public class PricingQueryService {
 
     private final CarServiceRequestRepository requestRepo;
     private final PricingRequestMapper pricingRequestMapper;
+    private final RequestReportRepository reportRepo;
+
 
     public List<PricingRequestCardDto> getMyRequests(Employee employee) {
 
@@ -42,9 +46,20 @@ public class PricingQueryService {
 
             throw new ApiException("غير مصرح لك");
         }
-
         PricingRequestDetailsDto dto =
                 pricingRequestMapper.toPricingDetailsDto(request);
+
+
+        RequestReport report =
+                reportRepo.findByRequest_IdAndLatestTrue(request.getId())
+                        .orElse(null);
+
+        dto.setReportReady(report != null);
+
+        if (report != null) {
+            dto.setReportVersion(report.getVersion());
+        }
+
 
         return dto;
     }

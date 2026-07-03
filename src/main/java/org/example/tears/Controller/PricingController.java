@@ -8,6 +8,7 @@ import org.example.tears.DTO.PricingRequestDto;
 import org.example.tears.Model.User;
 import org.example.tears.Service.PricingQueryService;
 import org.example.tears.Service.RequestPricingService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,4 +60,15 @@ public class PricingController {
 
         return new ApiResponse(true,"تم حفظ التسعير");
     }
+
+    @GetMapping("/requests/{requestId}/report")
+    public ResponseEntity<byte[]> downloadReport(
+            @PathVariable Integer requestId
+    ) throws Exception {
+
+        return requestPricingService.downloadPricingReport(requestId);
+
+    }
+
+
 }

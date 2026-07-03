@@ -2,17 +2,26 @@ package org.example.tears.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.PricingPartDto;
 import org.example.tears.DTO.PricingRequestDto;
 import org.example.tears.Enums.PricingStatus;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.Employee;
-import org.example.tears.Model.RequestPart;
-import org.example.tears.Model.RequestReport;
+import org.example.tears.Model.*;
 import org.example.tears.Repository.CarServiceRequestRepository;
+import org.example.tears.Repository.RequestNoteRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.example.tears.Repository.RequestReportRepository;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -24,6 +33,8 @@ public class RequestPricingService {
     private final CarServiceRequestRepository requestRepo;
     private final RequestPartRepository partRepo;
     private final RequestReportRepository reportRepo;
+    private final RequestNoteRepository noteRepo;
+
 
     @Transactional
     public void pricingRequest(
@@ -117,4 +128,112 @@ public class RequestPricingService {
 
         requestRepo.save(request);
     }
+
+
+    public ResponseEntity<byte[]> downloadPricingReport(Integer requestId) throws Exception {
+
+        // نتأكد أن التقرير موجود
+        reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                .orElseThrow(() ->
+                        new ApiException("التقرير غير موجود"));
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        List<RequestPart> parts =
+                partRepo.findByRequestId(requestId);
+
+        List<RequestNote> notes =
+                noteRepo.findByRequestOrderByCreatedAtDesc(request);
+
+        StringBuilder rows = new StringBuilder();
+
+        int grandTotal = 0;
+
+        for (RequestPart part : parts) {
+
+            int partPrice = part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+
+            int total =
+                    (partPrice * part.getQuantity()) +
+                            part.getLaborCost();
+
+            grandTotal += total;
+
+            rows.append("""
+                <tr>
+                    <td>%s</td>
+                    <td>%d</td>
+                    <td>%d</td>
+                    <td>%d</td>
+                    <td>%d</td>
+                </tr>
+                """.formatted(
+                    part.getName(),
+                    part.getQuantity(),
+                    partPrice,
+                    part.getLaborCost(),
+                    total
+            ));
+        }
+
+        String technicianNotes =
+                notes.isEmpty()
+                        ? "-"
+                        : notes.get(0).getNote();
+
+        ClassPathResource resource =
+                new ClassPathResource("templates/pricing-report.html");
+
+        String html = new String(
+                resource.getInputStream().readAllBytes(),
+                StandardCharsets.UTF_8
+        );
+
+        html = html.replace("${orderNumber}",
+                request.getOrderNumber());
+
+        html = html.replace("${customerName}",
+                request.getCustomer().getUser().getFullName());
+
+        html = html.replace("${carModel}",
+                request.getCar().getModel().getName());
+
+        html = html.replace("${problem}",
+                request.getProblemDescription());
+
+        html = html.replace("${technicianNotes}",
+                technicianNotes);
+
+        html = html.replace("${rows}",
+                rows.toString());
+
+        html = html.replace("${grandTotal}",
+                String.valueOf(grandTotal));
+
+        ByteArrayOutputStream output =
+                new ByteArrayOutputStream();
+
+        PdfRendererBuilder builder =
+                new PdfRendererBuilder();
+
+        builder.withHtmlContent(html, null);
+
+        builder.toStream(output);
+
+        builder.run();
+
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=pricing-report-" +
+                                request.getOrderNumber() +
+                                ".pdf"
+                )
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(output.toByteArray());
+    }
+
 }
