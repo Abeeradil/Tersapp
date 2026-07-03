@@ -108,25 +108,6 @@ import java.util.List;
     }
 
 
-    @PostMapping("/{id}/report")
-    public ApiResponse uploadReport(
-            @PathVariable Integer id,
-            @RequestParam MultipartFile file,
-            @RequestParam String description,
-            @AuthenticationPrincipal User user
-    ) {
-
-        String url = fileStorageService.saveFile(file, "reports");
-
-        reportService.uploadReport(
-                id,
-                user.getEmployee().getId(),
-                url,
-                description
-        );
-
-        return new ApiResponse(true, "تم رفع التقرير");
-    }
 
 
     @PutMapping("/{id}/status")
@@ -193,22 +174,6 @@ import java.util.List;
                 true,
                 "تم جلب القطع",
                 partsService.getParts(id)
-        );
-    }
-
-
-    // إنشاء / تعديل التقرير
-    @PostMapping("/requests/{requestId}/report")
-    public ApiResponse createReport(
-            @PathVariable Integer requestId,
-            @RequestBody CreateReportDto dto
-    ) {
-
-        reportService.createReport(requestId, dto);
-
-        return new ApiResponse(
-                true,
-                "تم حفظ التقرير بنجاح"
         );
     }
 
