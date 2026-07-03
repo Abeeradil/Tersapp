@@ -378,22 +378,21 @@ public class RequestWorkflowService {
         // حفظ ملاحظة
         // =========================
         private void saveNote(
-                CarServiceRequest req,
-                Employee employee,
-                String note
-        ) {
+            CarServiceRequest req,
+            Employee employee,
+            String note
+    ){
 
             RequestNote n = new RequestNote();
 
             n.setRequest(req);
             n.setEmployee(employee);
             n.setNote(note);
-
             n.setStep(req.getStaffStatus());
             n.setCreatedAt(LocalDateTime.now());
 
             noteRepo.save(n);
-        }
+    }
 
         // =========================
         // حفظ History

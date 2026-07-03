@@ -15,21 +15,16 @@ public class RequestNote {
 
         private String note;
 
-        @Enumerated(EnumType.STRING)
-        private StaffRequestStatus step;
-
-        private Integer employeeId;
-
-        private LocalDateTime createdAt;
-
-
         @ManyToOne
         @JoinColumn(name = "employee_id")
         private Employee employee;
 
+        @Enumerated(EnumType.STRING)
+        private StaffRequestStatus step;
+
+        private LocalDateTime createdAt;
+
         @ManyToOne
         @JoinColumn(name = "request_id")
         private CarServiceRequest request;
-
-    }
-
+}

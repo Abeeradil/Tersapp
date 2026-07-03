@@ -91,6 +91,7 @@ public class PricingRequestMapper {
         );
 
 
+
         dto.setNotes(
                 noteRepo.findByRequestOrderByCreatedAtDesc(request)
                         .stream()
@@ -101,10 +102,7 @@ public class PricingRequestMapper {
                             dtoNote.setEmployeeName(
                                     note.getEmployee().getUser().getFullName()
                             );
-
-                            dtoNote.setStep(
-                                    note.getStep()
-                            );
+                            dtoNote.setStep(note.getStep().name());
                             dtoNote.setCreatedAt(note.getCreatedAt());
 
                             return dtoNote;

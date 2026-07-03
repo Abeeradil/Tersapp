@@ -12,7 +12,7 @@ public class RequestNoteDTO {
 
     private String employeeName;
 
-    private StaffRequestStatus step;
+    private String step;
 
     private LocalDateTime createdAt;
 

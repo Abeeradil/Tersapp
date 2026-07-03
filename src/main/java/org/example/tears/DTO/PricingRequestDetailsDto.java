@@ -1,9 +1,7 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
-import org.example.tears.Model.RequestNote;
 
-import java.time.LocalDateTime;
 import java.util.List;
 @Data
 public class PricingRequestDetailsDto {
