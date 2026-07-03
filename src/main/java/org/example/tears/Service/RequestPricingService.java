@@ -84,13 +84,31 @@ public class RequestPricingService {
 
             request.setPricingStatus(PricingStatus.PRICED);
 
-            RequestReport report =
-                    reportRepo.findByRequest_Id(requestId)
-                            .orElse(new RequestReport());
+            RequestReport oldReport =
+                    reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                            .orElse(null);
+
+            int version = 1;
+
+            if (oldReport != null) {
+
+                oldReport.setLatest(false);
+
+                reportRepo.save(oldReport);
+
+                version = oldReport.getVersion() + 1;
+            }
+
+            RequestReport report = new RequestReport();
 
             report.setRequest(request);
+            report.setCreatedBy(pricingEmployee);
 
             report.setCreatedAt(LocalDateTime.now());
+
+            report.setVersion(version);
+
+            report.setLatest(true);
 
             report.setSent(false);
 

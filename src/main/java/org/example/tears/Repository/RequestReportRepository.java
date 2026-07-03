@@ -12,4 +12,6 @@ public interface RequestReportRepository extends JpaRepository<RequestReport,Int
 
     Optional<RequestReport> findByRequest_Id(Integer requestId);
 
+    Optional<RequestReport> findByRequest_IdAndLatestTrue(Integer requestId);
+
 }

@@ -8,9 +8,11 @@ import java.time.LocalDateTime;
 @Entity
 @Data
 public class RequestReport {
-                    @Id
-                @GeneratedValue(strategy = GenerationType.IDENTITY)
-                private Integer id;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     private Integer version;
 
     private boolean latest;
