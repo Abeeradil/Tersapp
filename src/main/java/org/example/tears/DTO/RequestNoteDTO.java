@@ -1,6 +1,7 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.Enums.StaffRequestStatus;
 
 import java.time.LocalDateTime;
 
@@ -9,7 +10,9 @@ public class RequestNoteDTO {
 
     private String note;
 
-    private Integer employeeId;
+    private String employeeName;
+
+    private StaffRequestStatus step;
 
     private LocalDateTime createdAt;
 

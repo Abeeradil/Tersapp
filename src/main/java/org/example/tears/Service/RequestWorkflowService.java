@@ -115,9 +115,10 @@ public class RequestWorkflowService {
 
         updateStaffTimestamps(req, status);
 
-        if (note != null && !note.isBlank()) {
-            saveNote(req, employeeId, note);
-        }
+        Employee employee = employeeRepo.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("الموظف غير موجود"));
+
+        saveNote(req, employee, note);
 
         saveHistory(req, employeeId);
 
@@ -254,9 +255,10 @@ public class RequestWorkflowService {
         req.setStage(WorkflowStage.RECEIVED);                        // عدّلها حسب enum مراحلك
         req.setLastUpdated(LocalDateTime.now());
 
-        if (note != null && !note.isBlank()) {
-            saveNote(req, employeeId, note);
-        }
+        Employee employee = employeeRepo.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("الموظف غير موجود"));
+
+        saveNote(req, employee, note);
 
         saveHistory(req, employeeId);
 
@@ -377,20 +379,21 @@ public class RequestWorkflowService {
         // =========================
         private void saveNote(
                 CarServiceRequest req,
-                Integer empId,
+                Employee employee,
                 String note
         ) {
 
             RequestNote n = new RequestNote();
 
             n.setRequest(req);
-            n.setEmployeeId(empId);
+            n.setEmployee(employee);
             n.setNote(note);
+
+            n.setStep(req.getStaffStatus());
             n.setCreatedAt(LocalDateTime.now());
 
             noteRepo.save(n);
         }
-
 
         // =========================
         // حفظ History

@@ -59,7 +59,9 @@ public class PricingRequestMapper {
                     )
             );
         }
+
         dto.setCreatedAt(request.getCreatedAt());
+
         return dto;
     }
 
@@ -78,7 +80,16 @@ public class PricingRequestMapper {
                 request.getProblemDescription()
         );
 
-        dto.setTimeline(buildTimeline(request));
+        dto.setTimeline(buildTimeline(request)
+        );
+
+        RequestNote lastNote = noteRepo
+                .findTopByRequestOrderByCreatedAtDesc(request);
+
+        dto.setTechnicianNote(
+                lastNote != null ? lastNote.getNote() : null
+        );
+
 
         dto.setNotes(
                 noteRepo.findByRequestOrderByCreatedAtDesc(request)
@@ -87,12 +98,23 @@ public class PricingRequestMapper {
                             RequestNoteDTO dtoNote = new RequestNoteDTO();
 
                             dtoNote.setNote(note.getNote());
-                            dtoNote.setEmployeeId(note.getEmployeeId());
+                            dtoNote.setEmployeeName(
+                                    note.getEmployee().getUser().getFullName()
+                            );
+
+                            dtoNote.setStep(
+                                    note.getStep()
+                            );
                             dtoNote.setCreatedAt(note.getCreatedAt());
 
                             return dtoNote;
                         })
                         .toList()
+        );
+
+
+        dto.setTechnicianName(
+                request.getAssignedEmployee().getUser().getFullName()
         );
 
         dto.setServiceOption(
