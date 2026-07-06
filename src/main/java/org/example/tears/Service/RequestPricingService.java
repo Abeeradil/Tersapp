@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
@@ -144,6 +142,11 @@ public class RequestPricingService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
+        RequestReport report =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("التقرير غير موجود"));
+
         List<RequestPart> parts =
                 partRepo.findByRequestId(requestId);
 
@@ -153,28 +156,43 @@ public class RequestPricingService {
         StringBuilder rows = new StringBuilder();
 
         int grandTotal = 0;
+        int totalPartsPrice = 0;
+        int totalLabor = 0;
+
+
 
         for (RequestPart part : parts) {
 
             int partPrice = part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+            int partsCost =
+                    partPrice * part.getQuantity();
+
+            int labor =
+                    part.getLaborCost();
 
             int total =
-                    (partPrice * part.getQuantity()) +
-                            part.getLaborCost();
+                    partsCost + labor;
 
+            totalPartsPrice += partsCost;
+            totalLabor += labor;
             grandTotal += total;
 
+
             rows.append("""
-                <tr>
-                    <td>%s</td>
-                    <td>%d</td>
-                    <td>%d</td>
-                    <td>%d</td>
-                    <td>%d</td>
-                </tr>
-                """.formatted(
+<tr>
+<td>%s</td>
+<td>%s</td>
+<td>%d</td>
+<td>%s</td>
+<td>%d SAR</td>
+<td>%d SAR</td>
+<td>%d SAR</td>
+</tr>
+""".formatted(
                     part.getName(),
+                    part.getType(),
                     part.getQuantity(),
+                    part.getProblemDescription(),
                     partPrice,
                     part.getLaborCost(),
                     total
@@ -185,6 +203,9 @@ public class RequestPricingService {
                 notes.isEmpty()
                         ? "-"
                         : notes.get(0).getNote();
+        String reportNumber =
+                "PR-" + request.getOrderNumber() + "-V" + report.getVersion();
+
 
         ClassPathResource resource =
                 new ClassPathResource("templates/pricing-report.html");
@@ -194,14 +215,24 @@ public class RequestPricingService {
                 StandardCharsets.UTF_8
         );
 
-        html = html.replace("${orderNumber}",
-                request.getOrderNumber());
-
         html = html.replace("${customerName}",
                 request.getCustomer().getUser().getFullName());
 
+        html = html.replace("${orderNumber}",
+                request.getOrderNumber());
+        html = html.replace(
+                "${reportNumber}",
+                reportNumber
+        );
+
         html = html.replace("${carModel}",
                 request.getCar().getModel().getName());
+
+        html = html.replace("${serviceOption}",
+                request.getServiceOption().name());
+
+        html = html.replace("${phone}",
+                request.getCustomer().getUser().getPhoneNumber());
 
         html = html.replace("${problem}",
                 request.getProblemDescription());
@@ -211,6 +242,18 @@ public class RequestPricingService {
 
         html = html.replace("${rows}",
                 rows.toString());
+
+        html = html.replace("${partsTotal}",
+                String.valueOf(totalPartsPrice));
+
+        html = html.replace("${laborTotal}",
+                String.valueOf(totalLabor));
+
+        html = html.replace("${vat}",
+                String.valueOf(request.getVatAmount()));
+
+        html = html.replace("${discount}",
+                String.valueOf(request.getDiscount()));
 
         html = html.replace("${grandTotal}",
                 String.valueOf(grandTotal));
@@ -222,6 +265,17 @@ public class RequestPricingService {
                 new PdfRendererBuilder();
 
         String baseUrl = new ClassPathResource("").getURL().toExternalForm();
+
+        ClassPathResource font =
+                new ClassPathResource("fonts/Cairo-Regular.ttf");
+
+        builder.useFont(
+                () -> font.getInputStream(),
+                "Cairo",
+                400,
+                PdfRendererBuilder.FontStyle.NORMAL,
+                true
+        );
 
         builder.withHtmlContent(html, baseUrl);
 

@@ -21,6 +21,8 @@ public class RequestReport {
 
     private LocalDateTime createdAt;
 
+    private String reportNumber;
+
     @ManyToOne
     private Employee createdBy;
 
