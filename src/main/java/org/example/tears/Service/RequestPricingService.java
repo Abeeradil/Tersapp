@@ -19,6 +19,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import java.time.LocalDateTime;
@@ -270,7 +271,13 @@ public class RequestPricingService {
                 new ClassPathResource("fonts/Cairo-Regular.ttf");
 
         builder.useFont(
-                () -> font.getInputStream(),
+                () -> {
+                    try {
+                        return font.getInputStream();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
                 "Cairo",
                 400,
                 PdfRendererBuilder.FontStyle.NORMAL,
