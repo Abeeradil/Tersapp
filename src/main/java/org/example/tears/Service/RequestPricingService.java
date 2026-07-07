@@ -6,11 +6,9 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.PricingPartDto;
 import org.example.tears.DTO.PricingRequestDto;
 import org.example.tears.Enums.PricingStatus;
+import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.*;
-import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.RequestNoteRepository;
-import org.example.tears.Repository.RequestPartRepository;
-import org.example.tears.Repository.RequestReportRepository;
+import org.example.tears.Repository.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -31,8 +29,26 @@ public class RequestPricingService {
 
     private final CarServiceRequestRepository requestRepo;
     private final RequestPartRepository partRepo;
+    private final RequestStatusHistoryRepository historyRepo;
     private final RequestReportRepository reportRepo;
     private final RequestNoteRepository noteRepo;
+
+    @Transactional
+    public void startPricing(Integer requestId, Employee employee){
+
+        CarServiceRequest request = requestRepo.findById(requestId)
+                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
+
+        if(request.getAssignedPricingEmployee() == null ||
+                !request.getAssignedPricingEmployee().getId().equals(employee.getId())){
+            throw new ApiException("الطلب غير مسند لك");
+        }
+
+        request.setPricingStatus(PricingStatus.PRICING);
+        request.setPricingAt(LocalDateTime.now());
+
+        requestRepo.save(request);
+    }
 
 
     @Transactional
@@ -94,6 +110,13 @@ public class RequestPricingService {
 
             request.setPricingStatus(PricingStatus.PRICED);
 
+            request.setLastUpdated(LocalDateTime.now());
+
+            saveHistory(
+                    request,
+                    pricingEmployee.getId()
+            );
+
             RequestReport oldReport =
                     reportRepo.findByRequest_IdAndLatestTrue(requestId)
                             .orElse(null);
@@ -129,7 +152,6 @@ public class RequestPricingService {
 
         requestRepo.save(request);
     }
-
 
     public ResponseEntity<byte[]> downloadPricingReport(Integer requestId) throws Exception {
 
@@ -299,6 +321,58 @@ public class RequestPricingService {
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(output.toByteArray());
+    }
+
+    @Transactional
+    public void sendToTechnician(Integer requestId,
+                                 Employee pricingEmployee){
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if(request.getAssignedPricingEmployee()==null ||
+                !request.getAssignedPricingEmployee()
+                        .getId()
+                        .equals(pricingEmployee.getId())){
+
+            throw new ApiException("الطلب غير مسند لك");
+        }
+
+        if(request.getPricingStatus()!=PricingStatus.PRICED){
+
+            throw new ApiException("يجب حفظ التسعير أولاً");
+        }
+
+        request.setCurrentEmployee(
+                request.getAssignedEmployee());
+
+        request.setStaffStatus(
+                StaffRequestStatus.REPORT_WRITING);
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepo.save(request);
+    }
+
+
+    private void saveHistory(
+            CarServiceRequest req,
+            Integer empId
+    ) {
+
+        RequestStatusHistory h = new RequestStatusHistory();
+
+        h.setRequest(req);
+        h.setStaffStatus(req.getStaffStatus());
+        h.setCustomerStatus(req.getCustomerStatus());
+        h.setPricingStatus(req.getPricingStatus());
+
+        h.setChangedBy(empId);
+        h.setChangedAt(LocalDateTime.now());
+
+        historyRepo.save(h);
     }
 
 }

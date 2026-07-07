@@ -1,10 +1,12 @@
 package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.PricingRequestCardDto;
 import org.example.tears.DTO.PricingRequestDetailsDto;
 import org.example.tears.DTO.PricingRequestDto;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
 import org.example.tears.Service.PricingQueryService;
 import org.example.tears.Service.RequestPricingService;
@@ -21,6 +23,21 @@ public class PricingController {
 
         private final RequestPricingService requestPricingService;
         private final PricingQueryService pricingQueryService;
+
+    @PutMapping("/requests/{requestId}/start")
+    public ApiResponse startPricing(
+            @PathVariable Integer requestId,
+            @AuthenticationPrincipal User user
+    ){
+
+        requestPricingService.startPricing(
+                requestId,
+                user.getEmployee()
+        );
+
+        return new ApiResponse(true, "تم بدء التسعير");
+    }
+
 
     @GetMapping("/my/requests")
     public List<PricingRequestCardDto> myRequests(
@@ -60,6 +77,22 @@ public class PricingController {
 
         return new ApiResponse(true,"تم حفظ التسعير");
     }
+
+    @PutMapping("/requests/{requestId}/send")
+    public ApiResponse sendToTechnician(
+            @PathVariable Integer requestId,
+            @AuthenticationPrincipal User user
+    ){
+
+        requestPricingService.sendToTechnician(
+                requestId,
+                user.getEmployee()
+        );
+
+        return new ApiResponse(true, "تم إرسال الطلب للفني");
+    }
+
+
 
     @GetMapping("/requests/{requestId}/report")
     public ResponseEntity<byte[]> downloadReport(

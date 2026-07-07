@@ -161,6 +161,15 @@ public class CarServiceRequest {
                 private LocalDateTime repairAt;
                 private LocalDateTime deliveredAt;
                 private LocalDateTime lastUpdated;
+
+    private LocalDateTime pricingStartedAt;
+
+    private LocalDateTime pricingCompletedAt;
+
+    private LocalDateTime reportGeneratedAt;
+
+    private LocalDateTime reportSentAt;
+
                 // ========================
                 // Location
                 // ========================
