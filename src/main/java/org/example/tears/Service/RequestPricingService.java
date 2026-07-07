@@ -148,6 +148,7 @@ public class RequestPricingService {
             report.setSent(false);
 
             reportRepo.save(report);
+            request.setReportWrittenAt(LocalDateTime.now());
         }
 
         requestRepo.save(request);
@@ -324,43 +325,45 @@ public class RequestPricingService {
     }
 
     @Transactional
-    public void sendToTechnician(Integer requestId,
-                                 Employee pricingEmployee){
+    public void sendToTechnician(
+            Integer requestId,
+            Employee pricingEmployee
+    ) {
 
         CarServiceRequest request =
                 requestRepo.findById(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        if(request.getAssignedPricingEmployee()==null ||
-                !request.getAssignedPricingEmployee()
-                        .getId()
-                        .equals(pricingEmployee.getId())){
+        if (request.getAssignedPricingEmployee() == null ||
+                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
 
             throw new ApiException("الطلب غير مسند لك");
         }
 
-        if(request.getPricingStatus()!=PricingStatus.PRICED){
+        if (request.getPricingStatus() != PricingStatus.PRICED) {
 
             throw new ApiException("يجب حفظ التسعير أولاً");
         }
-
-        request.setCurrentEmployee(
-                request.getAssignedEmployee());
-
-        request.setStaffStatus(
-                StaffRequestStatus.REPORT_WRITING);
-
-        request.setLastUpdated(LocalDateTime.now());
 
         RequestReport report =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
                         .orElseThrow(() ->
                                 new ApiException("لا يوجد تقرير"));
 
+        // إرسال التقرير
         report.setSent(true);
-
         reportRepo.save(report);
+
+        // إعادة الطلب للفني
+        request.setCurrentEmployee(request.getAssignedEmployee());
+
+        // تغيير حالة الموظف
+        request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
+
+        request.setReportWrittenAt(LocalDateTime.now());
+
+        request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
     }

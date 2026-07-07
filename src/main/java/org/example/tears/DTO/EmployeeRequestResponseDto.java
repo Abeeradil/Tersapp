@@ -24,8 +24,6 @@ import java.util.List;
 
         private String address;
 
-        private List<RequestImageDto> images;
-
         private String plateNumberArabic;
         private String plateNumberEnglish;
 

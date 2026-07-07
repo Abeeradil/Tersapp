@@ -1,22 +1,30 @@
 package org.example.tears.Mapper;
 
+import lombok.AllArgsConstructor;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.DTO.TimelineItemDto;
 import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.RequestState;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.RequestReport;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
+import org.example.tears.Repository.RequestReportRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
+@AllArgsConstructor
 public class RequestMapper {
+
+    private final RequestReportRepository reportRepo;
+
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
 
@@ -145,7 +153,13 @@ public class RequestMapper {
             dto.setServiceOption(r.getServiceOption().name());
         }
 
-        dto.setTimeline(buildTimeline(r));
+        RequestReport report =
+                reportRepo.findByRequest_IdAndLatestTrue(r.getId())
+                        .orElse(null);
+
+        dto.setTimeline(
+                buildTimeline(r, report)
+        );
 
         dto.setProblemDescription(r.getProblemDescription());
 
@@ -198,7 +212,10 @@ public class RequestMapper {
         return dto;
     }
 
-    private List<TimelineItemDto> buildTimeline(CarServiceRequest r){
+    private List<TimelineItemDto> buildTimeline(
+            CarServiceRequest r,
+            RequestReport report
+    ){
 
         List<TimelineItemDto> list = new ArrayList<>();
 
@@ -247,7 +264,32 @@ public class RequestMapper {
                 StaffRequestStatus.PRICING,
                 r.getPricingAt(),
                 r.getPricingAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.PRICING
+                r.getPricingStatus() == PricingStatus.PRICING
+        ));
+
+        list.add(new TimelineItemDto(
+                "تم التسعير",
+                StaffRequestStatus.PRICING,
+                report == null ? null : report.getCreatedAt(),
+                r.getPricingStatus() == PricingStatus.PRICED,
+                false
+        ));
+
+        list.add(new TimelineItemDto(
+                "إنشاء التقرير",
+                StaffRequestStatus.PRICING,
+                report == null ? null : report.getCreatedAt(),
+                report != null,
+                false
+        ));
+
+        list.add(new TimelineItemDto(
+                "إرفاق التقرير",
+                StaffRequestStatus.REPORT_WRITING,
+                r.getReportWrittenAt(),
+                r.getStaffStatus().ordinal()
+                        >= StaffRequestStatus.REPORT_WRITING.ordinal(),
+                r.getStaffStatus() == StaffRequestStatus.REPORT_WRITING
         ));
 
         list.add(new TimelineItemDto(
@@ -256,6 +298,15 @@ public class RequestMapper {
                 r.getRepairAt(),
                 r.getRepairAt() != null,
                 r.getStaffStatus() == StaffRequestStatus.REPAIRING
+        ));
+
+        list.add(new TimelineItemDto(
+                "جاري التسليم",
+                StaffRequestStatus.DELIVERY_IN_PROGRESS,
+                r.getLastUpdated(),
+                r.getStaffStatus().ordinal()
+                        >= StaffRequestStatus.DELIVERY_IN_PROGRESS.ordinal(),
+                r.getStaffStatus() == StaffRequestStatus.DELIVERY_IN_PROGRESS
         ));
 
         list.add(new TimelineItemDto(
