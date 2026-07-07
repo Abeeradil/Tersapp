@@ -33,10 +33,17 @@ public class PricingRequestDetailsDto {
 
                 // ملاحظات الفني
                 private List<RequestNoteDTO> notes;
-    private Boolean reportReady;
-    private Integer reportVersion;
+
+                private Boolean reportReady;
+                private Integer reportVersion;
 
 
                 // Timeline
-                private List<TimelineItemDto> timeline;
+                private List<PricingTimelineDto> timeline;
+
+
+    private Boolean reportSent;
+
+    private String reportNumber;
+
 }

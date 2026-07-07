@@ -4,15 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.PricingRequestCardDto;
 import org.example.tears.DTO.PricingRequestDetailsDto;
 import org.example.tears.DTO.RequestNoteDTO;
-import org.example.tears.DTO.TimelineItemDto;
-import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.RequestNote;
 import org.example.tears.Repository.RequestNoteRepository;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -80,9 +75,6 @@ public class PricingRequestMapper {
                 request.getProblemDescription()
         );
 
-        dto.setTimeline(buildTimeline(request)
-        );
-
         RequestNote lastNote = noteRepo
                 .findTopByRequestOrderByCreatedAtDesc(request);
 
@@ -148,77 +140,6 @@ public class PricingRequestMapper {
         );
 
         return dto;
-    }
-
-    private List<TimelineItemDto> buildTimeline(CarServiceRequest r){
-
-        List<TimelineItemDto> list = new ArrayList<>();
-
-        list.add(new TimelineItemDto(
-                "تم إنشاء الطلب",
-                StaffRequestStatus.NEW,
-                r.getCreatedAt(),
-                r.getCreatedAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.NEW
-        ));
-
-        list.add(new TimelineItemDto(
-                "تم استلام السيارة",
-                StaffRequestStatus.RECEIVED,
-                r.getReceivedAt(),
-                r.getReceivedAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.RECEIVED
-        ));
-
-        list.add(new TimelineItemDto(
-                "جاري الفحص",
-                StaffRequestStatus.INSPECTION_IN_PROGRESS,
-                r.getInspectionAt(),
-                r.getInspectionAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.INSPECTION_IN_PROGRESS
-        ));
-
-        list.add(new TimelineItemDto(
-                "قيد التجربة",
-                StaffRequestStatus.TESTING,
-                r.getTestingAt(),
-                r.getTestingAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.TESTING
-        ));
-
-        list.add(new TimelineItemDto(
-                "تسجيل القطع",
-                StaffRequestStatus.PARTS_REGISTERING,
-                r.getPartsRegisteredAt(),
-                r.getPartsRegisteredAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.PARTS_REGISTERING
-        ));
-
-        list.add(new TimelineItemDto(
-                "جاري التسعير",
-                StaffRequestStatus.PRICING,
-                r.getPricingAt(),
-                r.getPricingAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.PRICING
-        ));
-
-        list.add(new TimelineItemDto(
-                "جاري الإصلاح",
-                StaffRequestStatus.REPAIRING,
-                r.getRepairAt(),
-                r.getRepairAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.REPAIRING
-        ));
-
-        list.add(new TimelineItemDto(
-                "تم التسليم",
-                StaffRequestStatus.DELIVERED,
-                r.getDeliveredAt(),
-                r.getDeliveredAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.DELIVERED
-        ));
-
-        return list;
     }
 
     private String formatEnglishPlate(String plate) {

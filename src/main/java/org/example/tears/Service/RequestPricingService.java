@@ -353,6 +353,15 @@ public class RequestPricingService {
 
         request.setLastUpdated(LocalDateTime.now());
 
+        RequestReport report =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير"));
+
+        report.setSent(true);
+
+        reportRepo.save(report);
+
         requestRepo.save(request);
     }
 
