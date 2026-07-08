@@ -1,13 +1,8 @@
 package org.example.tears.DTO;
 import lombok.Data;
-import org.example.tears.InpDTO.LocationDto;
-import org.example.tears.Model.CarModel;
-import org.example.tears.Model.Location;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
+
 
 @Data
     public class EmployeeRequestResponseDto {

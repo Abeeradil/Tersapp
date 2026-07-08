@@ -77,9 +77,7 @@ public class PartsService {
                 part.setName(p.getName());
                 part.setType(p.getType());
                 part.setQuantity(p.getQuantity());
-
-                part.setLaborCost(
-                        calculateLaborCost(p.getQuantity())
+                part.setLaborCost((p.getLaborCost())
                 );
 
                 partRepo.save(part);
@@ -158,8 +156,8 @@ public class PartsService {
             return dto;
         }
 
-        private Integer calculateLaborCost(Integer quantity){
-            return quantity * 25;
-        }
+//        private Integer calculateLaborCost(Integer quantity){
+//            return quantity * 25;
+//        }
 
 }

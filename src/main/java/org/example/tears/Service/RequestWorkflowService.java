@@ -136,8 +136,7 @@ public class RequestWorkflowService {
     ) {
 
         // الحالات التي لها Endpoints خاصة (RECEIVED أُزيلت — تُدخل عبر /status)
-        if (next == StaffRequestStatus.PARTS_REGISTERING ||
-                next == StaffRequestStatus.REPAIRING) {
+        if (next == StaffRequestStatus.REPAIRING) {
 
             throw new RuntimeException("هذه الحالة لها عملية خاصة");
         }
@@ -198,41 +197,62 @@ public class RequestWorkflowService {
     ) {
 
         CarServiceRequest req = requestRepo.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+                .orElseThrow(() ->
+                        new ApiException("الطلب غير موجود"));
 
         if (req.getAssignedEmployee() == null ||
                 !employeeId.equals(req.getAssignedEmployee().getId())) {
-            throw new RuntimeException("غير مصرح لك");
+
+            throw new ApiException("غير مصرح لك");
         }
 
-        // ✅ لازم يكون الطلب فعلاً في حالة الاستلام (دخلها عبر /status من NEW)
         if (req.getStaffStatus() != StaffRequestStatus.RECEIVED) {
-            throw new RuntimeException("الطلب ليس في حالة الاستلام");
+            throw new ApiException("الطلب ليس في حالة الاستلام");
         }
 
-        // حد أقصى 5 ملفات
-        if (images != null && images.size() > 5) {
-            throw new RuntimeException("الحد الأقصى 5 ملفات");
+        // ===========================
+        // Validation
+        // ===========================
+
+        long currentImages = imageRepo.countByRequest(req);
+
+        long newImages = images == null ? 0 : images.size();
+
+        if (currentImages + newImages > 5) {
+            throw new ApiException("الحد الأقصى لصور الطلب هو 5 صور");
         }
+
+        // ===========================
+        // Upload Images
+        // ===========================
 
         if (images != null) {
 
             for (MultipartFile file : images) {
 
-                // التحقق من النوع
+                if (file.isEmpty()) {
+                    throw new ApiException("يوجد ملف فارغ");
+                }
+
+                // 10MB
+                if (file.getSize() > 10 * 1024 * 1024) {
+                    throw new ApiException("حجم الملف لا يجب أن يتجاوز 10MB");
+                }
+
                 String contentType = file.getContentType();
 
                 if (contentType == null ||
                         !(contentType.startsWith("image/")
                                 || contentType.equals("application/pdf"))) {
 
-                    throw new RuntimeException("يسمح فقط بالصور أو PDF");
+                    throw new ApiException("يسمح فقط برفع الصور أو ملفات PDF");
                 }
 
                 String fileUrl =
                         fileStorageService.saveFile(file, "receipts");
 
                 RequestImage image = new RequestImage();
+
                 image.setRequest(req);
                 image.setImageUrl(fileUrl);
                 image.setUploadedAt(LocalDateTime.now());
@@ -240,22 +260,26 @@ public class RequestWorkflowService {
 
                 imageRepo.save(image);
 
-                // أول صورة نخزنها كصورة رئيسية
                 if (req.getReceivedImageUrl() == null) {
                     req.setReceivedImageUrl(fileUrl);
                 }
             }
         }
 
-        // 🔄 الصور = إجراء الخروج من received → نتقدّم للفحص
+        // ===========================
+        // Update Request
+        // ===========================
+
         req.setStaffStatus(StaffRequestStatus.INSPECTION_IN_PROGRESS);
+        req.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED);
+        req.setStage(WorkflowStage.RECEIVED);
+
         req.setReceivedAt(LocalDateTime.now());
-        req.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED); // عدّلها حسب enum عميلك
-        req.setStage(WorkflowStage.RECEIVED);                        // عدّلها حسب enum مراحلك
         req.setLastUpdated(LocalDateTime.now());
 
         Employee employee = employeeRepo.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("الموظف غير موجود"));
+                .orElseThrow(() ->
+                        new ApiException("الموظف غير موجود"));
 
         saveNote(req, employee, note);
 
@@ -263,10 +287,13 @@ public class RequestWorkflowService {
 
         requestRepo.save(req);
 
-        // (اختياري) إشعار للعميل بتغيّر الحالة
+        // ===========================
+        // Notification
+        // ===========================
+
         notificationService.send(
                 req.getCustomer().getUser(),
-                "تم تحديث حالة طلبك رقم #" + req.getId()
+                "تم استلام السيارة وبدء مرحلة الفحص لطلب رقم #" + req.getId()
         );
     }
 
@@ -548,27 +575,44 @@ public class RequestWorkflowService {
     }
 
     @Transactional
-    public void sendReport(Integer requestId){
+    public void sendToCustomer(
+            Integer requestId,
+            Employee pricingEmployee
+    ) {
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (request.getAssignedPricingEmployee() == null ||
+                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
+
+            throw new ApiException("الطلب غير مسند لك");
+        }
+
+        if (request.getPricingStatus() != PricingStatus.PRICED) {
+            throw new ApiException("يجب إنهاء التسعير أولاً");
+        }
 
         RequestReport report =
-                reportRepo.findByRequest_Id(requestId)
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
                         .orElseThrow(() ->
-                                new ApiException("No report"));
-
-        CarServiceRequest request = report.getRequest();
+                                new ApiException("لا يوجد تقرير"));
 
         report.setSent(true);
 
-        request.setStaffStatus(StaffRequestStatus.REPAIRING);
-        request.setCurrentEmployee(request.getAssignedEmployee());
+        request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
+
         request.setLastUpdated(LocalDateTime.now());
 
         reportRepo.save(report);
+
         requestRepo.save(request);
 
         notificationService.send(
                 request.getCustomer().getUser(),
-                "تم إصدار تقرير الفحص لطلبك #" + request.getOrderNumber()
+                "تم إرسال تقرير التسعير، بانتظار موافقتك."
         );
     }
 

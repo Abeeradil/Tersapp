@@ -4,6 +4,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.PartDto;
 import org.example.tears.DTO.UpdatePartsDto;
+import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.RequestApproval;
@@ -25,81 +27,6 @@ import java.time.LocalDateTime;
         private final NotificationService notificationService;
 
 
-        // ===============================
-        // الموظف يحدث القطع والتسعير
-        // ===============================
-        @Transactional
-        public void updateParts(Integer requestId, UpdatePartsDto dto){
-
-            CarServiceRequest request =
-                    requestRepo.findById(requestId)
-                            .orElseThrow(() ->
-                                    new RuntimeException("Request not found"));
-
-
-            // حذف القطع القديمة
-            partRepo.deleteByRequestId(requestId);
-
-
-            int total = dto.getLaborCost(); // أجرة اليد
-
-
-            // إضافة القطع الجديدة
-            for (PartDto p : dto.getParts()) {
-                RequestPart part = new RequestPart();
-
-                part.setName(p.getName());
-                part.setType(p.getType());  // لو عندك نوع القطعة
-                part.setQuantity(p.getQuantity());
-                part.setRequest(request);
-
-                partRepo.save(part);
-
-            }
-
-
-
-            // السعر النهائي
-            request.setFinalPrice(total);
-
-            // انتظار موافقة العميل
-            request.setStage(WorkflowStage.WAITING_APPROVAL);
-
-            requestRepo.save(request);
-
-
-            // إنشاء طلب موافقة
-            createApproval(request);
-
-
-            // إشعار العميل
-            notificationService.send(
-                    request.getCustomer().getUser(),
-                    "Your request #" + request.getId() + " is ready for approval"
-            );
-        }
-
-
-
-        // ===============================
-        // إنشاء سجل موافقة
-        // ===============================
-        private void createApproval(CarServiceRequest request){
-
-            // إذا فيه موافقة قبل لا نكرر
-            if (approvalRepo.findByRequest_Id(request.getId()).isPresent()){
-                return;
-            }
-
-            RequestApproval approval = new RequestApproval();
-
-            approval.setRequest(request);
-            approval.setApproved(null);
-
-            approvalRepo.save(approval);
-        }
-
-
 
         // ===============================
         // العميل يوافق
@@ -111,27 +38,32 @@ import java.time.LocalDateTime;
                             .orElseThrow(() ->
                                     new RuntimeException("Approval not found"));
 
-
             approval.setApproved(true);
             approval.setDecisionAt(LocalDateTime.now());
             approval.setCustomerNote(note);
 
             approvalRepo.save(approval);
 
-
             CarServiceRequest request = approval.getRequest();
+
+            request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+
+            request.setStaffStatus(StaffRequestStatus.REPAIRING);
 
             request.setStage(WorkflowStage.REPAIRING);
 
+            request.setRepairAt(LocalDateTime.now());
+
+            request.setLastUpdated(LocalDateTime.now());
+
             requestRepo.save(request);
 
-
-            // إشعار الموظف
             notificationService.send(
-                    request.getCurrentEmployee().getUser(),
-                    "Request #" + request.getId() + " approved by customer"
+                    request.getAssignedEmployee().getUser(),
+                    "وافق العميل على تقرير التسعير للطلب #" + request.getOrderNumber()
             );
         }
+
 
 
 
@@ -153,10 +85,14 @@ import java.time.LocalDateTime;
             approvalRepo.save(approval);
 
 
+
             CarServiceRequest request = approval.getRequest();
 
-            request.setStage(WorkflowStage.CANCELLED);
+            request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
 
+            request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
+
+            request.setLastUpdated(LocalDateTime.now());
             requestRepo.save(request);
 
 

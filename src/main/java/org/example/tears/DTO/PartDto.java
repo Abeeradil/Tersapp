@@ -8,4 +8,6 @@ public class PartDto {
         private String name;
         private String type;           // جديد
         private Integer quantity;      // بدل qty
-    }
+        private Integer laborCost;
+
+}

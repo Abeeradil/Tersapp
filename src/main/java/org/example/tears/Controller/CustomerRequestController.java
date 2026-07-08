@@ -47,16 +47,7 @@ import java.util.List;
         }
 
 
-        // تعديل القطع
-        @PutMapping("/{id}/parts")
-        public ApiResponse updateParts(
-                @PathVariable Integer id,
-                @RequestBody UpdatePartsDto dto
-        ) {
 
-            approvalService.updateParts(id, dto);
 
-            return new ApiResponse(true,"تم تحديث القطع");
-        }
     }
 

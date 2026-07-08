@@ -189,17 +189,18 @@ import java.util.List;
         }
 
         // إرسال التقرير للعميل
-        @PostMapping("/requests/{requestId}/report/send")
-        public ApiResponse sendReport(
-                @PathVariable Integer requestId
-        ) {
+    @PutMapping("/requests/{requestId}/send-to-customer")
+    public ApiResponse sendToCustomer(
+            @PathVariable Integer requestId,
+            @AuthenticationPrincipal User user
+    ){
 
-            workflowService.sendReport(requestId);
+        workflowService.sendToCustomer(
+                requestId,
+                user.getEmployee()
+        );
 
-            return new ApiResponse(
-                    true,
-                    "تم إرسال التقرير للعميل"
-            );
-        }
+        return new ApiResponse(true,"تم إرسال التقرير للعميل");
+    }
 
 }

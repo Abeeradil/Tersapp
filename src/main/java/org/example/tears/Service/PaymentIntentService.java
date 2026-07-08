@@ -8,11 +8,13 @@ import org.example.tears.DTO.CheckoutResponse;
 import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Model.CarServiceRequest;
+import org.example.tears.Model.Customer;
 import org.example.tears.Model.PaymentIntent;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.PaymentIntentRepository;
+import org.example.tears.Repository.RequestApprovalRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class PaymentIntentService {
     private final PaymentIntentRepository paymentIntentRepository;
     private final CarServiceRequestRepository requestRepository;
     private final CarServiceRequestService carServiceRequestService;
+    private final RequestApprovalRepository approvalRepo;
     private final AuthService authService;
     private final WalletService walletService;
 
@@ -261,5 +264,99 @@ public class PaymentIntentService {
         }
 
         return carServiceRequestService.toResponseDto(intent.getServiceRequest());
+    }
+
+    @Transactional
+    public CheckoutResponse createFinalCheckout(
+            Integer requestId,
+            HttpServletRequest httpRequest
+    ) {
+
+        User user = authService.getAuthenticatedUser(httpRequest);
+
+        CarServiceRequest request =
+                requestRepository.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (!request.getCustomer().getId().equals(user.getCustomer().getId())) {
+            throw new ApiException("غير مصرح لك");
+        }
+
+        if (request.isFinalPaid()) {
+            throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
+        }
+
+        if (request.getFinalPrice() == null || request.getFinalPrice() <= 0) {
+            throw new ApiException("لا يوجد مبلغ للدفع");
+        }
+
+        PaymentIntent intent = new PaymentIntent();
+
+        intent.setCustomer(user.getCustomer());
+        intent.setServiceRequest(request);
+
+        intent.setInitialPaymentAmount(request.getFinalPrice().doubleValue());
+
+        intent.setInitialPaymentAmountHalalah(
+                request.getFinalPrice() * 100
+        );
+
+        intent.setPaymentMethod(request.getPaymentMethod());
+
+        intent.setPaymentStatus(PaymentStatus.INITIATED);
+
+        intent.setCreatedAt(LocalDateTime.now());
+
+        intent.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+
+        paymentIntentRepository.save(intent);
+
+        int amountHalalah = request.getFinalPrice() * 100;
+
+        Map<String, Object> body = new HashMap<>();
+
+        body.put("amount", amountHalalah);
+        body.put("currency", "SAR");
+        body.put("description",
+                "Final Payment - Request #" + request.getOrderNumber());
+
+        body.put("callback_url", callbackUrl);
+        body.put("success_url", successUrl);
+        body.put("back_url", backUrl);
+
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.setBasicAuth(secretKey, "");
+
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        ResponseEntity<Map> response =
+                restTemplate.postForEntity(
+                        "https://api.moyasar.com/v1/invoices",
+                        new HttpEntity<>(body, headers),
+                        Map.class
+                );
+
+        Map data = response.getBody();
+
+        if (data == null || data.get("id") == null || data.get("url") == null) {
+            throw new ApiException("Invalid Moyasar invoice response");
+        }
+
+        String invoiceId = data.get("id").toString();
+        String checkoutUrl = data.get("url").toString();
+
+        intent.setInvoiceId(invoiceId);
+        intent.setCheckoutUrl(checkoutUrl);
+
+        paymentIntentRepository.save(intent);
+
+        return new CheckoutResponse(
+                intent.getId().toString(),
+                invoiceId,
+                checkoutUrl,
+                amountHalalah
+        );
     }
 }

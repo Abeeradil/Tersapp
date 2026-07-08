@@ -7,4 +7,5 @@ import java.util.List;
 public class AddPartsDto {
     private String problemDescription;
     private List<PartDto> parts;
+
 }

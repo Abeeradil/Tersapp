@@ -10,6 +10,7 @@ import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.PaymentIntentService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -56,6 +57,18 @@ public class PaymentIntentController {
     ) {
         return ResponseEntity.ok(
                 paymentIntentService.payRequestWithWallet(request, dto)
+        );
+    }
+
+    @PostMapping("/requests/{requestId}/final-payment")
+    public CheckoutResponse createFinalPayment(
+            @PathVariable Integer requestId,
+            HttpServletRequest request
+    ) {
+
+        return paymentIntentService.createFinalCheckout(
+                requestId,
+                request
         );
     }
 
