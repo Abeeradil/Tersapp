@@ -51,7 +51,7 @@ public class RequestWorkflowService {
 
         // ❌ الحالات التي تُدخل عبر Endpoint خاص (RECEIVED أُزيلت — صارت تُدخل عبر /status)
         if (
-                status == StaffRequestStatus.PARTS_REGISTERING ||
+                status == StaffRequestStatus.PRICING ||
                         status == StaffRequestStatus.REPAIRING ||
                         status == StaffRequestStatus.DELIVERY_IN_PROGRESS
         ) {
