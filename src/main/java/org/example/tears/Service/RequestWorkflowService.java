@@ -61,8 +61,10 @@ public class RequestWorkflowService {
         }
 
         // 🚫 الخروج من RECEIVED يكون عبر زر الاستلام (/receive) فقط — لا عبر /status
-        if (req.getStaffStatus() == StaffRequestStatus.RECEIVED) {
-            throw new RuntimeException(
+        if (req.getStaffStatus() == StaffRequestStatus.RECEIVED ||
+                req.getStaffStatus() == StaffRequestStatus.REPORT_WRITING
+        ) {
+            throw new ApiException(
                     "هذه الحالة لها إجراء خاص"
             );
         }
