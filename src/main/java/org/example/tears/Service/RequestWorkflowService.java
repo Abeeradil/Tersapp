@@ -138,49 +138,50 @@ public class RequestWorkflowService {
         // الحالات التي لها Endpoints خاصة (RECEIVED أُزيلت — تُدخل عبر /status)
         if (next == StaffRequestStatus.REPAIRING) {
 
-            throw new RuntimeException("هذه الحالة لها عملية خاصة");
+            throw new ApiException("هذه الحالة لها عملية خاصة");
         }
 
         switch (current) {
 
             case NEW -> {
                 if (next != StaffRequestStatus.RECEIVED)
-                    throw new RuntimeException("انتقال غير صحيح");
+                    throw new ApiException("انتقال غير صحيح");
             }
 
             case RECEIVED ->
-                    throw new RuntimeException("استخدم زر استلام السيارة");
+                    throw new ApiException("استخدم زر استلام السيارة");
 
             case INSPECTION_IN_PROGRESS -> {
+                if (next != StaffRequestStatus.TESTING)
+                    throw new ApiException("انتقال غير صحيح");
+            }
+
+            case TESTING -> {
                 if (next != StaffRequestStatus.PARTS_REGISTERING)
-                    throw new RuntimeException("انتقال غير صحيح");
+                    throw new ApiException("انتقال غير صحيح");
             }
 
             case PARTS_REGISTERING -> {
-                if(next != StaffRequestStatus.PRICING)
-                    throw new RuntimeException("انتقال غير صحيح");
+                if (next != StaffRequestStatus.PRICING)
+                    throw new ApiException("انتقال غير صحيح");
             }
 
             case PRICING -> {
-                if (next != StaffRequestStatus.REPORT_WRITING)
-
-                    throw new RuntimeException(
-                        "انتقال غير صحصيح"
-                );
+                throw new ApiException("استخدم أزرار المسعر");
             }
 
             case REPORT_WRITING -> {
                 if (next != StaffRequestStatus.REPAIRING)
-                throw new RuntimeException("انتقال غير صحيح");
+                    throw new ApiException("انتقال غير صحيح");
             }
 
             case REPAIRING -> {
-                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS)
-                    throw new RuntimeException("انتقال غير صحيح");
-            }
+                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS &&
+                        next != StaffRequestStatus.PARTS_REGISTERING) {
 
-            case DELIVERED ->
-                    throw new RuntimeException("تم إغلاق الطلب");
+                    throw new ApiException("انتقال غير صحيح");
+                }
+            }
 
             default ->
                     throw new RuntimeException("لا يمكن تحديث هذه الحالة من هنا");
