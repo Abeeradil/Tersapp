@@ -341,7 +341,7 @@ public class RequestPricingService {
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=pricing-report-"+request.getOrderNumber()+".pdf"
+                        "attachment; filename=pricing-report-"+report.getReportNumber()+".pdf"
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(output.toByteArray());
