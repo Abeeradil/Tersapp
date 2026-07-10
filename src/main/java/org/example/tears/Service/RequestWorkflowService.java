@@ -38,11 +38,11 @@ public class RequestWorkflowService {
             String note) {
 
         CarServiceRequest req = requestRepo.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
 
         if (req.getAssignedEmployee() == null ||
                 !employeeId.equals(req.getAssignedEmployee().getId())) {
-            throw new RuntimeException("غير مصرح لك");
+            throw new ApiException("غير مصرح لك");
         }
 
         req.setCustomerStatus(
@@ -52,7 +52,7 @@ public class RequestWorkflowService {
         // ❌ الحالات التي تُدخل عبر Endpoint خاص (RECEIVED أُزيلت — صارت تُدخل عبر /status)
         if (
                 status == StaffRequestStatus.PRICING ) {
-            throw new RuntimeException(
+            throw new ApiException(
                     "هذه الحالة لها إجراء خاص"
             );
         }
@@ -73,7 +73,7 @@ public class RequestWorkflowService {
                 status.ordinal()
                         <= req.getStaffStatus().ordinal()
         ) {
-            throw new RuntimeException(
+            throw new ApiException(
                     "لا يمكن الرجوع لحالة سابقة"
             );
         }
@@ -81,7 +81,7 @@ public class RequestWorkflowService {
         // 📝 ملاحظة
         if (rule.isRequiresNote() &&
                 (note == null || note.isBlank())) {
-            throw new RuntimeException("يجب إضافة ملاحظة لهذه الحالة");
+            throw new ApiException("يجب إضافة ملاحظة لهذه الحالة");
         }
 
         validateStatusTransition(
@@ -114,7 +114,7 @@ public class RequestWorkflowService {
         updateStaffTimestamps(req, status);
 
         Employee employee = employeeRepo.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("الموظف غير موجود"));
+                .orElseThrow(() -> new ApiException("الموظف غير موجود"));
 
         saveNote(req, employee, note);
 
@@ -183,7 +183,7 @@ public class RequestWorkflowService {
             }
 
             default ->
-                    throw new RuntimeException("لا يمكن تحديث هذه الحالة من هنا");
+                    throw new ApiException("لا يمكن تحديث هذه الحالة من هنا");
         }
     }
 
@@ -301,7 +301,7 @@ public class RequestWorkflowService {
     public List<TimelineItemDto> getTimeline(Integer requestId){
 
         CarServiceRequest req = requestRepo.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
 
         List<TimelineItemDto> timeline = new ArrayList<>();
 
@@ -501,7 +501,7 @@ public class RequestWorkflowService {
         }
     private CarServiceRequest getRequest(Integer id) {
         return requestRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
     }
 
 
@@ -519,7 +519,7 @@ public class RequestWorkflowService {
 
         if (req.getAssignedEmployee() == null ||
                 !req.getAssignedEmployee().getId().equals(employeeId)) {
-            throw new RuntimeException("غير مصرح لك");
+            throw new ApiException("غير مصرح لك");
         }
     }
 
@@ -530,7 +530,7 @@ public class RequestWorkflowService {
                 employeeRepo.findByEmployeeRole(EmployeeRole.PRICING);
 
         if (pricingEmployees.isEmpty()) {
-            throw new RuntimeException("لا يوجد موظف تسعير");
+            throw new ApiException("لا يوجد موظف تسعير");
         }
 
         Employee selected = null;
