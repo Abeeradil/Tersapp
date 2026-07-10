@@ -72,6 +72,16 @@ public class PaymentIntentController {
         );
     }
 
+    @PostMapping("/payment/final/callback")
+    public RequestResponseDto finalPaymentCallback(
+            @RequestBody Map<String,Object> payload
+    ){
+
+        return paymentIntentService.handleFinalInvoiceCallback(payload);
+
+    }
+
+
     @GetMapping("/success")
     public ResponseEntity<String> success() {
         return ResponseEntity.ok("Payment success. You can close this page.");

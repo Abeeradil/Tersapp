@@ -32,6 +32,7 @@ public class PaymentIntentService {
     private final PaymentIntentRepository paymentIntentRepository;
     private final CarServiceRequestRepository requestRepository;
     private final CarServiceRequestService carServiceRequestService;
+    private final NotificationService notificationService;
     private final RequestApprovalRepository approvalRepo;
     private final AuthService authService;
     private final WalletService walletService;
@@ -359,4 +360,66 @@ public class PaymentIntentService {
                 amountHalalah
         );
     }
+
+    @Transactional
+    public RequestResponseDto handleFinalInvoiceCallback(
+            Map<String, Object> payload
+    ) {
+
+        String invoiceId = payload.get("id").toString();
+        String status = payload.get("status").toString();
+
+        PaymentIntent intent = paymentIntentRepository
+                .findByInvoiceId(invoiceId)
+                .orElseThrow(() ->
+                        new ApiException("Payment intent not found"));
+
+        if (!"paid".equalsIgnoreCase(status)) {
+
+            intent.setPaymentStatus(PaymentStatus.FAILED);
+
+            paymentIntentRepository.save(intent);
+
+            throw new ApiException("Payment failed");
+        }
+
+        CarServiceRequest request = intent.getServiceRequest();
+
+        if (request == null) {
+            throw new ApiException("Request not found");
+        }
+
+        // تحديث بيانات الدفع
+        request.setFinalPaid(true);
+        request.setFinalTransactionId(invoiceId);
+
+        request.setNextPaymentMethod(intent.getPaymentMethod());
+        request.setNextPaymentStatus(PaymentStatus.PAID);
+
+        // تحديث حالة الطلب
+        request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+        request.setStaffStatus(StaffRequestStatus.REPAIRING);
+        request.setStage(WorkflowStage.REPAIRING);
+
+        request.setRepairAt(LocalDateTime.now());
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepository.save(request);
+
+        // تحديث عملية الدفع
+        intent.setPaymentStatus(PaymentStatus.PAID);
+        intent.setPaidAt(LocalDateTime.now());
+
+        paymentIntentRepository.save(intent);
+
+        // إشعار للفني
+        notificationService.send(
+                request.getCurrentEmployee().getUser(),
+                "تم دفع الدفعة النهائية للطلب #" +
+                        request.getOrderNumber()
+        );
+
+        return carServiceRequestService.toResponseDto(request);
+    }
+
 }

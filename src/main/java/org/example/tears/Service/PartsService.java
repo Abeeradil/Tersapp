@@ -131,6 +131,7 @@ public class PartsService {
                 p.setFinalPrice(part.getFinalPrice());
 
                 p.setLaborCost(part.getLaborCost());
+                p.setPriced(part.getPriced());
 
                 Integer totalPrice = null;
 

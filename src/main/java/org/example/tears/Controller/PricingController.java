@@ -68,28 +68,12 @@ public class PricingController {
             @RequestBody PricingRequestDto dto,
             @AuthenticationPrincipal User user
     ){
-
         requestPricingService.pricingRequest(
                 requestId,
                 dto,
                 user.getEmployee()
         );
-
         return new ApiResponse(true,"تم حفظ التسعير");
-    }
-
-    @PutMapping("/requests/{requestId}/send")
-    public ApiResponse sendToTechnician(
-            @PathVariable Integer requestId,
-            @AuthenticationPrincipal User user
-    ){
-
-        requestPricingService.sendToTechnician(
-                requestId,
-                user.getEmployee()
-        );
-
-        return new ApiResponse(true, "تم إرسال الطلب للفني");
     }
 
 

@@ -30,6 +30,7 @@ public class RequestPricingService {
     private final CarServiceRequestRepository requestRepo;
     private final RequestPartRepository partRepo;
     private final RequestStatusHistoryRepository historyRepo;
+    private final NotificationService notificationService;
     private final RequestReportRepository reportRepo;
     private final RequestNoteRepository noteRepo;
 
@@ -50,7 +51,6 @@ public class RequestPricingService {
         requestRepo.save(request);
     }
 
-
     @Transactional
     public void pricingRequest(
             Integer requestId,
@@ -59,17 +59,17 @@ public class RequestPricingService {
     ) {
 
         CarServiceRequest request = requestRepo.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
 
         if (request.getAssignedPricingEmployee() == null ||
                 !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
 
-            throw new RuntimeException("الطلب غير مسند لك");
+            throw new ApiException("الطلب غير مسند لك");
         }
 
-        if (request.getPricingStatus() == PricingStatus.NEW) {
-
-            request.setPricingStatus(PricingStatus.PRICING);
+        // الطلب لازم يكون جاري التسعير
+        if (request.getPricingStatus() != PricingStatus.PRICING) {
+            throw new ApiException("يجب بدء التسعير أولاً");
         }
 
         int totalPartsPrice = 0;
@@ -78,10 +78,10 @@ public class RequestPricingService {
         for (PricingPartDto item : dto.getParts()) {
 
             RequestPart part = partRepo.findById(item.getPartId())
-                    .orElseThrow(() -> new RuntimeException("القطعة غير موجودة"));
+                    .orElseThrow(() -> new ApiException("القطعة غير موجودة"));
 
             if (!part.getRequest().getId().equals(requestId)) {
-                throw new RuntimeException("القطعة لا تتبع هذا الطلب");
+                throw new ApiException("القطعة لا تتبع هذا الطلب");
             }
 
             part.setFinalPrice(item.getFinalPrice());
@@ -89,69 +89,94 @@ public class RequestPricingService {
 
             partRepo.save(part);
 
-            totalPartsPrice +=
-                    item.getFinalPrice() * part.getQuantity();
-
+            totalPartsPrice += item.getFinalPrice() * part.getQuantity();
             totalLabor += part.getLaborCost();
         }
 
         request.setFinalPrice(totalPartsPrice + totalLabor);
+        request.setLastUpdated(LocalDateTime.now());
+
+        List<RequestPart> parts = partRepo.findByRequestId(requestId);
+
+        boolean allPriced =
+                parts.stream().allMatch(RequestPart::getPriced);
+
+        // إذا ما خلصت كل القطع نخزن فقط
+        if (!allPriced) {
+
+            requestRepo.save(request);
+
+            return;
+        }
+
+        // ============================
+        // تم الانتهاء من التسعير
+        // ============================
+
+        request.setPricingStatus(PricingStatus.PRICED);
+
+        saveHistory(
+                request,
+                pricingEmployee.getId()
+        );
+
+        // ============================
+        // إنشاء نسخة جديدة من التقرير
+        // ============================
+
+        RequestReport oldReport =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElse(null);
+
+        int version = 1;
+
+        if (oldReport != null) {
+
+            oldReport.setLatest(false);
+
+            reportRepo.save(oldReport);
+
+            version = oldReport.getVersion() + 1;
+        }
+
+        RequestReport report = new RequestReport();
+
+        report.setRequest(request);
+        report.setCreatedBy(pricingEmployee);
+        report.setCreatedAt(LocalDateTime.now());
+
+        report.setVersion(version);
+
+        report.setLatest(true);
+
+        // التقرير جاهز ومرفق للفني
+        report.setSent(true);
+
+        reportRepo.save(report);
+
+        // ============================
+        // رجوع الطلب للفني
+        // ============================
+
+        request.setCurrentEmployee(
+                request.getAssignedEmployee()
+        );
+
+        request.setStaffStatus(
+                StaffRequestStatus.REPORT_WRITING
+        );
+
+        request.setReportWrittenAt(LocalDateTime.now());
 
         request.setLastUpdated(LocalDateTime.now());
 
-        List<RequestPart> parts =
-                partRepo.findByRequestId(requestId);
-
-        boolean allPriced =
-                parts.stream()
-                        .allMatch(RequestPart::getPriced);
-
-        if (allPriced) {
-
-            request.setPricingStatus(PricingStatus.PRICED);
-
-            request.setLastUpdated(LocalDateTime.now());
-
-            saveHistory(
-                    request,
-                    pricingEmployee.getId()
-            );
-
-            RequestReport oldReport =
-                    reportRepo.findByRequest_IdAndLatestTrue(requestId)
-                            .orElse(null);
-
-            int version = 1;
-
-            if (oldReport != null) {
-
-                oldReport.setLatest(false);
-
-                reportRepo.save(oldReport);
-
-                version = oldReport.getVersion() == null
-                        ? 1
-                        : oldReport.getVersion() + 1;
-            }
-
-            RequestReport report = new RequestReport();
-
-            report.setRequest(request);
-            report.setCreatedBy(pricingEmployee);
-
-            report.setCreatedAt(LocalDateTime.now());
-
-            report.setVersion(version);
-
-            report.setLatest(true);
-
-            report.setSent(false);
-
-            reportRepo.save(report);
-            request.setReportWrittenAt(LocalDateTime.now());
-        }
-
         requestRepo.save(request);
+
+        notificationService.send(
+                request.getAssignedEmployee().getUser(),
+                "تم إنشاء تقرير التسعير للطلب #" +
+                        request.getOrderNumber()
+        );
     }
 
     public ResponseEntity<byte[]> downloadPricingReport(Integer requestId) throws Exception {
@@ -322,50 +347,6 @@ public class RequestPricingService {
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(output.toByteArray());
-    }
-
-    @Transactional
-    public void sendToTechnician(
-            Integer requestId,
-            Employee pricingEmployee
-    ) {
-
-        CarServiceRequest request =
-                requestRepo.findById(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("الطلب غير موجود"));
-
-        if (request.getAssignedPricingEmployee() == null ||
-                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
-
-            throw new ApiException("الطلب غير مسند لك");
-        }
-
-        if (request.getPricingStatus() != PricingStatus.PRICED) {
-
-            throw new ApiException("يجب حفظ التسعير أولاً");
-        }
-
-        RequestReport report =
-                reportRepo.findByRequest_IdAndLatestTrue(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("لا يوجد تقرير"));
-
-        // إرسال التقرير
-        report.setSent(true);
-        reportRepo.save(report);
-
-        // إعادة الطلب للفني
-        request.setCurrentEmployee(request.getAssignedEmployee());
-
-        // تغيير حالة الموظف
-        request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
-
-        request.setReportWrittenAt(LocalDateTime.now());
-
-        request.setLastUpdated(LocalDateTime.now());
-
-        requestRepo.save(request);
     }
 
 

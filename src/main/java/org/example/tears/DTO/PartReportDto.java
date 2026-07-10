@@ -19,4 +19,6 @@ public class PartReportDto {
 
         private Integer laborCost;
 
+        private Boolean priced = false;
+
 }

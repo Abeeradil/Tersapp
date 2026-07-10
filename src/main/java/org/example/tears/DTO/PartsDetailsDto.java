@@ -18,4 +18,7 @@ public class PartsDetailsDto {
     private Integer totalPartsPrice;  // مجموع أسعار القطع
 
     private Integer grandTotal;       // القطع + الأجور
+
+    private Boolean priced = false;
+
 }
