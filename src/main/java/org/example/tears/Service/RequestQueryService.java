@@ -5,6 +5,8 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.Enums.EmployeeRole;
+import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
@@ -51,6 +53,15 @@ public class RequestQueryService {
     }
 
     public long getMyNewRequestsCount(Employee employee) {
+
+        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+
+            return requestRepo.countByAssignedPricingEmployee_IdAndPricingStatus(
+                    employee.getId(),
+                    PricingStatus.PRICING
+            );
+        }
+
         return requestRepo.countByAssignedEmployee_IdAndStaffStatus(
                 employee.getId(),
                 StaffRequestStatus.NEW
@@ -135,21 +146,31 @@ public class RequestQueryService {
             String plateEnglish
     ) {
 
-        return requestRepo.findByAssignedEmployee(employee)
-                .stream()
+        List<CarServiceRequest> requests;
+
+        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+
+            requests = requestRepo.findByAssignedPricingEmployee(employee);
+
+        } else {
+
+            requests = requestRepo.findByAssignedEmployee(employee);
+        }
+
+        return requests.stream()
                 .filter(r ->
-                orderNumber == null ||
-                        r.getOrderNumber()
-                                .toLowerCase()
-                                .startsWith(orderNumber.toLowerCase())
-        )
+                        orderNumber == null ||
+                                r.getOrderNumber()
+                                        .toLowerCase()
+                                        .startsWith(orderNumber.toLowerCase())
+                )
                 .filter(r ->
                         plateArabic == null ||
                                 r.getCar()
                                         .getPlateNumberArabic()
-                                        .replace(" ","")
+                                        .replace(" ", "")
                                         .startsWith(
-                                                plateArabic.replace(" ","")
+                                                plateArabic.replace(" ", "")
                                         )
                 )
                 .filter(r ->

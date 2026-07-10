@@ -22,13 +22,17 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             StaffRequestStatus status
     );
 
+    long countByAssignedPricingEmployee_IdAndPricingStatus(
+            Integer employeeId,
+            PricingStatus pricingStatus
+    );
+
     long countByAssignedPricingEmployee_IdAndPricingStatusIn(
             Integer employeeId,
             List<PricingStatus> statuses
     );
 
     Optional<CarServiceRequest> findById(Integer id);
-
 
     long countByAssignedEmployee_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
 
