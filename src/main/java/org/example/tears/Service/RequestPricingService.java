@@ -217,7 +217,7 @@ public class RequestPricingService {
                     partPrice * part.getQuantity();
 
             int labor =
-                    part.getLaborCost();
+                    part.getLaborCost()== null ? 0 : part.getLaborCost();
 
             int total =
                     partsCost + labor;
@@ -239,11 +239,11 @@ public class RequestPricingService {
 </tr>
 """.formatted(
                     part.getName(),
-                    part.getType(),
+                    part.getType() == null ? "-" : part.getType(),
                     part.getQuantity(),
-                    part.getProblemDescription(),
+                    part.getProblemDescription() == null ? "-" : part.getProblemDescription(),
                     partPrice,
-                    part.getLaborCost(),
+                    labor,
                     total
             ));
         }

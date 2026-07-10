@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
 
     <meta charset="UTF-8"/>
@@ -12,8 +12,24 @@
         }
 
         body{
-            font-family: Cairo;
-            direction: rtl;
+            font-family:Cairo;
+            direction:ltr;
+            font-size:14px;
+            margin:30px;
+        }
+
+        h1{
+            text-align:center;
+            margin-bottom:25px;
+        }
+
+        .info{
+            margin-bottom:20px;
+            line-height:1.8;
+        }
+
+        .info p{
+            margin:4px 0;
         }
 
         table{
@@ -22,14 +38,28 @@
             margin-top:20px;
         }
 
+        th{
+            background:#f2f2f2;
+        }
+
         td,th{
             border:1px solid #000;
             padding:8px;
             text-align:center;
         }
 
-        h2{
-            text-align:center;
+        .summary{
+            width:40%;
+            margin-left:auto;
+            margin-top:25px;
+        }
+
+        .summary td{
+            text-align:left;
+        }
+
+        .footer{
+            margin-top:35px;
         }
 
     </style>
@@ -38,37 +68,80 @@
 
 <body>
 
-<h2>تقرير التسعير</h2>
+<h1>Pricing Report</h1>
 
-<p><b>Report No:</b> ${reportNumber}</p>
+<div class="info">
 
-<p><b>رقم الطلب:</b> ${orderNumber}</p>
+    <p><b>Report Number:</b> ${reportNumber}</p>
 
-<p><b>اسم العميل:</b> ${customerName}</p>
+    <p><b>Order Number:</b> ${orderNumber}</p>
 
-<p><b>السيارة:</b> ${carModel}</p>
+    <p><b>Customer Name:</b> ${customerName}</p>
 
-<p><b>المشكلة:</b></p>
+    <p><b>Phone:</b> ${phone}</p>
 
-<p>${problem}</p>
+    <p><b>Vehicle:</b> ${carModel}</p>
+
+    <p><b>Service:</b> ${serviceOption}</p>
+
+    <p><b>Problem Description:</b></p>
+
+    <p>${problem}</p>
+
+</div>
 
 <table>
 
     <tr>
-        <th>القطعة</th>
-        <th>الكمية</th>
-        <th>سعر القطعة</th>
-        <th>الأجور</th>
-        <th>الإجمالي</th>
+        <th>Part Name</th>
+        <th>Type</th>
+        <th>Qty</th>
+        <th>Description</th>
+        <th>Unit Price</th>
+        <th>Labor Cost</th>
+        <th>Total</th>
     </tr>
 
     ${rows}
 
 </table>
 
-<h3>
-    الإجمالي النهائي: ${grandTotal} ريال
-</h3>
+<table class="summary">
+
+    <tr>
+        <td><b>Parts Total</b></td>
+        <td>${partsTotal} SAR</td>
+    </tr>
+
+    <tr>
+        <td><b>Labor Total</b></td>
+        <td>${laborTotal} SAR</td>
+    </tr>
+
+    <tr>
+        <td><b>VAT</b></td>
+        <td>${vat} SAR</td>
+    </tr>
+
+    <tr>
+        <td><b>Discount</b></td>
+        <td>${discount} SAR</td>
+    </tr>
+
+    <tr>
+        <td><b>Grand Total</b></td>
+        <td><b>${grandTotal} SAR</b></td>
+    </tr>
+
+</table>
+
+<div class="footer">
+
+    <b>Technician Notes</b>
+
+    <p>${technicianNotes}</p>
+
+</div>
 
 </body>
 </html>
