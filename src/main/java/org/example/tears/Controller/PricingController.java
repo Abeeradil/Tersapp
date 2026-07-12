@@ -1,5 +1,6 @@
 package org.example.tears.Controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.example.tears.Api.ApiResponse;
@@ -76,9 +77,26 @@ public class PricingController {
         return new ApiResponse(true,"تم حفظ التسعير");
     }
 
+    @PutMapping("/requests/{requestId}/finish-pricing")
+    public ApiResponse finishPricing(
+            @PathVariable Integer requestId,
+            @AuthenticationPrincipal User user
+    ) {
+
+        requestPricingService.finishPricing(
+                requestId,
+                user.getEmployee()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم إنهاء التسعير وإنشاء التقرير"
+        );
+    }
 
 
-    @GetMapping("/requests/{requestId}/report")
+
+    @GetMapping("/requests/{requestId}/download_report")
     public ResponseEntity<byte[]> downloadReport(
             @PathVariable Integer requestId
     ) throws Exception {

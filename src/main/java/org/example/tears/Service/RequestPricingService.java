@@ -67,7 +67,6 @@ public class RequestPricingService {
             throw new ApiException("الطلب غير مسند لك");
         }
 
-        // الطلب لازم يكون جاري التسعير
         if (request.getPricingStatus() != PricingStatus.PRICING) {
             throw new ApiException("يجب بدء التسعير أولاً");
         }
@@ -94,24 +93,42 @@ public class RequestPricingService {
         }
 
         request.setFinalPrice(totalPartsPrice + totalLabor);
+
         request.setLastUpdated(LocalDateTime.now());
 
-        List<RequestPart> parts = partRepo.findByRequestId(requestId);
+        requestRepo.save(request);
+    }
+
+    @Transactional
+    public void finishPricing(
+            Integer requestId,
+            Employee pricingEmployee
+    ) {
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (request.getAssignedPricingEmployee() == null ||
+                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
+
+            throw new ApiException("الطلب غير مسند لك");
+        }
+
+        if (request.getPricingStatus() != PricingStatus.PRICING) {
+            throw new ApiException("الطلب ليس في مرحلة التسعير");
+        }
+
+        List<RequestPart> parts =
+                partRepo.findByRequestId(requestId);
 
         boolean allPriced =
                 parts.stream().allMatch(RequestPart::getPriced);
 
-        // إذا ما خلصت كل القطع نخزن فقط
         if (!allPriced) {
-
-            requestRepo.save(request);
-
-            return;
+            throw new ApiException("يجب تسعير جميع القطع أولاً");
         }
-
-        // ============================
-        // تم الانتهاء من التسعير
-        // ============================
 
         request.setPricingStatus(PricingStatus.PRICED);
 
@@ -119,10 +136,6 @@ public class RequestPricingService {
                 request,
                 pricingEmployee.getId()
         );
-
-        // ============================
-        // إنشاء نسخة جديدة من التقرير
-        // ============================
 
         RequestReport oldReport =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
@@ -142,21 +155,18 @@ public class RequestPricingService {
         RequestReport report = new RequestReport();
 
         report.setRequest(request);
+
         report.setCreatedBy(pricingEmployee);
+
         report.setCreatedAt(LocalDateTime.now());
 
         report.setVersion(version);
 
         report.setLatest(true);
 
-        // التقرير جاهز ومرفق للفني
-        report.setSent(true);
+        report.setSent(false);
 
         reportRepo.save(report);
-
-        // ============================
-        // رجوع الطلب للفني
-        // ============================
 
         request.setCurrentEmployee(
                 request.getAssignedEmployee()
@@ -174,7 +184,7 @@ public class RequestPricingService {
 
         notificationService.send(
                 request.getAssignedEmployee().getUser(),
-                "تم إنشاء تقرير التسعير للطلب #" +
+                "تم الانتهاء من التسعير للطلب #" +
                         request.getOrderNumber()
         );
     }
