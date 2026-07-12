@@ -22,6 +22,7 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             StaffRequestStatus status
     );
 
+
     long countByAssignedPricingEmployee_IdAndPricingStatus(
             Integer employeeId,
             PricingStatus pricingStatus
@@ -57,6 +58,7 @@ AND
             @Param("plateArabic") String plateArabic,
             @Param("plateEnglish") String plateEnglish
     );
+
 
 
     List<CarServiceRequest> findByAssignedEmployee (Employee emp);

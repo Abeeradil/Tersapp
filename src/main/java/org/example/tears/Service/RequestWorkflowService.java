@@ -577,7 +577,7 @@ public class RequestWorkflowService {
     @Transactional
     public void sendToCustomer(
             Integer requestId,
-            Employee pricingEmployee
+            Employee assignedEmployee
     ) {
 
         CarServiceRequest request =
@@ -585,14 +585,18 @@ public class RequestWorkflowService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        if (request.getAssignedPricingEmployee() == null ||
-                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
+        if (request.getCurrentEmployee() == null ||
+                !request.getCurrentEmployee().getId().equals(assignedEmployee.getId())) {
 
             throw new ApiException("الطلب غير مسند لك");
         }
 
         if (request.getPricingStatus() != PricingStatus.PRICED) {
             throw new ApiException("يجب إنهاء التسعير أولاً");
+        }
+
+        if (request.getFinalPrice() == null || request.getFinalPrice() <= 0) {
+            throw new ApiException("لا يمكن إرسال تقرير بدون سعر نهائي");
         }
 
         RequestReport report =
@@ -607,7 +611,6 @@ public class RequestWorkflowService {
         request.setLastUpdated(LocalDateTime.now());
 
         reportRepo.save(report);
-
         requestRepo.save(request);
 
         notificationService.send(
