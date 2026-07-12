@@ -148,6 +148,11 @@ public class PartsService {
                 list.add(p);
             }
 
+            boolean priced = parts.stream()
+                    .allMatch(RequestPart::getPriced);
+
+            dto.setPriced(priced);
+            dto.setPricingStatus(req.getPricingStatus());
             dto.setParts(list);
             dto.setTotalParts(totalQuantity);
             dto.setTotalLabor(totalLabor);

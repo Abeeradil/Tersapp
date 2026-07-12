@@ -1,6 +1,7 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.Enums.PricingStatus;
 
 import java.util.List;
 
@@ -10,6 +11,7 @@ public class PartsDetailsDto {
     private String problemDescription;
 
     private List<PartReportDto> parts;
+    private PricingStatus pricingStatus;
 
     private Integer totalParts;       // مجموع عدد القطع
 

@@ -58,7 +58,7 @@ public class RequestQueryService {
 
             return requestRepo.countByAssignedPricingEmployee_IdAndPricingStatus(
                     employee.getId(),
-                    PricingStatus.PRICING
+                    PricingStatus.NEW
             );
         }
 
