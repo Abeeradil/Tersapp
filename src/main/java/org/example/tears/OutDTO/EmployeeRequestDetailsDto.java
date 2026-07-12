@@ -4,7 +4,9 @@ import lombok.Data;
 import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.DTO.TimelineItemDto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -34,6 +36,14 @@ public class EmployeeRequestDetailsDto {
     private String problemDescription;
 
     private LocalDateTime createdAt;
+
+    private LocalDate deliveryDate;
+
+    private LocalTime deliveryTime;
+
+    private String deliveryLocation;
+
+    private Boolean customerApproved;
 
     private String pricingEmployeeName;
     private String pricingEmployeePhone;

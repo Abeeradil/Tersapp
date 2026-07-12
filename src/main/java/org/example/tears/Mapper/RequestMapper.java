@@ -11,8 +11,10 @@ import org.example.tears.Enums.RequestState;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.RequestApproval;
 import org.example.tears.Model.RequestReport;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
+import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +26,7 @@ import java.util.List;
 public class RequestMapper {
 
     private final RequestReportRepository reportRepo;
+    private final RequestApprovalRepository approvalRepo;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -162,6 +165,14 @@ public class RequestMapper {
         );
 
         dto.setProblemDescription(r.getProblemDescription());
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(r.getId())
+                        .orElse(null);
+
+        dto.setCustomerApproved(
+                approval == null ? null : approval.getApproved()
+        );
 
         if(r.getCustomer()!=null){
 
