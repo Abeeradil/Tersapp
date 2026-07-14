@@ -1,10 +1,11 @@
 package org.example.tears.Service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.example.tears.DTO.PartDto;
-import org.example.tears.DTO.UpdatePartsDto;
+import org.example.tears.Api.ApiException;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.CustomerRequestStatus;
+import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
@@ -16,8 +17,10 @@ import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
-    @Service
+@Service
     @RequiredArgsConstructor
     public class RequestApprovalService {
 
@@ -26,6 +29,69 @@ import java.time.LocalDateTime;
         private final CarServiceRequestRepository requestRepo;
         private final NotificationService notificationService;
 
+
+    @Transactional(readOnly = true)
+        public ReportPreviewDto getReport(Integer requestId) {
+
+            CarServiceRequest request =
+                    requestRepo.findById(requestId)
+                            .orElseThrow(() ->
+                                    new ApiException("الطلب غير موجود"));
+
+            List<RequestPart> parts =
+                    partRepo.findByRequestId(requestId);
+
+            ReportPreviewDto dto = new ReportPreviewDto();
+
+            dto.setRequestId(request.getId());
+            dto.setOrderNumber(request.getOrderNumber());
+            dto.setProblemDescription(request.getProblemDescription());
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElse(null);
+
+        if (approval != null) {
+            dto.setCustomerApproved(
+                    approval.getApproved()
+            );
+        }
+            List<CustomerReportPartDto> list = new ArrayList<>();
+
+            double grandTotal = 0;
+
+            for (RequestPart part : parts) {
+
+                CustomerReportPartDto p =
+                        new CustomerReportPartDto();
+
+                p.setPartId(part.getId());
+
+                p.setName(part.getName());
+
+                p.setQuantity(part.getQuantity());
+
+                p.setFinalPrice(part.getFinalPrice());
+
+                p.setLaborCost(part.getLaborCost());
+
+                double total =
+                        (part.getFinalPrice() * part.getQuantity())
+                                + part.getLaborCost();
+
+                p.setTotal(total);
+
+                grandTotal += total;
+
+                list.add(p);
+            }
+
+            dto.setParts(list);
+
+            dto.setGrandTotal(grandTotal);
+
+            return dto;
+        }
 
 
         // ===============================
@@ -102,5 +168,68 @@ import java.time.LocalDateTime;
                     "Request #" + request.getId() + " rejected by customer"
             );
         }
+        @Transactional
+        public void requestModification(
+                Integer requestId,
+                CustomerModifyReportDto dto
+        ){
+
+            CarServiceRequest request =
+                    requestRepo.findById(requestId)
+                            .orElseThrow(() ->
+                                    new ApiException("الطلب غير موجود"));
+
+            RequestApproval approval =
+                    approvalRepo.findByRequest_Id(requestId)
+                            .orElseThrow(() ->
+                                    new ApiException("لا يوجد تقرير"));
+
+            approval.setApproved(false);
+
+            approval.setCustomerNote(dto.getNote());
+
+            approval.setDecisionAt(LocalDateTime.now());
+
+            approvalRepo.save(approval);
+
+            for(CustomerPartDto item : dto.getParts()){
+
+                RequestPart part =
+                        partRepo.findById(item.getPartId())
+                                .orElseThrow(() ->
+                                        new ApiException("القطعة غير موجودة"));
+
+                if(!part.getRequest().getId().equals(requestId)){
+
+                    throw new ApiException("القطعة لا تتبع هذا الطلب");
+                }
+
+                part.setQuantity(item.getQuantity());
+
+                part.setPriced(false);
+
+                partRepo.save(part);
+            }
+
+            request.setPricingStatus(PricingStatus.PRICING);
+
+            request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
+
+            request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
+
+            request.setCurrentEmployee(request.getAssignedEmployee());
+
+            request.setLastUpdated(LocalDateTime.now());
+
+            requestRepo.save(request);
+
+            notificationService.send(
+                    request.getAssignedEmployee().getUser(),
+                    "قام العميل بطلب تعديل على التقرير رقم #" +
+                            request.getOrderNumber()
+            );
+        }
+
+
 
     }

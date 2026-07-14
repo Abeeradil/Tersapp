@@ -13,10 +13,7 @@ import org.example.tears.Model.Appointment;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.OutDTO.PreviewResponseDto;
-import org.example.tears.Service.AppointmentService;
-import org.example.tears.Service.AuthService;
-import org.example.tears.Service.CarServiceRequestService;
-import org.example.tears.Service.LocationService;
+import org.example.tears.Service.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,6 +30,7 @@ public class CarServiceRequestController {
         private final CarServiceRequestService requestService;
         private final AppointmentService appointmentService;
         private final LocationService locationService;
+        private final RequestApprovalService requestApprovalService;
 
         private final AuthService authService;
 
@@ -186,6 +184,13 @@ public class CarServiceRequestController {
                 )
         );
     }
+
+
+
+
+
+
+
 
 }
 

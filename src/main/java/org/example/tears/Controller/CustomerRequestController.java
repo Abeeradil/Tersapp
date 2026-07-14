@@ -2,6 +2,8 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.DTO.CustomerModifyReportDto;
+import org.example.tears.DTO.ReportPreviewDto;
 import org.example.tears.DTO.UpdatePartsDto;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -21,7 +23,7 @@ import java.util.List;
     public class CustomerRequestController {
 
         private final CarServiceRequestService requestService;
-        private final RequestApprovalService approvalService;
+        private final RequestApprovalService requestApprovalService;
 
 
         // طلباتي
@@ -33,20 +35,59 @@ import java.util.List;
                     .getMyRequests(user.getCustomer().getId());
         }
 
+    @GetMapping("/requests/{requestId}/report")
+    public ReportPreviewDto getReport(
+            @PathVariable Integer requestId
+    ) {
+        return requestApprovalService.getReport(requestId);
+    }
+
 
         // الموافقة على التقرير
-        @PutMapping("/{id}/approve")
+        @PutMapping("/{requestId}/approve")
         public ApiResponse approveReport(
-                @PathVariable Integer id
-                ,String note
+                @PathVariable Integer requestId,
+                @RequestParam(required = false) String note
         ) {
 
-            approvalService.approve(id,note);
+            requestApprovalService.approve(requestId, note);
 
-            return new ApiResponse(true,"تمت الموافقة على التقرير");
+            return new ApiResponse(
+                    true,
+                    "تمت الموافقة على التقرير"
+            );
         }
 
+    @PutMapping("/{requestId}/reject")
+    public ApiResponse rejectReport(
+            @PathVariable Integer requestId,
+            @RequestParam(required = false) String note
+    ) {
 
+        requestApprovalService.reject(requestId, note);
+
+        return new ApiResponse(
+                true,
+                "تم رفض التقرير"
+        );
+    }
+
+    @PutMapping("/{requestId}/modify")
+    public ApiResponse modifyReport(
+            @PathVariable Integer requestId,
+            @RequestBody CustomerModifyReportDto dto
+    ) {
+
+        requestApprovalService.requestModification(
+                requestId,
+                dto
+        );
+
+        return new ApiResponse(
+                true,
+                "تم إرسال طلب التعديل"
+        );
+    }
 
 
     }
