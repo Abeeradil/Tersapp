@@ -128,7 +128,7 @@ import java.util.List;
     public ApiResponse receiveCar(
             @PathVariable Integer id,
             @RequestParam(required = false) String note,
-            @RequestParam("images") List<MultipartFile> images,
+            @RequestPart("images") List<MultipartFile> images,
             @AuthenticationPrincipal User user
     ) {
 
