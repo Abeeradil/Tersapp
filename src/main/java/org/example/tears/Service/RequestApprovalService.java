@@ -1,13 +1,12 @@
 package org.example.tears.Service;
 
+import org.example.tears.Enums.*;
+import org.example.tears.Model.Customer;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
-import org.example.tears.Enums.CustomerRequestStatus;
-import org.example.tears.Enums.PricingStatus;
-import org.example.tears.Enums.StaffRequestStatus;
-import org.example.tears.Enums.WorkflowStage;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.RequestApproval;
 import org.example.tears.Model.RequestPart;
@@ -28,7 +27,25 @@ import java.util.List;
         private final RequestPartRepository partRepo;
         private final CarServiceRequestRepository requestRepo;
         private final NotificationService notificationService;
+    private final RequestPricingService requestPricingService;
 
+
+    public ResponseEntity<byte[]> downloadCustomerReport(
+            Integer requestId,
+            Customer customer
+    ) throws Exception {
+
+        CarServiceRequest serviceRequest =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (!serviceRequest.getCustomer().getId().equals(customer.getId())) {
+            throw new ApiException("غير مصرح لك");
+        }
+
+        return requestPricingService.downloadPricingReport(requestId);
+    }
 
     @Transactional(readOnly = true)
         public ReportPreviewDto getReport(Integer requestId) {
@@ -112,13 +129,10 @@ import java.util.List;
 
             CarServiceRequest request = approval.getRequest();
 
-            request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
-
-            request.setStaffStatus(StaffRequestStatus.REPAIRING);
-
-            request.setStage(WorkflowStage.REPAIRING);
-
-            request.setRepairAt(LocalDateTime.now());
+            request.setCustomerStatus(
+                    CustomerRequestStatus.WAITING_APPROVAL
+            );
+            request.setPaymentStatus(PaymentStatus.PENDING);
 
             request.setLastUpdated(LocalDateTime.now());
 

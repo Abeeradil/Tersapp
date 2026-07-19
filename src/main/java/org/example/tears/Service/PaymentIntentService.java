@@ -7,10 +7,7 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.CheckoutResponse;
 import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.Customer;
-import org.example.tears.Model.PaymentIntent;
-import org.example.tears.Model.User;
+import org.example.tears.Model.*;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.PaymentIntentRepository;
@@ -284,6 +281,15 @@ public class PaymentIntentService {
             throw new ApiException("غير مصرح لك");
         }
 
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير"));
+
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تمت الموافقة مسبقاً");
+        }
+
         if (request.isFinalPaid()) {
             throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
         }
@@ -345,18 +351,16 @@ public class PaymentIntentService {
             throw new ApiException("Invalid Moyasar invoice response");
         }
 
-        String invoiceId = data.get("id").toString();
-        String checkoutUrl = data.get("url").toString();
+        intent.setInvoiceId(data.get("id").toString());
 
-        intent.setInvoiceId(invoiceId);
-        intent.setCheckoutUrl(checkoutUrl);
+        intent.setCheckoutUrl(data.get("url").toString());
 
         paymentIntentRepository.save(intent);
 
         return new CheckoutResponse(
                 intent.getId().toString(),
-                invoiceId,
-                checkoutUrl,
+                intent.getInvoiceId(),
+                intent.getCheckoutUrl(),
                 amountHalalah
         );
     }
@@ -384,6 +388,16 @@ public class PaymentIntentService {
         }
 
         CarServiceRequest request = intent.getServiceRequest();
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(request.getId())
+                        .orElseThrow(() ->
+                                new ApiException("Approval not found"));
+
+        approval.setApproved(true);
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
 
         if (request == null) {
             throw new ApiException("Request not found");

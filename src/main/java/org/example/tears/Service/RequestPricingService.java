@@ -33,6 +33,7 @@ public class RequestPricingService {
     private final NotificationService notificationService;
     private final RequestReportRepository reportRepo;
     private final RequestNoteRepository noteRepo;
+    private final RequestApprovalRepository approvalRepo;
 
     @Transactional
     public void startPricing(Integer requestId, Employee employee){
@@ -181,6 +182,23 @@ public class RequestPricingService {
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElse(null);
+
+        if (approval == null) {
+
+            approval = new RequestApproval();
+            approval.setRequest(request);
+
+        }
+
+        approval.setApproved(null);
+        approval.setDecisionAt(null);
+        approval.setCustomerNote(null);
+
+        approvalRepo.save(approval);
+
 
         notificationService.send(
                 request.getAssignedEmployee().getUser(),
