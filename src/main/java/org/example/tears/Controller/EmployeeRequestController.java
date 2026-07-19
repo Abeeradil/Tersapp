@@ -123,6 +123,7 @@ import java.util.List;
         return new ApiResponse(true, "تم تحديث الحالة بنجاح");
     }
 
+
     @PostMapping(value = "/{id}/receive", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse receiveCar(
             @PathVariable Integer id,
@@ -164,6 +165,7 @@ import java.util.List;
 
         return new ApiResponse(true, "تم تسجيل القطع بنجاح");
     }
+
 
     @GetMapping("/{id}/get-parts")
     public ApiResponse getParts(@PathVariable Integer id){

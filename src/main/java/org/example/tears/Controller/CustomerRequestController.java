@@ -3,10 +3,7 @@ package org.example.tears.Controller;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.CheckoutResponse;
-import org.example.tears.DTO.CustomerModifyReportDto;
-import org.example.tears.DTO.ReportPreviewDto;
-import org.example.tears.DTO.UpdatePartsDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.AuthService;
@@ -108,6 +105,27 @@ import java.util.List;
         );
     }
 
+    @PutMapping("/{requestId}/delivery")
+    public ApiResponse scheduleDelivery(
+            @PathVariable Integer requestId,
+            @RequestBody DeliveryRequestDto dto,
+            HttpServletRequest request
+    ){
 
+        User user = authService.getAuthenticatedUser(request);
+
+        requestApprovalService.scheduleDelivery(
+                requestId,
+                dto,
+                user.getCustomer()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم تحديد موعد التسليم"
+        );
     }
+
+
+}
 

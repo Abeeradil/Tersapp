@@ -1,20 +1,16 @@
 package org.example.tears.Service;
 
 import org.example.tears.Enums.*;
-import org.example.tears.Model.Customer;
+import org.example.tears.Model.*;
+import org.example.tears.Repository.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.RequestApproval;
-import org.example.tears.Model.RequestPart;
-import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.RequestApprovalRepository;
-import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +22,12 @@ import java.util.List;
         private final RequestApprovalRepository approvalRepo;
         private final RequestPartRepository partRepo;
         private final CarServiceRequestRepository requestRepo;
+        private final RequestReportRepository reportRepo;
         private final NotificationService notificationService;
     private final RequestPricingService requestPricingService;
+    private final AppointmentService appointmentService;
+    private final LocationRepository locationRepository;
+
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -111,139 +111,202 @@ import java.util.List;
         }
 
 
-        // ===============================
-        // العميل يوافق
-        // ===============================
-        public void approve(Integer requestId, String note){
 
-            RequestApproval approval =
-                    approvalRepo.findByRequest_Id(requestId)
+    public void reject(Integer requestId, String note) {
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new RuntimeException("Approval not found"));
+
+        approval.setApproved(false);
+        approval.setDecisionAt(LocalDateTime.now());
+        approval.setCustomerNote(note);
+
+        approvalRepo.save(approval);
+
+        CarServiceRequest request = approval.getRequest();
+
+        request.setCustomerStatus(CustomerRequestStatus.READY_FOR_DELIVERY);
+
+        request.setStaffStatus(StaffRequestStatus.DELIVERY_IN_PROGRESS);
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepo.save(request);
+
+        notificationService.send(
+                request.getAssignedEmployee().getUser(),
+                "رفض العميل تقرير التسعير للطلب #" +
+                        request.getOrderNumber() +
+                        "، يرجى تجهيز السيارة للتسليم."
+        );
+    }
+
+
+    @Transactional
+    public void requestModification(
+            Integer requestId,
+            CustomerModifyReportDto dto
+    ){
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير"));
+
+        approval.setApproved(false);
+        approval.setCustomerNote(dto.getNote());
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
+
+        int totalPartsPrice = 0;
+        int totalLabor = 0;
+
+        for (CustomerPartDto item : dto.getParts()) {
+
+            RequestPart part =
+                    partRepo.findById(item.getPartId())
                             .orElseThrow(() ->
-                                    new RuntimeException("Approval not found"));
+                                    new ApiException("القطعة غير موجودة"));
 
-            approval.setApproved(true);
-            approval.setDecisionAt(LocalDateTime.now());
-            approval.setCustomerNote(note);
-
-            approvalRepo.save(approval);
-
-            CarServiceRequest request = approval.getRequest();
-
-            request.setCustomerStatus(
-                    CustomerRequestStatus.WAITING_APPROVAL
-            );
-            request.setPaymentStatus(PaymentStatus.PENDING);
-
-            request.setLastUpdated(LocalDateTime.now());
-
-            requestRepo.save(request);
-
-            notificationService.send(
-                    request.getAssignedEmployee().getUser(),
-                    "وافق العميل على تقرير التسعير للطلب #" + request.getOrderNumber()
-            );
-        }
-
-
-
-
-        // ===============================
-        // العميل يرفض
-        // ===============================
-        public void reject(Integer requestId, String note){
-
-            RequestApproval approval =
-                    approvalRepo.findByRequest_Id(requestId)
-                            .orElseThrow(() ->
-                                    new RuntimeException("Approval not found"));
-
-
-            approval.setApproved(false);
-            approval.setDecisionAt(LocalDateTime.now());
-            approval.setCustomerNote(note);
-
-            approvalRepo.save(approval);
-
-
-
-            CarServiceRequest request = approval.getRequest();
-
-            request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
-
-            request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
-
-            request.setLastUpdated(LocalDateTime.now());
-            requestRepo.save(request);
-
-
-            // إشعار الموظف
-            notificationService.send(
-                    request.getCurrentEmployee().getUser(),
-                    "Request #" + request.getId() + " rejected by customer"
-            );
-        }
-        @Transactional
-        public void requestModification(
-                Integer requestId,
-                CustomerModifyReportDto dto
-        ){
-
-            CarServiceRequest request =
-                    requestRepo.findById(requestId)
-                            .orElseThrow(() ->
-                                    new ApiException("الطلب غير موجود"));
-
-            RequestApproval approval =
-                    approvalRepo.findByRequest_Id(requestId)
-                            .orElseThrow(() ->
-                                    new ApiException("لا يوجد تقرير"));
-
-            approval.setApproved(false);
-
-            approval.setCustomerNote(dto.getNote());
-
-            approval.setDecisionAt(LocalDateTime.now());
-
-            approvalRepo.save(approval);
-
-            for(CustomerPartDto item : dto.getParts()){
-
-                RequestPart part =
-                        partRepo.findById(item.getPartId())
-                                .orElseThrow(() ->
-                                        new ApiException("القطعة غير موجودة"));
-
-                if(!part.getRequest().getId().equals(requestId)){
-
-                    throw new ApiException("القطعة لا تتبع هذا الطلب");
-                }
-
-                part.setQuantity(item.getQuantity());
-
-                part.setPriced(false);
-
-                partRepo.save(part);
+            if (!part.getRequest().getId().equals(requestId)) {
+                throw new ApiException("القطعة لا تتبع هذا الطلب");
             }
 
-            request.setPricingStatus(PricingStatus.PRICING);
+            int oldQty = part.getQuantity();
 
-            request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
+            int newQty = item.getQuantity();
 
-            request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
+            if (newQty < 0) {
+                throw new ApiException("الكمية غير صحيحة");
+            }
 
-            request.setCurrentEmployee(request.getAssignedEmployee());
+            int oldLabor =
+                    part.getLaborCost() == null ? 0 : part.getLaborCost();
 
-            request.setLastUpdated(LocalDateTime.now());
+            int laborPerPiece =
+                    oldQty == 0 ? 0 : oldLabor / oldQty;
 
-            requestRepo.save(request);
+            part.setQuantity(newQty);
 
-            notificationService.send(
-                    request.getAssignedEmployee().getUser(),
-                    "قام العميل بطلب تعديل على التقرير رقم #" +
-                            request.getOrderNumber()
-            );
+            part.setLaborCost(laborPerPiece * newQty);
+
+            partRepo.save(part);
+
+            int unitPrice =
+                    part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+
+            totalPartsPrice += unitPrice * newQty;
+
+            totalLabor += part.getLaborCost();
         }
 
+        request.setFinalPrice(totalPartsPrice + totalLabor);
 
+        request.setPricingStatus(PricingStatus.PRICED);
 
+        request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
+
+        request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
+
+        request.setCurrentEmployee(request.getAssignedEmployee());
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        RequestReport oldReport =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElse(null);
+
+        int version = 1;
+
+        if (oldReport != null) {
+
+            oldReport.setLatest(false);
+
+            reportRepo.save(oldReport);
+
+            version = oldReport.getVersion() + 1;
+        }
+
+        RequestReport report = new RequestReport();
+
+        report.setRequest(request);
+
+        report.setCreatedBy(request.getAssignedPricingEmployee());
+
+        report.setCreatedAt(LocalDateTime.now());
+
+        report.setVersion(version);
+
+        report.setLatest(true);
+
+        report.setSent(true);
+
+        reportRepo.save(report);
+
+        requestRepo.save(request);
+
+        notificationService.send(
+                request.getCustomer().getUser(),
+                "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى."
+        );
     }
+
+    @jakarta.transaction.Transactional
+    public void scheduleDelivery(
+            Integer requestId,
+            DeliveryRequestDto dto,
+            Customer customer
+    ){
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if(!request.getCustomer().getId().equals(customer.getId())){
+            throw new ApiException("غير مصرح لك");
+        }
+
+        if(dto.getDeliveryDate().getDayOfWeek() == DayOfWeek.FRIDAY){
+            throw new ApiException("لا يمكن اختيار يوم الجمعة");
+        }
+
+        appointmentService.validateAppointment(
+                dto.getDeliveryDate(),
+                dto.getDeliveryTime()
+        );
+
+        Location location =
+                locationRepository.findById(dto.getLocationId())
+                        .orElseThrow(() ->
+                                new ApiException("الموقع غير موجود"));
+
+        if(!location.getCustomer().getId().equals(customer.getId())){
+            throw new ApiException("الموقع لا يخصك");
+        }
+
+        request.setDeliveryDate(dto.getDeliveryDate());
+        request.setDeliveryTime(dto.getDeliveryTime());
+        request.setDeliveryLocation(location);
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepo.save(request);
+
+        notificationService.send(
+                request.getAssignedEmployee().getUser(),
+                "قام العميل بتحديد موعد تسليم السيارة للطلب #"
+                        + request.getOrderNumber()
+        );
+    }
+
+
+}

@@ -41,7 +41,11 @@ public class EmployeeRequestDetailsDto {
 
     private LocalTime deliveryTime;
 
-    private String deliveryLocation;
+    private String deliveryAddress;
+
+    private Double deliveryLat;
+
+    private Double deliveryLng;
 
     private Boolean customerApproved;
 

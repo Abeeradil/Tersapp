@@ -13,6 +13,7 @@ import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
+import org.example.tears.Repository.LocationRepository;
 import org.example.tears.Repository.RequestImageRepository;
 import org.springframework.stereotype.Service;
 
@@ -118,8 +119,29 @@ public class RequestQueryService {
                         .toList()
         );
 
+        if(request.getDeliveryLocation() != null){
+
+            dto.setDeliveryDate(request.getDeliveryDate());
+
+            dto.setDeliveryTime(request.getDeliveryTime());
+
+            dto.setDeliveryAddress(
+                    request.getDeliveryLocation().getAddress()
+            );
+
+            dto.setDeliveryLat(
+                    request.getDeliveryLocation().getLat()
+            );
+
+            dto.setDeliveryLng(
+                    request.getDeliveryLocation().getLng()
+            );
+        }
+
         return dto;
     }
+
+
 
 
 
@@ -183,5 +205,7 @@ public class RequestQueryService {
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
     }
+
+
 
 }

@@ -68,6 +68,14 @@ public class CarServiceRequest {
 
     private LocalDateTime partsRegisteredAt;
 
+    @ManyToOne
+    @JoinColumn(name = "delivery_location_id")
+    private Location deliveryLocation;
+
+    private LocalDate deliveryDate;
+
+    private LocalTime deliveryTime;
+
                 // ========================
                 // Pricing & Payment
                 // ========================

@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
         private String plateNumberArabic;
         private String plateNumberEnglish;
 
+
         private LocalDateTime createdAt;
 
     }
