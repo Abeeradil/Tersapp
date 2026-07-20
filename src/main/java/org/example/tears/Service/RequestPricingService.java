@@ -281,7 +281,7 @@ public class RequestPricingService {
                         ? "-"
                         : notes.get(0).getNote();
         String reportNumber =
-                "PR-" + request.getOrderNumber() + "-V" + report.getVersion();
+                "PR-" + report.getReportNumber() ;
 
 
         ClassPathResource resource =
