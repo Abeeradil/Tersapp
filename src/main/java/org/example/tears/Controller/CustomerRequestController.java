@@ -13,7 +13,6 @@ import org.example.tears.Service.RequestApprovalService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -62,6 +61,19 @@ import java.util.List;
 
 
         // الموافقة على التقرير
+        @PutMapping("/{requestId}/approve")
+        public ApiResponse approveReport(
+                @PathVariable Integer requestId,
+                @RequestParam(required = false) String note
+        ){
+            requestApprovalService.approve(requestId, note);
+
+            return new ApiResponse(
+                    true,
+                    "تمت الموافقة على التقرير"
+            );
+        }
+
         @PostMapping("/{requestId}/final-payment")
         public CheckoutResponse createFinalPayment(
                 @PathVariable Integer requestId,
