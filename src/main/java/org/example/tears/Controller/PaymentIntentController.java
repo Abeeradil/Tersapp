@@ -72,7 +72,7 @@ public class PaymentIntentController {
         );
     }
 
-    @PostMapping("/payment/final/callback")
+    @PostMapping("/final/callback")
     public RequestResponseDto finalPaymentCallback(
             @RequestBody Map<String,Object> payload
     ){
