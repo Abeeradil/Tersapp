@@ -123,7 +123,6 @@ import java.util.List;
             throw new ApiException("تمت الموافقة مسبقاً");
         }
 
-        approval.setApproved(true);
         approval.setDecisionAt(LocalDateTime.now());
         approval.setCustomerNote(note);
 
