@@ -1,6 +1,5 @@
 package org.example.tears.Service;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
@@ -94,18 +93,17 @@ public class RequestWorkflowService {
         req.setStaffStatus(status);
         switch (status) {
 
-            case DELIVERY_IN_PROGRESS -> {
+            case DELIVERY_IN_PROGRESS ->
                 req.setCustomerStatus(CustomerRequestStatus.READY_FOR_DELIVERY);
-            }
 
             case DELIVERED -> {
                 req.setCustomerStatus(CustomerRequestStatus.DELIVERED);
                 req.setStage(WorkflowStage.DELIVERED);
             }
 
-            default -> {
+            default ->
                 req.setCustomerStatus(mapCustomerStatus(status));
-            }
+
         }
 
         if (status == StaffRequestStatus.DELIVERY_IN_PROGRESS) {
@@ -196,9 +194,8 @@ public class RequestWorkflowService {
                     throw new ApiException("انتقال غير صحيح");
             }
 
-            case PRICING -> {
+            case PRICING ->
                 throw new ApiException("استخدم أزرار المسعر");
-            }
 
             case REPORT_WRITING -> {
                 if (next != StaffRequestStatus.REPAIRING)
@@ -428,9 +425,9 @@ public class RequestWorkflowService {
             case RECEIVED ->
                     req.setReceivedAt(now);
 
-            case INSPECTION_IN_PROGRESS -> {
+            case INSPECTION_IN_PROGRESS ->
                 req.setInspectionAt(now);
-            }
+
             case TESTING ->
                     req.setTestingAt(now);
 
@@ -552,21 +549,8 @@ public class RequestWorkflowService {
             };
         }
 
-    private CarServiceRequest getRequest(Integer id) {
-        return requestRepo.findById(id)
-                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
-    }
 
 
-    private void notifyCustomer(CarServiceRequest req) {
-
-        if (req.getCustomer() == null) return;
-
-        notificationService.send(
-                req.getCustomer().getUser(),
-                "تم تحديث طلبك #" + req.getOrderNumber()
-        );
-    }
 
     private void validateWorkshopEmployee(CarServiceRequest req, Integer employeeId) {
 

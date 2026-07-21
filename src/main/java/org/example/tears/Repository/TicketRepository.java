@@ -12,17 +12,9 @@ import java.util.Optional;
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Integer> {
 
-    Optional<Ticket> findByTicketNumber(String ticketNumber);
-
-    List<Ticket> findByCustomer_IdOrderByCreatedAtDesc(Integer customerId);
-
-    List<Ticket> findByAssignedEmployee_IdOrderByCreatedAtDesc(Integer employeeId);
-
-    List<Ticket> findAllByOrderByCreatedAtDesc();
 
     Optional<Ticket> findById(Integer id);
 
-    List<Ticket> findByStatusOrderByCreatedAtDesc(TicketStatus status);
 
     List<Ticket> findByCreatedByEmployee_IdOrderByCreatedAtDesc(Integer employeeId);
 
