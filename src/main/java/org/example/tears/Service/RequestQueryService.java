@@ -119,27 +119,10 @@ public class RequestQueryService {
                         .toList()
         );
 
-        if(request.getDeliveryLocation() != null){
-
-            dto.setDeliveryDate(request.getDeliveryDate());
-
-            dto.setDeliveryTime(request.getDeliveryTime());
-
-            dto.setDeliveryAddress(
-                    request.getDeliveryLocation().getAddress()
-            );
-
-            dto.setDeliveryLat(
-                    request.getDeliveryLocation().getLat()
-            );
-
-            dto.setDeliveryLng(
-                    request.getDeliveryLocation().getLng()
-            );
-        }
 
         return dto;
     }
+
 
 
 

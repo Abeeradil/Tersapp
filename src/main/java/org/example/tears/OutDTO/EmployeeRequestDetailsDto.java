@@ -37,15 +37,15 @@ public class EmployeeRequestDetailsDto {
 
     private LocalDateTime createdAt;
 
+    private Boolean customerSelectedDelivery;
+
     private LocalDate deliveryDate;
 
     private LocalTime deliveryTime;
 
-    private String deliveryAddress;
+    private String deliveryDay;
 
-    private Double deliveryLat;
-
-    private Double deliveryLng;
+    private OutLocationDto deliveryLocation;
 
     private Boolean customerApproved;
 

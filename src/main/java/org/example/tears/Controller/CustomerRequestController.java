@@ -126,7 +126,7 @@ import java.util.List;
 
         User user = authService.getAuthenticatedUser(request);
 
-        requestApprovalService.scheduleDelivery(
+        requestApprovalService.chooseDelivery(
                 requestId,
                 dto,
                 user.getCustomer()

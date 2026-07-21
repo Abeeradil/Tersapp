@@ -11,6 +11,7 @@ import org.example.tears.DTO.*;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -300,51 +301,59 @@ import java.util.List;
         );
     }
 
-    @jakarta.transaction.Transactional
-    public void scheduleDelivery(
+    @Transactional
+    public void chooseDelivery(
             Integer requestId,
             DeliveryRequestDto dto,
             Customer customer
-    ){
+    ) {
 
         CarServiceRequest request =
                 requestRepo.findById(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        if(!request.getCustomer().getId().equals(customer.getId())){
+        if (!request.getCustomer().getId().equals(customer.getId())) {
             throw new ApiException("غير مصرح لك");
         }
 
-        if(dto.getDeliveryDate().getDayOfWeek() == DayOfWeek.FRIDAY){
+        if (request.getStaffStatus() != StaffRequestStatus.DELIVERY_IN_PROGRESS) {
+            throw new ApiException("لا يمكن اختيار موعد التسليم حالياً");
+        }
+
+        if (dto.getDeliveryDate().getDayOfWeek() == DayOfWeek.FRIDAY) {
             throw new ApiException("لا يمكن اختيار يوم الجمعة");
         }
 
-        appointmentService.validateAppointment(
-                dto.getDeliveryDate(),
-                dto.getDeliveryTime()
-        );
+        if (dto.getDeliveryDate().isBefore(LocalDate.now())) {
+            throw new ApiException("لا يمكن اختيار تاريخ سابق");
+        }
+
+        /**
+        if (!AVAILABLE_TIMES.contains(dto.getDeliveryTime())) {
+            throw new ApiException("وقت التسليم غير متاح");
+        }
+         **/
+
 
         Location location =
                 locationRepository.findById(dto.getLocationId())
                         .orElseThrow(() ->
                                 new ApiException("الموقع غير موجود"));
 
-        if(!location.getCustomer().getId().equals(customer.getId())){
-            throw new ApiException("الموقع لا يخصك");
-        }
-
+        request.setDeliveryLocation(location);
         request.setDeliveryDate(dto.getDeliveryDate());
         request.setDeliveryTime(dto.getDeliveryTime());
-        request.setDeliveryLocation(location);
+
+        request.setCustomerSelectedDelivery(true);
 
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
 
         notificationService.send(
-                request.getAssignedEmployee().getUser(),
-                "قام العميل بتحديد موعد تسليم السيارة للطلب #"
+                request.getCurrentEmployee().getUser(),
+                "قام العميل بحجز موعد تسليم السيارة للطلب #"
                         + request.getOrderNumber()
         );
     }

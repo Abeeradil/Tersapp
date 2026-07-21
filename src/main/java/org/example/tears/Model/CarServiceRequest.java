@@ -68,14 +68,6 @@ public class CarServiceRequest {
 
     private LocalDateTime partsRegisteredAt;
 
-    @ManyToOne
-    @JoinColumn(name = "delivery_location_id")
-    private Location deliveryLocation;
-
-    private LocalDate deliveryDate;
-
-    private LocalTime deliveryTime;
-
                 // ========================
                 // Pricing & Payment
                 // ========================
@@ -191,5 +183,19 @@ public class CarServiceRequest {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<RequestImage> images;
+
+// ========================
+// Delivery
+// ========================
+
+    @ManyToOne
+    @JoinColumn(name = "delivery_location_id")
+    private Location deliveryLocation;
+
+    private LocalDate deliveryDate;
+
+    private LocalTime deliveryTime;
+
+    private Boolean customerSelectedDelivery = false;
 
         }

@@ -17,4 +17,5 @@ public class DeliveryRequestDto {
 
     @NotNull
     private LocalTime deliveryTime;
+
 }

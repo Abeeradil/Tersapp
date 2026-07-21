@@ -9,17 +9,18 @@ import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.RequestState;
 import org.example.tears.Enums.StaffRequestStatus;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.Employee;
-import org.example.tears.Model.RequestApproval;
-import org.example.tears.Model.RequestReport;
+import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
+import org.example.tears.OutDTO.OutLocationDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
+import org.example.tears.Service.CarServiceRequestService;
 import org.springframework.stereotype.Component;
 
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Component
 @AllArgsConstructor
@@ -27,6 +28,7 @@ public class RequestMapper {
 
     private final RequestReportRepository reportRepo;
     private final RequestApprovalRepository approvalRepo;
+    private final CarServiceRequestService carServiceRequestService;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -148,6 +150,37 @@ public class RequestMapper {
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
+        dto.setCustomerSelectedDelivery(
+                r.getCustomerSelectedDelivery()
+        );
+
+        dto.setDeliveryDate(
+                r.getDeliveryDate()
+        );
+
+        dto.setDeliveryTime(
+                r.getDeliveryTime()
+        );
+
+        if (r.getDeliveryDate() != null) {
+
+            dto.setDeliveryDay(
+                    r.getDeliveryDate()
+                            .getDayOfWeek()
+                            .getDisplayName(
+                                    TextStyle.FULL,
+                                    new Locale("ar")
+                            )
+            );
+        }
+
+        if (r.getDeliveryLocation() != null) {
+
+            dto.setDeliveryLocation(
+                    mapLocation(r.getDeliveryLocation())
+            );
+        }
+
         if (r.getStaffStatus() != null){
             dto.setStatus(r.getStaffStatus().name());
         }
@@ -173,6 +206,7 @@ public class RequestMapper {
         dto.setCustomerApproved(
                 approval == null ? null : approval.getApproved()
         );
+
 
         if(r.getCustomer()!=null){
 
@@ -388,6 +422,22 @@ public class RequestMapper {
         }
 
         return plate;
+    }
+    public OutLocationDto mapLocation(Location loc) {
+
+        if (loc == null) {
+            return null;
+        }
+
+        OutLocationDto dto = new OutLocationDto();
+
+        dto.setId(loc.getId());
+        dto.setLat(loc.getLat());
+        dto.setLng(loc.getLng());
+        dto.setAddress(loc.getAddress());
+        dto.setTitle(loc.getTitle());
+
+        return dto;
     }
 
 
