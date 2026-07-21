@@ -309,8 +309,10 @@ public class RequestWorkflowService {
         req.setCustomerStatus(CustomerRequestStatus.CAR_RECEIVED);
         req.setStage(WorkflowStage.RECEIVED);
 
-        req.setReceivedAt(LocalDateTime.now());
-        req.setLastUpdated(LocalDateTime.now());
+        updateStaffTimestamps(
+                req,
+                StaffRequestStatus.INSPECTION_IN_PROGRESS
+        );
 
         Employee employee = employeeRepo.findById(employeeId)
                 .orElseThrow(() ->
@@ -425,9 +427,9 @@ public class RequestWorkflowService {
             case RECEIVED ->
                     req.setReceivedAt(now);
 
-            case INSPECTION_IN_PROGRESS ->
-                    req.setInspectionAt(now);
-
+            case INSPECTION_IN_PROGRESS -> {
+                req.setInspectionAt(now);
+            }
             case TESTING ->
                     req.setTestingAt(now);
 
