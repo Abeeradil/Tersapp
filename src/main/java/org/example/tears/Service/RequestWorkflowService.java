@@ -180,6 +180,11 @@ public class RequestWorkflowService {
 
                     throw new ApiException("انتقال غير صحيح");
                 }
+
+            }
+            case DELIVERY_IN_PROGRESS -> {
+                if (next != StaffRequestStatus.DELIVERED)
+                    throw new ApiException("انتقال غير صحيح");
             }
 
             default ->
