@@ -15,6 +15,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
 
     Optional<Ticket> findById(Integer id);
 
+    List<Ticket> findAllByOrderByCreatedAtDesc();
 
     List<Ticket> findByCreatedByEmployee_IdOrderByCreatedAtDesc(Integer employeeId);
 

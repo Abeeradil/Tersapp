@@ -8,19 +8,17 @@ import org.example.tears.Enums.TicketStatus;
 import java.time.LocalDateTime;
 
 @Data
-public class TicketDetailsDto {
+public class TicketListDto {
 
     private Integer id;
 
     private String ticketNumber;
 
-    private Integer requestId;
-
     private String orderNumber;
 
-    private String customerName;
+    private Integer requestId;
 
-    private String customerPhone;
+    private String customerName;
 
     private String carModel;
 
@@ -30,23 +28,9 @@ public class TicketDetailsDto {
 
     private TicketStatus status;
 
-    private String description;
-
-    private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
-
     private Boolean acceptedByCustomerService;
-    
-    private LocalDateTime acceptedAt;
-
-    private LocalDateTime solvedAt;
 
     private String assignedEmployeeName;
 
-    private String assignedEmployeePhone;
-
-
-    private String assignedEmployee;
-
+    private LocalDateTime createdAt;
 }

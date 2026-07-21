@@ -4,12 +4,11 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.CreateTicketDto;
-import org.example.tears.DTO.TicketDetailsDto;
-import org.example.tears.DTO.TicketResponseDto;
-import org.example.tears.DTO.UpdateTicketStatusDto;
+import org.example.tears.DTO.*;
+import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.TicketStatus;
 import org.example.tears.Model.CarServiceRequest;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.Ticket;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.CarServiceRequestRepository;
@@ -183,6 +182,33 @@ public class TicketService {
 
         dto.setStatus(ticket.getStatus());
 
+        dto.setAcceptedByCustomerService(
+                ticket.getAcceptedByCustomerService()
+        );
+
+        dto.setAcceptedAt(
+                ticket.getAcceptedAt()
+        );
+
+        dto.setSolvedAt(
+                ticket.getSolvedAt()
+        );
+
+        if (ticket.getAssignedEmployee() != null) {
+
+            dto.setAssignedEmployeeName(
+                    ticket.getAssignedEmployee()
+                            .getUser()
+                            .getFullName()
+            );
+
+            dto.setAssignedEmployeePhone(
+                    ticket.getAssignedEmployee()
+                            .getUser()
+                            .getPhoneNumber()
+            );
+        }
+
         dto.setDescription(ticket.getDescription());
 
         dto.setCreatedAt(ticket.getCreatedAt());
@@ -204,7 +230,7 @@ public class TicketService {
     }
 
     @Transactional
-    public void updateTicketStatus(
+    public void updateStatus(
             Integer ticketId,
             UpdateTicketStatusDto dto,
             HttpServletRequest request
@@ -216,45 +242,75 @@ public class TicketService {
             throw new ApiException("غير مصرح");
         }
 
+        Employee employee = user.getEmployee();
+
+        if (employee.getEmployeeRole() != EmployeeRole.SUPPORT) {
+            throw new ApiException("هذه العملية خاصة بخدمة العملاء");
+        }
+
         Ticket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() ->
                         new ApiException("التذكرة غير موجودة"));
 
-        if (dto.getStatus() == TicketStatus.ACTIVE) {
-            throw new ApiException("لا يمكن الرجوع إلى ACTIVE");
-        }
+        TicketStatus newStatus = dto.getStatus();
 
-        if (ticket.getStatus() == TicketStatus.SOLVED) {
-            throw new ApiException("تم إغلاق التذكرة");
-        }
+        // ============================
+        // ACTIVE -> IN_PROGRESS
+        // ============================
 
-        if (dto.getStatus() == TicketStatus.IN_PROGRESS) {
+        if (ticket.getStatus() == TicketStatus.ACTIVE &&
+                newStatus == TicketStatus.IN_PROGRESS) {
 
-            if (ticket.getAssignedEmployee() != null &&
-                    !ticket.getAssignedEmployee().getId().equals(user.getEmployee().getId())) {
+            if (ticket.getAssignedEmployee() != null) {
 
-                throw new ApiException("التذكرة محجوزة لموظف آخر");
+                throw new ApiException(
+                        "تم استلام التذكرة بواسطة موظف آخر"
+                );
             }
+
+            ticket.setAssignedEmployee(employee);
+
             ticket.setAcceptedByCustomerService(true);
-            ticket.setAssignedEmployee(user.getEmployee());
+
+            ticket.setAcceptedAt(LocalDateTime.now());
+
+            ticket.setStatus(TicketStatus.IN_PROGRESS);
+
+            ticket.setUpdatedAt(LocalDateTime.now());
+
+            ticketRepository.save(ticket);
+
+            return;
         }
 
-        if (dto.getStatus() == TicketStatus.SOLVED) {
+        // ============================
+        // IN_PROGRESS -> SOLVED
+        // ============================
+
+        if (ticket.getStatus() == TicketStatus.IN_PROGRESS &&
+                newStatus == TicketStatus.SOLVED) {
 
             if (ticket.getAssignedEmployee() == null ||
-                    !ticket.getAssignedEmployee().getId().equals(user.getEmployee().getId())) {
+                    !ticket.getAssignedEmployee().getId()
+                            .equals(employee.getId())) {
 
-                throw new ApiException("يجب استلام التذكرة أولاً");
+                throw new ApiException(
+                        "ليست التذكرة الخاصة بك"
+                );
             }
 
+            ticket.setStatus(TicketStatus.SOLVED);
+
             ticket.setSolvedAt(LocalDateTime.now());
+
+            ticket.setUpdatedAt(LocalDateTime.now());
+
+            ticketRepository.save(ticket);
+
+            return;
         }
 
-        ticket.setStatus(dto.getStatus());
-
-        ticket.setUpdatedAt(LocalDateTime.now());
-
-        ticketRepository.save(ticket);
+        throw new ApiException("انتقال حالة غير صحيح");
     }
 
     public List<TicketResponseDto> searchByOrderNumber(
@@ -266,6 +322,75 @@ public class TicketService {
                 .stream()
                 .map(this::mapToResponse)
                 .toList();
+    }
+
+    public List<TicketListDto> getSupportTickets(
+            HttpServletRequest request
+    ){
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if(user.getEmployee()==null ||
+                user.getEmployee().getEmployeeRole()!=EmployeeRole.SUPPORT){
+
+            throw new ApiException("غير مصرح");
+        }
+
+        return ticketRepository
+                .findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toListDto)
+                .toList();
+    }
+
+    public TicketListDto toListDto(Ticket ticket){
+
+        TicketListDto dto = new TicketListDto();
+
+        dto.setId(ticket.getId());
+
+        dto.setTicketNumber(ticket.getTicketNumber());
+
+        dto.setOrderNumber(ticket.getRequest().getOrderNumber());
+
+        dto.setRequestId(ticket.getRequest().getId());
+
+        dto.setCustomerName(
+                ticket.getRequest()
+                        .getCustomer()
+                        .getUser()
+                        .getFullName()
+        );
+
+        dto.setCarModel(
+                ticket.getRequest()
+                        .getCar()
+                        .getModel()
+                        .getNameAr()
+        );
+
+        dto.setProblemType(ticket.getProblemType());
+
+        dto.setPriority(ticket.getPriority());
+
+        dto.setStatus(ticket.getStatus());
+
+        dto.setAcceptedByCustomerService(
+                ticket.getAcceptedByCustomerService()
+        );
+
+        dto.setCreatedAt(ticket.getCreatedAt());
+
+        if(ticket.getAssignedEmployee()!=null){
+
+            dto.setAssignedEmployeeName(
+                    ticket.getAssignedEmployee()
+                            .getUser()
+                            .getFullName()
+            );
+        }
+
+        return dto;
     }
 
 

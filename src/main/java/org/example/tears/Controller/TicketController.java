@@ -55,14 +55,14 @@ public class TicketController {
 
     }
 
-    @PutMapping("/{ticketId}/status")
+    @PutMapping("/update/{ticketId}/status")
     public ApiResponse updateStatus(
             @PathVariable Integer ticketId,
             @RequestBody @Valid UpdateTicketStatusDto dto,
             HttpServletRequest request
     ){
 
-        ticketService.updateTicketStatus(
+        ticketService.updateStatus(
                 ticketId,
                 dto,
                 request
@@ -85,6 +85,22 @@ public class TicketController {
                 ticketService.searchByOrderNumber(orderNumber)
         );
 
+    }
+
+    @GetMapping("/support/all-ticket")
+    public ApiResponse getSupportTickets(
+            HttpServletRequest request
+    ){
+
+        return new ApiResponse(
+
+                true,
+
+                "تم جلب التذاكر",
+
+                ticketService.getSupportTickets(request)
+
+        );
     }
 
 }
