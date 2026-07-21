@@ -44,11 +44,13 @@ public class PartsService {
                 throw new RuntimeException("لا يمكن تسجيل القطع في هذه المرحلة");
             }
 
+            /**
             if(dto.getProblemDescription() == null ||
                     dto.getProblemDescription().isBlank()){
 
                 throw new RuntimeException("وصف المشكلة مطلوب");
             }
+            **/
 
             if(dto.getParts() == null || dto.getParts().isEmpty()){
 

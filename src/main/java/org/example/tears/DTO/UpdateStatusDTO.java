@@ -10,6 +10,4 @@ public class UpdateStatusDTO {
 
         private String note;
 
-        private String imageUrl; // فقط إذا فيه صورة (RECEIVED مثلاً)
-
     }
