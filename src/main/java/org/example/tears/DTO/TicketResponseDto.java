@@ -1,7 +1,13 @@
-package org.example.tears.Enums;
+package org.example.tears.DTO;
+
+import lombok.Data;
+import org.example.tears.Enums.TicketPriority;
+import org.example.tears.Enums.TicketProblemType;
+import org.example.tears.Enums.TicketStatus;
 
 import java.time.LocalDateTime;
 
+@Data
 public class TicketResponseDto {
 
     private Integer id;
@@ -9,6 +15,8 @@ public class TicketResponseDto {
     private String ticketNumber;
 
     private String orderNumber;
+
+    private Integer requestId;
 
     private String carModel;
 

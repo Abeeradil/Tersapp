@@ -3,7 +3,6 @@ public enum TicketPriority {
 
     URGENT,
     IMPORTANT,
-
     NOT_URGENT
 
 }
