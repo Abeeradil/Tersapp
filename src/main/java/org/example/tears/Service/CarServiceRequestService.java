@@ -337,6 +337,19 @@ public class CarServiceRequestService {
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
+
+        dto.setWarrantyEligible(
+
+                r.getServiceOption() == ServiceOption.WARRANTY
+
+                        && r.getDeliveredAt() != null
+
+                        && r.getDeliveredAt()
+                        .plusDays(30)
+                        .isAfter(LocalDateTime.now())
+
+        );
+
         dto.setStatus(
                 r.getCustomerStatus() != null
                         ? r.getCustomerStatus().name()

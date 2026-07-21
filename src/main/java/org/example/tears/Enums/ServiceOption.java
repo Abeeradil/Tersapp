@@ -8,7 +8,7 @@ import lombok.Getter;
 public enum ServiceOption {
 
 
-
+    WARRANTY("طلب تحت الضمان",0),
     FULL_MAINTENANCE("صيانة شاملة", 250),
     BODY_PAINT("سمكرة ودهان", 250),
     ELECTRONIC_CHECK("فحص إلكتروني", 150);

@@ -5,10 +5,7 @@ import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.DTO.TimelineItemDto;
-import org.example.tears.Enums.CustomerRequestStatus;
-import org.example.tears.Enums.PricingStatus;
-import org.example.tears.Enums.RequestState;
-import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.OutDTO.OutLocationDto;
@@ -16,6 +13,7 @@ import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,6 +77,18 @@ public class RequestMapper {
         if (r.getStaffStatus() != null) {
             dto.setStatus(r.getStaffStatus().name());
         }
+
+        dto.setWarrantyEligible(
+
+                r.getServiceOption() == ServiceOption.WARRANTY
+
+                        && r.getDeliveredAt() != null
+
+                        && r.getDeliveredAt()
+                        .plusDays(30)
+                        .isAfter(LocalDateTime.now())
+
+        );
 
         dto.setProblemDescription(r.getProblemDescription());
 

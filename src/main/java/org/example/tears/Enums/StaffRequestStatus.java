@@ -5,9 +5,9 @@ public enum StaffRequestStatus {
         RECEIVED,               // تم استلام السيارة
         INSPECTION_IN_PROGRESS, // جاري الفحص
         TESTING,                // قيد التجربة
-        REPORT_WRITING,         // إعداد التقرير
         PARTS_REGISTERING,      // تسجيل القطع
         PRICING,                // جاري التسعير
+        REPORT_WRITING,         // إعداد التقرير
         REPAIRING,              // جاري الإصلاح
         DELIVERY_IN_PROGRESS,   //جاري التسليم
         DELIVERED               // تم التسليم

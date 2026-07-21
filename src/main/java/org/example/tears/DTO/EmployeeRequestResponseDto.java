@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
         private String plateNumberArabic;
         private String plateNumberEnglish;
 
+    private Boolean warrantyEligible;
+
 
         private LocalDateTime createdAt;
 

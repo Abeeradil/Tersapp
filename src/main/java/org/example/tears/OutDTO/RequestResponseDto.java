@@ -23,6 +23,8 @@ public class RequestResponseDto {
 
         private String status;
 
+        private Boolean warrantyEligible;
+
         private Double totalPrice;
 
         private LocalDate appointmentDate;
@@ -56,6 +58,7 @@ public class RequestResponseDto {
         private String initialPaymentMethod;
 
         private String initialPaymentStatus;
+
 
         private Double remainingAmount;
 
