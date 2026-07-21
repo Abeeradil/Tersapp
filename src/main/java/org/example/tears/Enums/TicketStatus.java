@@ -1,8 +1,11 @@
 package org.example.tears.Enums;
 
 public enum TicketStatus {
-    NEW,
+
+    ACTIVE,
+
     IN_PROGRESS,
-    RESOLVED,
-    CLOSED
+
+    SOLVED
+
 }

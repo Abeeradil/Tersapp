@@ -340,13 +340,10 @@ public class CarServiceRequestService {
 
         dto.setWarrantyEligible(
 
-                r.getServiceOption() == ServiceOption.WARRANTY
+                r.getDeliveredAt() != null
 
-                        && r.getDeliveredAt() != null
-
-                        && r.getDeliveredAt()
-                        .plusDays(30)
-                        .isAfter(LocalDateTime.now())
+                        && LocalDateTime.now()
+                        .isBefore(r.getDeliveredAt().plusDays(30))
 
         );
 
