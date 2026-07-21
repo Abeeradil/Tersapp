@@ -41,6 +41,8 @@ public class Ticket {
 
         private LocalDateTime solvedAt;
 
+        private Boolean acceptedByCustomerService = false;
+
         @ManyToOne
         @JoinColumn(name = "request_id", nullable = false)
         private CarServiceRequest request;

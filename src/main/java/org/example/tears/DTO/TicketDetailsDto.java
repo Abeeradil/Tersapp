@@ -36,6 +36,8 @@ public class TicketDetailsDto {
 
     private LocalDateTime updatedAt;
 
+    private Boolean acceptedByCustomerService;
+
     private LocalDateTime solvedAt;
 
     private String assignedEmployee;

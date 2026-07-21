@@ -20,6 +20,12 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
 
     List<Ticket> findAllByOrderByCreatedAtDesc();
 
+    Optional<Ticket> findById(Integer id);
+
+    List<Ticket> findByStatusOrderByCreatedAtDesc(TicketStatus status);
+
+    List<Ticket> findByCreatedByEmployee_IdOrderByCreatedAtDesc(Integer employeeId);
+
     Optional<Ticket> findByRequest_IdAndStatusIn(
             Integer requestId,
             List<TicketStatus> statuses
