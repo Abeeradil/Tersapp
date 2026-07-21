@@ -49,7 +49,6 @@ public class RequestWorkflowService {
                 mapCustomerStatus(status)
         );
 
-        // ❌ الحالات التي تُدخل عبر Endpoint خاص (RECEIVED أُزيلت — صارت تُدخل عبر /status)
         if (
                 status == StaffRequestStatus.PRICING ) {
             throw new ApiException(
@@ -57,7 +56,6 @@ public class RequestWorkflowService {
             );
         }
 
-        // 🚫 الخروج من RECEIVED يكون عبر زر الاستلام (/receive) فقط — لا عبر /status
         if (req.getStaffStatus() == StaffRequestStatus.RECEIVED ||
                 req.getStaffStatus() == StaffRequestStatus.REPORT_WRITING
         ) {
@@ -93,6 +91,38 @@ public class RequestWorkflowService {
 
         // 🔄 الحالة
         req.setStaffStatus(status);
+        switch (status) {
+
+            case DELIVERY_IN_PROGRESS -> {
+                req.setCustomerStatus(CustomerRequestStatus.READY_FOR_DELIVERY);
+            }
+
+            case DELIVERED -> {
+                req.setCustomerStatus(CustomerRequestStatus.DELIVERED);
+                req.setStage(WorkflowStage.DELIVERED);
+            }
+
+            default -> {
+                req.setCustomerStatus(mapCustomerStatus(status));
+            }
+        }
+
+        if (status == StaffRequestStatus.DELIVERY_IN_PROGRESS) {
+
+            notificationService.send(
+                    req.getCustomer().getUser(),
+                    "تم تجهيز سيارتك للتسليم، وسيتم تسليمها في الموعد الذي اخترته."
+            );
+        }
+
+        if (status == StaffRequestStatus.DELIVERED) {
+
+            notificationService.send(
+                    req.getCustomer().getUser(),
+                    "تم تسليم سيارتك بنجاح، شكرًا لاستخدامك خدماتنا."
+            );
+        }
+
         req.setLastUpdated(LocalDateTime.now());
 
         if (status == StaffRequestStatus.PRICING) {
@@ -381,27 +411,41 @@ public class RequestWorkflowService {
     // =========================
         // حفظ الأوقات
         // =========================
-        private void updateStaffTimestamps(
-                CarServiceRequest req,
-                StaffRequestStatus status
-        ) {
-            LocalDateTime now = LocalDateTime.now();
+    private void updateStaffTimestamps(
+            CarServiceRequest req,
+            StaffRequestStatus status
+    ) {
 
-            switch (status) {
+        LocalDateTime now = LocalDateTime.now();
 
-                case RECEIVED -> req.setReceivedAt(now);
+        req.setLastUpdated(now);
 
-                case INSPECTION_IN_PROGRESS -> req.setInspectionAt(now);
+        switch (status) {
 
-                case TESTING -> req.setTestingAt(now);
+            case RECEIVED ->
+                    req.setReceivedAt(now);
 
-                case PRICING -> req.setPricingAt(now);
+            case INSPECTION_IN_PROGRESS ->
+                    req.setInspectionAt(now);
 
-                case REPAIRING -> req.setRepairAt(now);
+            case TESTING ->
+                    req.setTestingAt(now);
 
-                case DELIVERED -> req.setDeliveredAt(now);
+            case PRICING ->
+                    req.setPricingAt(now);
+
+            case REPAIRING ->
+                    req.setRepairAt(now);
+
+            case DELIVERY_IN_PROGRESS -> {
+                // إذا عندك حقل deliveryStartedAt أضيفيه هنا
+                // req.setDeliveryStartedAt(now);
             }
+
+            case DELIVERED ->
+                    req.setDeliveredAt(now);
         }
+    }
 
 
 

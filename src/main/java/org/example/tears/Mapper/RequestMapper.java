@@ -14,7 +14,6 @@ import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.OutDTO.OutLocationDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
-import org.example.tears.Service.CarServiceRequestService;
 import org.springframework.stereotype.Component;
 
 import java.time.format.TextStyle;
@@ -28,7 +27,6 @@ public class RequestMapper {
 
     private final RequestReportRepository reportRepo;
     private final RequestApprovalRepository approvalRepo;
-    private final CarServiceRequestService carServiceRequestService;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
