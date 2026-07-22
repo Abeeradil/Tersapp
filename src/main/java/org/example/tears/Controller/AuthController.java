@@ -60,15 +60,6 @@ public class AuthController {
                 )
         );
     }
-
-    @PutMapping("/auth/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestParam String phone,
-                                                @RequestParam String newPassword) {
-
-        authService.resetPassword(phone, newPassword);
-        return ResponseEntity.ok("Password updated successfully");
-    }
-
     // ================= General Login =================
 
     // تسجيل دخول عميل
@@ -94,30 +85,14 @@ public class AuthController {
 
     // ================= OTP Password Reset (Employee) =================
 
-    // إرسال OTP لتغيير كلمة المرور
-    @PostMapping("/password/reset/send-otp")
-    public ApiResponse sendResetOtp(
-            @RequestBody PhoneNumberDTO dto
-    ) {
-        return authService.sendResetOtp(
-                dto.getPhoneNumber()
-        );
-    }
 
-    // التحقق من OTP
-    @PostMapping("/password/reset/verify-otp")
-    public ApiResponse verifyResetOtp(
-            @RequestBody VerifyOtpDTO dto
-    ) {
-        return authService.verifyResetOtp(dto);
-    }
-
-    @PostMapping("/password/reset")
+    @PutMapping("/reset-password")
     public ApiResponse resetPassword(
             HttpServletRequest request,
-            @RequestBody ResetPasswordDTO dto
-    ) {
-        return authService.resetPassword(
+            @RequestBody @Valid ResetPasswordDTO dto
+    ){
+
+        return authService.resetPasswordInsideApp(
                 request,
                 dto
         );

@@ -5,10 +5,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.Config.TwilioConfig;
 import org.example.tears.DTO.ResetPasswordDTO;
-import org.example.tears.DTO.VerifyChangePasswordDTO;
-import org.example.tears.DTO.VerifyOtpDTO;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.ChangePasswordDTO;
@@ -18,8 +15,6 @@ import org.example.tears.Model.Customer;
 import org.example.tears.Model.JwtUtil;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.AuthStatusDto;
-import org.example.tears.Repository.CustomerRepository;
-import org.example.tears.Repository.EmployeeRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,10 +24,8 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
     private final UserRepository userRepo;
-    private final CustomerRepository customerRepo;
-    private final EmployeeRepository employeeRepo;
     private final PasswordEncoder encoder;
-    private final TwilioConfig twilioConfig;
+   // private final TwilioConfig twilioConfig;
     private final JwtUtil jwtUtil;
 
     // =========================================================
@@ -75,17 +68,6 @@ public class AuthService {
         return new ApiResponse(true, "OTP sent to " + dto.getPhoneNumber());
     }
 
-    public void resetPassword(String phone, String newPassword) {
-
-        User user = userRepo.findByPhoneNumber(phone)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        String hashedPassword = encoder.encode(newPassword);
-
-        user.setPassword(hashedPassword);
-
-        userRepo.save(user);
-    }
 
     // =========================================================
     // 2️⃣ التحقق من OTP
@@ -251,142 +233,33 @@ public class AuthService {
         return new ApiResponse(true, "تم تغيير كلمة المرور بنجاح", token);
     }
 
-
-    public ApiResponse sendResetOtp(
-            String phoneNumber
-    ) {
-
-        userRepo.findByPhoneNumber(phoneNumber)
-                .orElseThrow(() ->
-                        new ApiException("User not found")
-                );
-
-        System.out.println(
-                "Reset OTP = 123456"
-        );
-
-        return new ApiResponse(
-                true,
-                "OTP sent to " + phoneNumber
-        );
-    }
-
-    public ApiResponse verifyResetOtp(
-            VerifyOtpDTO dto
-    ) {
-
-        User user =
-                userRepo.findByPhoneNumber(
-                        dto.getPhoneNumber()
-                ).orElseThrow(() ->
-                        new ApiException("User not found")
-                );
-
-        if (!dto.getOtp().equals("123456")) {
-            throw new ApiException(
-                    "Invalid OTP"
-            );
-        }
-
-        String resetToken =
-                jwtUtil.generateToken(
-                        user.getPhoneNumber(),
-                        "PASSWORD_RESET"
-                );
-
-        return new ApiResponse(
-                true,
-                "OTP verified successfully",
-                resetToken
-        );
-    }
-
-
-    public ApiResponse resetPassword(
+    @Transactional
+    public ApiResponse resetPasswordInsideApp(
             HttpServletRequest request,
             ResetPasswordDTO dto
-    ) {
+    ){
 
-        String header =
-                request.getHeader(
-                        "Authorization"
-                );
+        User user = getAuthenticatedUser(request);
 
-        if (
-                header == null
-                        ||
-                        !header.startsWith(
-                                "Bearer "
-                        )
-        ) {
+        if(!dto.getNewPassword().equals(dto.getConfirmPassword())){
 
-            throw new ApiException(
-                    "Missing reset token"
-            );
-        }
-
-        String token =
-                header.substring(7);
-
-
-
-        String type =
-                jwtUtil.getRoleFromToken(
-                        token
-                );
-
-        if (!type.equals("PASSWORD_RESET")) {
-            throw new ApiException(
-                    "Invalid reset token"
-            );
-        }
-
-        String phone =
-                jwtUtil.getPhoneFromToken(
-                        token
-                );
-
-        User user =
-                userRepo.findByPhoneNumber(
-                                phone
-                        )
-                        .orElseThrow(() ->
-                                new ApiException(
-                                        "User not found"
-                                )
-                        );
-
-        if (
-                !dto.getNewPassword()
-                        .equals(
-                                dto.getConfirmPassword()
-                        )
-        ) {
-
-            throw new ApiException(
-                    "Passwords do not match"
-            );
+            throw new ApiException("Passwords do not match");
         }
 
         user.setPassword(
-                encoder.encode(
-                        dto.getNewPassword()
-                )
+                encoder.encode(dto.getNewPassword())
         );
 
-        if (user.getEmployee() != null) {
+        if(user.getEmployee()!=null){
 
-            user.getEmployee()
-                    .setMustChangePassword(
-                            false
-                    );
+            user.getEmployee().setMustChangePassword(false);
         }
 
         userRepo.save(user);
 
         return new ApiResponse(
                 true,
-                "Password reset successfully"
+                "تم تغيير كلمة المرور بنجاح"
         );
     }
 
