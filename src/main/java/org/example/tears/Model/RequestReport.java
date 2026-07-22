@@ -2,7 +2,6 @@ package org.example.tears.Model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 @Entity
