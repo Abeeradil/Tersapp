@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
+import org.example.tears.Enums.CustomerReportFilter;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.AuthService;
@@ -37,6 +38,21 @@ import java.util.List;
             return requestService
                     .getMyRequests(user.getCustomer().getId());
         }
+
+    @GetMapping("/customer/reports")
+    public List<CustomerReportListDto> getCustomerReports(
+            @RequestParam(defaultValue = "ALL")
+            CustomerReportFilter filter,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return requestApprovalService.getCustomerReports(
+                user.getCustomer(),
+                filter
+        );
+    }
 
     @GetMapping("/requests/{requestId}/report/download")
     public ResponseEntity<byte[]> downloadReport(

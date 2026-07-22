@@ -21,6 +21,7 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             Employee employee,
             StaffRequestStatus status
     );
+    List<CarServiceRequest> findByCustomer_Id(Integer customerId);
 
 
     long countByAssignedPricingEmployee_IdAndPricingStatus(

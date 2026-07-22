@@ -26,7 +26,6 @@ import java.util.List;
         private final RequestReportRepository reportRepo;
         private final NotificationService notificationService;
     private final RequestPricingService requestPricingService;
-    private final AppointmentService appointmentService;
     private final LocationRepository locationRepository;
 
 
@@ -111,6 +110,82 @@ import java.util.List;
             return dto;
         }
 
+    @Transactional(readOnly = true)
+    public List<CustomerReportListDto> getCustomerReports(
+            Customer customer,
+            CustomerReportFilter filter
+    ) {
+
+        List<CarServiceRequest> requests =
+                requestRepo.findByCustomer_Id(customer.getId());
+
+        return requests.stream()
+
+                // فقط الطلبات التي يوجد لها تقرير
+                .filter(r -> reportRepo.existsByRequest_Id(r.getId()))
+
+                // الفلترة
+                .filter(r -> {
+
+                    RequestApproval approval =
+                            approvalRepo.findByRequest_Id(r.getId())
+                                    .orElse(null);
+
+                    Boolean approved =
+                            approval == null ? null : approval.getApproved();
+
+                    return switch (filter) {
+
+                        case ALL -> true;
+
+                        case PENDING -> approved == null;
+
+                        case APPROVED -> Boolean.TRUE.equals(approved);
+
+                        case REJECTED -> Boolean.FALSE.equals(approved);
+                    };
+                })
+
+                .map(r -> {
+
+                    CustomerReportListDto dto =
+                            new CustomerReportListDto();
+
+                    dto.setRequestId(r.getId());
+                    dto.setOrderNumber(r.getOrderNumber());
+                    dto.setServiceOption(r.getServiceOption().name());
+                    dto.setReportName("تقرير الفحص");
+
+                    RequestApproval approval =
+                            approvalRepo.findByRequest_Id(r.getId())
+                                    .orElse(null);
+
+                    Boolean approved =
+                            approval == null ? null : approval.getApproved();
+
+                    if (approved == null) {
+
+                        dto.setStatus(ReportStatus.PENDING);
+                        dto.setActive(true);
+
+                    } else if (approved) {
+
+                        dto.setStatus(ReportStatus.APPROVED);
+                        dto.setActive(false);
+
+                    } else {
+
+                        dto.setStatus(ReportStatus.REJECTED);
+                        dto.setActive(false);
+                    }
+
+                    return dto;
+
+                })
+
+                .toList();
+    }
+
 
     @Transactional
     public void approve(Integer requestId, String note) {
@@ -128,6 +203,7 @@ import java.util.List;
         approval.setCustomerNote(note);
 
         approvalRepo.save(approval);
+
 
         CarServiceRequest request = approval.getRequest();
 

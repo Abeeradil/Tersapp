@@ -642,7 +642,6 @@ public class RequestWorkflowService {
                                 new ApiException("لا يوجد تقرير"));
 
         report.setSent(true);
-
         request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
 
         request.setLastUpdated(LocalDateTime.now());
