@@ -32,4 +32,8 @@ public class RequestPart {
                 @ManyToOne
                 @JoinColumn(name = "request_id")
                 private CarServiceRequest request;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "report_id")
+    private RequestReport report;
         }

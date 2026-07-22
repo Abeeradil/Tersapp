@@ -2,10 +2,12 @@ package org.example.tears.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.AddPartsDto;
 import org.example.tears.DTO.PartDto;
 import org.example.tears.DTO.PartReportDto;
 import org.example.tears.DTO.PartsDetailsDto;
+import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
@@ -104,11 +106,20 @@ public class PartsService {
 
 
         // عرض القطع
-        public PartsDetailsDto getParts(Integer requestId){
-
+        public PartsDetailsDto getParts(
+                Integer requestId,
+                Employee employee
+        ){
             CarServiceRequest req = requestRepo.findById(requestId)
                     .orElseThrow(() -> new RuntimeException("الطلب غير موجود"));
+            if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
 
+                if (req.getAssignedPricingEmployee() == null ||
+                        !req.getAssignedPricingEmployee().getId().equals(employee.getId())) {
+
+                    throw new ApiException("غير مصرح لك");
+                }
+            }
             List<RequestPart> parts = partRepo.findByRequestId(requestId);
 
             PartsDetailsDto dto = new PartsDetailsDto();
@@ -163,9 +174,5 @@ public class PartsService {
 
             return dto;
         }
-
-//        private Integer calculateLaborCost(Integer quantity){
-//            return quantity * 25;
-//        }
 
 }

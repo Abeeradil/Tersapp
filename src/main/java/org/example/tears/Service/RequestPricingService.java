@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.PricingPartDto;
 import org.example.tears.DTO.PricingRequestDto;
+import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.*;
@@ -168,6 +169,7 @@ public class RequestPricingService {
         report.setSent(false);
 
         reportRepo.save(report);
+        clonePartsToReport(request, report);
 
         request.setCurrentEmployee(
                 request.getAssignedEmployee()
@@ -207,17 +209,29 @@ public class RequestPricingService {
         );
     }
 
-    public ResponseEntity<byte[]> downloadPricingReport(Integer requestId) throws Exception {
-
-        // نتأكد أن التقرير موجود
-        reportRepo.findByRequest_IdAndLatestTrue(requestId)
-                .orElseThrow(() ->
-                        new ApiException("التقرير غير موجود"));
+    public ResponseEntity<byte[]> downloadPricingReport(
+            Integer requestId
+    ) throws Exception
+    {
 
         CarServiceRequest request =
                 requestRepo.findById(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
+
+//        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+//
+//            if (request.getAssignedPricingEmployee() == null ||
+//                    !request.getAssignedPricingEmployee().getId().equals(employee.getId())) {
+//
+//                throw new ApiException("غير مصرح لك");
+//            }
+        //}
+
+        // نتأكد أن التقرير موجود
+        reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                .orElseThrow(() ->
+                        new ApiException("التقرير غير موجود"));
 
         RequestReport report =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
@@ -373,6 +387,40 @@ public class RequestPricingService {
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(output.toByteArray());
+    }
+
+    private void clonePartsToReport(
+            CarServiceRequest request,
+            RequestReport report
+    ) {
+
+        List<RequestPart> currentParts =
+                partRepo.findByRequestId(request.getId());
+
+        for (RequestPart oldPart : currentParts) {
+
+            RequestPart copy = new RequestPart();
+
+            copy.setRequest(request);
+
+            copy.setReport(report);
+
+            copy.setName(oldPart.getName());
+
+            copy.setType(oldPart.getType());
+
+            copy.setQuantity(oldPart.getQuantity());
+
+            copy.setProblemDescription(oldPart.getProblemDescription());
+
+            copy.setFinalPrice(oldPart.getFinalPrice());
+
+            copy.setLaborCost(oldPart.getLaborCost());
+
+            copy.setPriced(oldPart.getPriced());
+
+            partRepo.save(copy);
+        }
     }
 
 

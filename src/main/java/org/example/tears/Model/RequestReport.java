@@ -8,13 +8,13 @@ import java.time.LocalDateTime;
 @Data
 public class RequestReport {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Integer id;
 
     private Integer version;
 
-    private boolean latest;
+    private Boolean latest;
 
     private boolean sent;
 
@@ -22,10 +22,11 @@ public class RequestReport {
 
     private String reportNumber;
 
+
     @ManyToOne
     private Employee createdBy;
 
     @ManyToOne
     private CarServiceRequest request;
 
-        }
+    }

@@ -1,5 +1,6 @@
 package org.example.tears.Service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
@@ -28,6 +29,7 @@ public class RequestWorkflowService {
     private final NotificationService notificationService;
     private final RequestImageRepository imageRepo;
     private final FileStorageService fileStorageService;
+    private final ObjectMapper objectMapper;
 
 
     @Transactional
@@ -593,13 +595,23 @@ public class RequestWorkflowService {
         return selected;
     }
 
-    public ReportDto preview(Integer requestId) {
-
+    public ReportDto preview(
+            Integer requestId,
+            Employee employee
+    ){
         RequestReport report = reportRepo.findByRequest_Id(requestId)
                 .orElseThrow(() -> new ApiException("No report"));
 
         CarServiceRequest request = report.getRequest();
 
+        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+
+            if (request.getAssignedPricingEmployee() == null ||
+                    !request.getAssignedPricingEmployee().getId().equals(employee.getId())) {
+
+                throw new ApiException("غير مصرح لك");
+            }
+        }
         ReportDto dto = new ReportDto();
 
         dto.setCustomerName(request.getCustomer().getUser().getFullName());

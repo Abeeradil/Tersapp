@@ -1,5 +1,6 @@
 package org.example.tears.Controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
@@ -24,6 +25,8 @@ import java.util.List;
     private final RequestWorkflowService workflowService;
     private final PartsService partsService;
     private final RequestQueryService requestQueryService;
+    private final AuthService authService;
+
 
     @GetMapping("/my/requests")
     public List<EmployeeRequestResponseDto> myRequests(
@@ -168,25 +171,39 @@ import java.util.List;
 
 
     @GetMapping("/{id}/get-parts")
-    public ApiResponse getParts(@PathVariable Integer id){
+    public ApiResponse getParts(
+            @PathVariable Integer id,
+            HttpServletRequest request
+    ){
+
+        User user = authService.getAuthenticatedUser(request);
 
         return new ApiResponse(
                 true,
                 "تم جلب القطع",
-                partsService.getParts(id)
+                partsService.getParts(
+                        id,
+                        user.getEmployee()
+                )
         );
     }
 
         // معاينة التقرير
         @GetMapping("/requests/{requestId}/report")
-        public ApiResponse preview(
-                @PathVariable Integer requestId
-        ) {
+        public ApiResponse previewReport(
+                @PathVariable Integer requestId,
+                HttpServletRequest request
+        ){
+
+            User user = authService.getAuthenticatedUser(request);
 
             return new ApiResponse(
                     true,
                     "تم جلب التقرير",
-                    workflowService.preview(requestId)
+                    workflowService.preview(
+                            requestId,
+                            user.getEmployee()
+                    )
             );
         }
 
