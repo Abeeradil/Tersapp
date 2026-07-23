@@ -3,7 +3,6 @@ package org.example.tears.DTO;
 import lombok.Data;
 
 import java.util.List;
-
 @Data
 public class ReportPreviewDto {
 
@@ -11,11 +10,19 @@ public class ReportPreviewDto {
 
     private String orderNumber;
 
+    private String customerName;
+
+    private String carModel;
+
     private String problemDescription;
 
     private Boolean customerApproved;
 
     private List<CustomerReportPartDto> parts;
+
+    private Integer totalPartsPrice;
+
+    private Integer totalLabor;
 
     private Double grandTotal;
 

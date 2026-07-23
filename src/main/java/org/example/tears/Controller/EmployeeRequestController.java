@@ -201,7 +201,7 @@ import java.util.List;
             return new ApiResponse(
                     true,
                     "تم جلب التقرير",
-                    requestPricingService.preview(
+                    requestPricingService.getEmpReport(
                             requestId,
                             user.getEmployee()
                     )

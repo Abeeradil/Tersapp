@@ -1,11 +1,9 @@
 package org.example.tears.Service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.PricingPartDto;
-import org.example.tears.DTO.PricingRequestDto;
-import org.example.tears.DTO.ReportDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
@@ -23,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -388,41 +387,85 @@ public class RequestPricingService {
     }
 
 
-    public ReportDto preview(
+    @Transactional(readOnly = true)
+    public ReportPreviewDto getEmpReport(
             Integer requestId,
             Employee employee
     ) {
 
-        RequestReport report =
-                getAccessibleReport(requestId, employee);
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
 
-        CarServiceRequest request = report.getRequest();
+        List<RequestPart> parts;
 
-        ReportDto dto = new ReportDto();
+        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
 
-        dto.setCustomerName(
-                request.getCustomer().getUser().getFullName()
-        );
+            RequestReport report =
+                    getAccessibleReport(requestId, employee);
 
-        dto.setOrderNumber(
-                request.getOrderNumber()
-        );
+            parts = partRepo.findByReport_Id(report.getId());
 
-        dto.setCarModel(
-                request.getCar().getModel().getName()
-        );
+        } else {
 
-        dto.setProblemDescription(
-                request.getProblemDescription()
-        );
+            parts = partRepo.findByRequestId(requestId);
 
-        dto.setReportNumber(
-                report.getReportNumber()
-        );
+        }
 
-        dto.setVersion(
-                report.getVersion()
-        );
+        ReportPreviewDto dto = new ReportPreviewDto();
+
+        dto.setRequestId(request.getId());
+        dto.setOrderNumber(request.getOrderNumber());
+        dto.setCustomerName(request.getCustomer().getUser().getFullName());
+        dto.setCarModel(request.getCar().getModel().getName());
+        dto.setProblemDescription(request.getProblemDescription());
+
+        approvalRepo.findByRequest_Id(requestId)
+                .ifPresent(a -> dto.setCustomerApproved(a.getApproved()));
+
+        List<CustomerReportPartDto> list = new ArrayList<>();
+
+        int totalPartsPrice = 0;
+        int totalLabor = 0;
+        double grandTotal = 0;
+
+        for (RequestPart part : parts) {
+
+            CustomerReportPartDto p = new CustomerReportPartDto();
+
+            p.setPartId(part.getId());
+            p.setName(part.getName());
+            p.setQuantity(part.getQuantity());
+            p.setFinalPrice(part.getFinalPrice());
+            p.setLaborCost(part.getLaborCost());
+
+            int partPrice =
+                    part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+
+            int labor =
+                    part.getLaborCost() == null ? 0 : part.getLaborCost();
+
+            int partsCost =
+                    partPrice * part.getQuantity();
+
+            int total =
+                    partsCost + labor;
+
+            p.setTotal((double) total);
+
+            list.add(p);
+
+            totalPartsPrice += partsCost;
+            totalLabor += labor;
+
+            grandTotal += total;
+        }
+
+        dto.setParts(list);
+        dto.setTotalPartsPrice(totalPartsPrice);
+        dto.setTotalLabor(totalLabor);
+        dto.setGrandTotal(grandTotal);
 
         return dto;
     }
