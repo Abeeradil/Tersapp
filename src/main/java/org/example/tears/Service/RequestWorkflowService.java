@@ -29,7 +29,6 @@ public class RequestWorkflowService {
     private final NotificationService notificationService;
     private final RequestImageRepository imageRepo;
     private final FileStorageService fileStorageService;
-    private final ObjectMapper objectMapper;
 
 
     @Transactional

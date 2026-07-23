@@ -4,7 +4,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
-import org.example.tears.Enums.CustomerReportFilter;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.AuthService;

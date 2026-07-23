@@ -38,7 +38,6 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
     Optional<CarServiceRequest> findById(Integer id);
 
     long countByAssignedEmployee_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
-    List<RequestPart> findByReport_Id(Integer reportId);
     boolean existsByAppointmentDateAndAppointmentTime(
             LocalDate appointmentDate,
             LocalTime appointmentTime
