@@ -169,6 +169,10 @@ public class RequestPricingService {
 
         report.setSent(false);
 
+        report.setReportNumber(
+                "PR-" + String.format("%06d", report.getId())
+        );
+
         reportRepo.save(report);
         clonePartsToReport(request, report);
 
@@ -286,7 +290,7 @@ public class RequestPricingService {
                         ? "-"
                         : notes.get(0).getNote();
         String reportNumber =
-                "PR-" + report.getReportNumber() ;
+                report.getReportNumber();
 
 
         ClassPathResource resource =
