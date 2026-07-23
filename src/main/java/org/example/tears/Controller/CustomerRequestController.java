@@ -6,14 +6,12 @@ import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
-import org.example.tears.Service.AuthService;
-import org.example.tears.Service.CarServiceRequestService;
-import org.example.tears.Service.PaymentIntentService;
-import org.example.tears.Service.RequestApprovalService;
+import org.example.tears.Service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -27,9 +25,11 @@ import java.util.List;
         private final CarServiceRequestService requestService;
         private final RequestApprovalService requestApprovalService;
         private final PaymentIntentService paymentIntentService;
+    private final WarrantyService warrantyService;
 
 
-        // طلباتي
+
+    // طلباتي
         @GetMapping("/my")
         public List<RequestResponseDto> myRequests(
                 @AuthenticationPrincipal User user
@@ -148,6 +148,56 @@ import java.util.List;
         return new ApiResponse(
                 true,
                 "تم تحديد موعد التسليم"
+        );
+    }
+
+    @PostMapping("/{requestId}/warranty")
+    public ApiResponse createWarranty(
+            @PathVariable Integer requestId,
+            @RequestPart WarrantyRequestDto dto,
+            @RequestPart(required = false) List<MultipartFile> images,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        warrantyService.createWarrantyRequest(
+                requestId,
+                dto,
+                images,
+                user.getCustomer()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم إرسال طلب الضمان"
+        );
+    }
+
+
+    @GetMapping("/warranty")
+    public List<WarrantyResponseDto> myWarrantyRequests(
+            HttpServletRequest request
+    ){
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return warrantyService.getCustomerWarrantyRequests(
+                user.getCustomer()
+        );
+    }
+
+    @GetMapping("/warranty/{id}")
+    public WarrantyDetailsDto details(
+            @PathVariable Integer id,
+            HttpServletRequest request
+    ){
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return warrantyService.details(
+                id,
+                user.getCustomer()
         );
     }
 

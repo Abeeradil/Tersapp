@@ -53,6 +53,9 @@ public class Ticket {
         @JoinColumn(name = "customer_id", nullable = false)
         private Customer customer;
 
+        @ManyToOne
+        private WarrantyRequest warrantyRequest;
+
         // موظف خدمة العملاء الذي استلم التذكرة
         @ManyToOne
         @JoinColumn(name = "assigned_employee_id")

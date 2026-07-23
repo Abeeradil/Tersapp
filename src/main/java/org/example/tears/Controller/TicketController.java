@@ -5,8 +5,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.CreateTicketDto;
+import org.example.tears.DTO.RejectWarrantyDto;
 import org.example.tears.DTO.UpdateTicketStatusDto;
+import org.example.tears.Model.User;
+import org.example.tears.Service.AuthService;
 import org.example.tears.Service.TicketService;
+import org.example.tears.Service.WarrantyService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,6 +19,8 @@ import org.springframework.web.bind.annotation.*;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final AuthService authService;
+    private final WarrantyService warrantyService;
 
     @PostMapping("/creat")
     public ApiResponse createTicket(
@@ -102,5 +108,48 @@ public class TicketController {
 
         );
     }
+
+    @PutMapping("/warranty/{id}/approve")
+    public ApiResponse approveWarranty(
+            @PathVariable Integer id,
+            HttpServletRequest request
+    ){
+
+        User user =
+                authService.getAuthenticatedUser(request);
+
+        warrantyService.approveWarranty(
+                id,
+                user.getEmployee()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم قبول طلب الضمان"
+        );
+    }
+
+    @PutMapping("/warranty/{id}/reject")
+    public ApiResponse rejectWarranty(
+            @PathVariable Integer id,
+            @RequestBody RejectWarrantyDto dto,
+            HttpServletRequest request
+    ){
+
+        User user =
+                authService.getAuthenticatedUser(request);
+
+        warrantyService.rejectWarranty(
+                id,
+                user.getEmployee(),
+                dto.getReason()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم رفض طلب الضمان"
+        );
+    }
+
 
 }
