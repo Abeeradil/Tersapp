@@ -158,22 +158,24 @@ public class RequestPricingService {
         RequestReport report = new RequestReport();
 
         report.setRequest(request);
-
         report.setCreatedBy(pricingEmployee);
-
         report.setCreatedAt(LocalDateTime.now());
-
         report.setVersion(version);
-
         report.setLatest(true);
-
         report.setSent(false);
 
+// أول حفظ للحصول على الـ id
+        reportRepo.save(report);
+
+// الآن الـ id أصبح موجودًا
         report.setReportNumber(
                 "PR-" + String.format("%06d", report.getId())
         );
 
+// تحديث التقرير برقم التقرير
         reportRepo.save(report);
+
+// نسخ القطع بعد اكتمال التقرير
         clonePartsToReport(request, report);
 
         request.setCurrentEmployee(
