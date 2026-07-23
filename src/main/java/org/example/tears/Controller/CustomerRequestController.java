@@ -39,23 +39,10 @@ import java.util.List;
                     .getMyRequests(user.getCustomer().getId());
         }
 
-    @GetMapping("/customer/reports")
-    public List<CustomerReportListDto> getCustomerReports(
-            @RequestParam(defaultValue = "ALL")
-            CustomerReportFilter filter,
-            HttpServletRequest request
-    ) {
 
-        User user = authService.getAuthenticatedUser(request);
-
-        return requestApprovalService.getCustomerReports(
-                user.getCustomer(),
-                filter
-        );
-    }
 
     @GetMapping("/requests/{requestId}/report/download")
-    public ResponseEntity<byte[]> downloadReport(
+    public ResponseEntity<byte[]> downloadCustomerReport(
             @PathVariable Integer requestId,
             HttpServletRequest request
     ) throws Exception {
@@ -69,10 +56,21 @@ import java.util.List;
     }
 
     @GetMapping("/requests/{requestId}/report")
-    public ReportPreviewDto getReport(
-            @PathVariable Integer requestId
-    ) {
-        return requestApprovalService.getReport(requestId);
+    public ApiResponse previewCustomerReport(
+            @PathVariable Integer requestId,
+            HttpServletRequest request
+    ){
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return new ApiResponse(
+                true,
+                "تم جلب التقرير",
+                requestApprovalService.getReport(
+                        requestId,
+                        user.getCustomer()
+                )
+        );
     }
 
 

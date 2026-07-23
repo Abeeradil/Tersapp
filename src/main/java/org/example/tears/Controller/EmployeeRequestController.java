@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Service.*;
@@ -26,6 +27,7 @@ import java.util.List;
     private final PartsService partsService;
     private final RequestQueryService requestQueryService;
     private final AuthService authService;
+    private final RequestPricingService requestPricingService;
 
 
     @GetMapping("/my/requests")
@@ -193,14 +195,14 @@ import java.util.List;
         public ApiResponse previewReport(
                 @PathVariable Integer requestId,
                 HttpServletRequest request
-        ){
+        ) {
 
             User user = authService.getAuthenticatedUser(request);
 
             return new ApiResponse(
                     true,
                     "تم جلب التقرير",
-                    workflowService.preview(
+                    requestPricingService.preview(
                             requestId,
                             user.getEmployee()
                     )

@@ -595,33 +595,44 @@ public class RequestWorkflowService {
         return selected;
     }
 
-    public ReportDto preview(
-            Integer requestId,
-            Employee employee
-    ){
-        RequestReport report = reportRepo.findByRequest_Id(requestId)
-                .orElseThrow(() -> new ApiException("No report"));
-
-        CarServiceRequest request = report.getRequest();
-
-        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
-
-            if (request.getAssignedPricingEmployee() == null ||
-                    !request.getAssignedPricingEmployee().getId().equals(employee.getId())) {
-
-                throw new ApiException("غير مصرح لك");
-            }
-        }
-        ReportDto dto = new ReportDto();
-
-        dto.setCustomerName(request.getCustomer().getUser().getFullName());
-        dto.setOrderNumber(request.getOrderNumber());
-        dto.setCarModel(request.getCar().getModel().getName());
-        dto.setProblemDescription(request.getProblemDescription());
-
-
-        return dto;
-    }
+//    public ReportDto preview(
+//            Integer requestId,
+//            Employee employee
+//    ) {
+//
+//        RequestReport report =
+//                getAccessibleReport(requestId, employee);
+//
+//        CarServiceRequest request = report.getRequest();
+//
+//        ReportDto dto = new ReportDto();
+//
+//        dto.setCustomerName(
+//                request.getCustomer().getUser().getFullName()
+//        );
+//
+//        dto.setOrderNumber(
+//                request.getOrderNumber()
+//        );
+//
+//        dto.setCarModel(
+//                request.getCar().getModel().getName()
+//        );
+//
+//        dto.setProblemDescription(
+//                request.getProblemDescription()
+//        );
+//
+//        dto.setReportNumber(
+//                report.getReportNumber()
+//        );
+//
+//        dto.setVersion(
+//                report.getVersion()
+//        );
+//
+//        return dto;
+//    }
 
     @Transactional
     public void sendToCustomer(

@@ -30,4 +30,8 @@ public class ReportDto {
         private String recommendations;
 
         private LocalDateTime createdAt;
+
+        private String reportNumber;
+
+        private Integer version;
     }

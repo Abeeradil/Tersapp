@@ -35,28 +35,48 @@ import java.util.List;
             Customer customer
     ) throws Exception {
 
-        CarServiceRequest serviceRequest =
+        CarServiceRequest request =
                 requestRepo.findById(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        if (!serviceRequest.getCustomer().getId().equals(customer.getId())) {
+        if (!request.getCustomer().getId().equals(customer.getId())) {
             throw new ApiException("غير مصرح لك");
         }
 
-        return requestPricingService.downloadPricingReport(requestId);
+        RequestReport report =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير"));
+
+        return requestPricingService.generatePdf(report);
     }
 
     @Transactional(readOnly = true)
-        public ReportPreviewDto getReport(Integer requestId) {
+    public ReportPreviewDto getReport(
+            Integer requestId,
+            Customer customer
+    ){
 
             CarServiceRequest request =
                     requestRepo.findById(requestId)
                             .orElseThrow(() ->
                                     new ApiException("الطلب غير موجود"));
 
-            List<RequestPart> parts =
-                    partRepo.findByRequestId(requestId);
+        if (!request.getCustomer().getId().equals(customer.getId())) {
+            throw new ApiException("غير مصرح لك");
+        }
+
+
+        RequestReport report =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("التقرير غير موجود"));
+
+        List<RequestPart> parts =
+                partRepo.findByReport_Id(report.getId());
+
+
 
             ReportPreviewDto dto = new ReportPreviewDto();
 

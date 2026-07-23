@@ -12,8 +12,13 @@ public interface RequestReportRepository extends JpaRepository<RequestReport,Int
 
     Optional<RequestReport> findByRequest_Id(Integer requestId);
 
-    boolean existsByRequest_Id(Integer requestId);
-
     Optional<RequestReport> findByRequest_IdAndLatestTrue(Integer requestId);
+
+    Optional<RequestReport> findTopByRequest_IdAndCreatedBy_IdOrderByVersionDesc(
+            Integer requestId,
+            Integer employeeId
+    );
+
+    boolean existsByRequest_Id(Integer requestId);
 
 }

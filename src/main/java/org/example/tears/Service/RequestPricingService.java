@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.PricingPartDto;
 import org.example.tears.DTO.PricingRequestDto;
+import org.example.tears.DTO.ReportDto;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
@@ -210,36 +211,26 @@ public class RequestPricingService {
     }
 
     public ResponseEntity<byte[]> downloadPricingReport(
-            Integer requestId
-    ) throws Exception
-    {
-
-        CarServiceRequest request =
-                requestRepo.findById(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("الطلب غير موجود"));
-
-//        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
-//
-//            if (request.getAssignedPricingEmployee() == null ||
-//                    !request.getAssignedPricingEmployee().getId().equals(employee.getId())) {
-//
-//                throw new ApiException("غير مصرح لك");
-//            }
-        //}
-
-        // نتأكد أن التقرير موجود
-        reportRepo.findByRequest_IdAndLatestTrue(requestId)
-                .orElseThrow(() ->
-                        new ApiException("التقرير غير موجود"));
+            Integer requestId,
+            Employee employee
+    ) throws Exception {
 
         RequestReport report =
-                reportRepo.findByRequest_IdAndLatestTrue(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("التقرير غير موجود"));
+                getAccessibleReport(requestId, employee);
+
+        return generatePdf(report);
+    }
+
+
+    public ResponseEntity<byte[]> generatePdf(
+            RequestReport report
+    ) throws Exception {
+
+        CarServiceRequest request =
+                report.getRequest();
 
         List<RequestPart> parts =
-                partRepo.findByRequestId(requestId);
+                partRepo.findByReport_Id(report.getId());
 
         List<RequestNote> notes =
                 noteRepo.findByRequestOrderByCreatedAtDesc(request);
@@ -270,16 +261,16 @@ public class RequestPricingService {
 
 
             rows.append("""
-<tr>
-<td>%s</td>
-<td>%s</td>
-<td>%d</td>
-<td>%s</td>
-<td>%d SAR</td>
-<td>%d SAR</td>
-<td>%d SAR</td>
-</tr>
-""".formatted(
+                            <tr>
+                            <td>%s</td>
+                            <td>%s</td>
+                            <td>%d</td>
+                            <td>%s</td>
+                            <td>%d SAR</td>
+                            <td>%d SAR</td>
+                            <td>%d SAR</td>
+                            </tr>
+                            """.formatted(
                     part.getName(),
                     part.getType() == null ? "-" : part.getType(),
                     part.getQuantity(),
@@ -387,6 +378,47 @@ public class RequestPricingService {
                 )
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(output.toByteArray());
+
+    }
+
+
+    public ReportDto preview(
+            Integer requestId,
+            Employee employee
+    ) {
+
+        RequestReport report =
+                getAccessibleReport(requestId, employee);
+
+        CarServiceRequest request = report.getRequest();
+
+        ReportDto dto = new ReportDto();
+
+        dto.setCustomerName(
+                request.getCustomer().getUser().getFullName()
+        );
+
+        dto.setOrderNumber(
+                request.getOrderNumber()
+        );
+
+        dto.setCarModel(
+                request.getCar().getModel().getName()
+        );
+
+        dto.setProblemDescription(
+                request.getProblemDescription()
+        );
+
+        dto.setReportNumber(
+                report.getReportNumber()
+        );
+
+        dto.setVersion(
+                report.getVersion()
+        );
+
+        return dto;
     }
 
     private void clonePartsToReport(
@@ -421,6 +453,29 @@ public class RequestPricingService {
 
             partRepo.save(copy);
         }
+    }
+
+    private RequestReport getAccessibleReport(
+            Integer requestId,
+            Employee employee
+    ) {
+
+        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+
+            return reportRepo
+                    .findTopByRequest_IdAndCreatedBy_IdOrderByVersionDesc(
+                            requestId,
+                            employee.getId()
+                    )
+                    .orElseThrow(() ->
+                            new ApiException("لا يوجد تقرير لهذا الموظف"));
+
+        }
+
+        return reportRepo
+                .findByRequest_IdAndLatestTrue(requestId)
+                .orElseThrow(() ->
+                        new ApiException("لا يوجد تقرير"));
     }
 
 

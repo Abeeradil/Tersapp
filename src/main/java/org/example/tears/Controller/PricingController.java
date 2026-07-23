@@ -2,6 +2,7 @@ package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Service.AuthService;
 import org.springframework.security.core.Authentication;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.PricingRequestCardDto;
@@ -24,6 +25,8 @@ public class PricingController {
 
         private final RequestPricingService requestPricingService;
         private final PricingQueryService pricingQueryService;
+    private final AuthService authService;
+
 
     @PutMapping("/requests/{requestId}/start")
     public ApiResponse startPricing(
@@ -77,6 +80,7 @@ public class PricingController {
         return new ApiResponse(true,"تم حفظ التسعير");
     }
 
+
     @PutMapping("/requests/{requestId}/finish-pricing")
     public ApiResponse finishPricing(
             @PathVariable Integer requestId,
@@ -96,13 +100,19 @@ public class PricingController {
 
 
 
+
     @GetMapping("/requests/{requestId}/download_report")
     public ResponseEntity<byte[]> downloadReport(
-            @PathVariable Integer requestId
+            @PathVariable Integer requestId,
+            HttpServletRequest request
     ) throws Exception {
 
-        return requestPricingService.downloadPricingReport(requestId);
+        User user = authService.getAuthenticatedUser(request);
 
+        return requestPricingService.downloadPricingReport(
+                requestId,
+                user.getEmployee()
+        );
     }
 
 
