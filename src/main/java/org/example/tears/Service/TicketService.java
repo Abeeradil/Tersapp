@@ -108,11 +108,14 @@ public class TicketService {
 
         dto.setCreatedAt(ticket.getCreatedAt());
 
-        dto.setCarModel(
-                ticket.getRequest()
-                        .getCar()
-                        .getModel()
-                        .getNameAr()
+        dto.setCarModel( ticket.getRequest() .getCar() .getModel() .getNameAr() );
+
+        dto.setPlateArabic(
+                formatCarArTitle(ticket.getRequest().getCar())
+        );
+
+        dto.setPlateEnglish(
+                formatCarEnTitle(ticket.getRequest().getCar())
         );
 
         return dto;

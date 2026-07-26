@@ -26,6 +26,9 @@ public class TicketResponseDto {
 
     private TicketStatus status;
 
+    private String plateArabic;
+    private String plateEnglish;
+
     private LocalDateTime createdAt;
 
 }
