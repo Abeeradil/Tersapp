@@ -88,7 +88,16 @@ public class RequestWorkflowService {
                 status
         );
 
+        if (status == StaffRequestStatus.DELIVERED &&
+                !Boolean.TRUE.equals(req.getCustomerSelectedDelivery())) {
+
+            throw new ApiException(
+                    "لا يمكن إنهاء الطلب قبل أن يحدد العميل موعد وطريقة التسليم"
+            );
+        }
+
         // 📸 صور
+
 
         // 🔄 الحالة
         req.setStaffStatus(status);

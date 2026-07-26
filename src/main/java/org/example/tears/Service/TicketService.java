@@ -181,7 +181,9 @@ public class TicketService {
                 ticket.getAcceptedByCustomerService()
         );
 
-        dto.setCarModel(
+        dto.setCarModel( ticket.getRequest() .getCar() .getModel() .getNameAr() );
+
+        dto.setPlateArabic(
                 formatCarArTitle(ticket.getRequest().getCar())
         );
 
