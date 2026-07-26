@@ -7,7 +7,6 @@ import lombok.Data;
 public class VerifyOtpDTO {
     @NotBlank
     private String phoneNumber;
-
     @NotBlank
     private String otp;
 }

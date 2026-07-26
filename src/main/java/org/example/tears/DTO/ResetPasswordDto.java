@@ -1,12 +1,12 @@
-package org.example.tears.InpDTO;
+package org.example.tears.DTO;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
-public class ChangePasswordDTO {
-
+public class ResetPasswordDto {
+    @NotEmpty
+    private String resetToken;
     @NotEmpty
     private String newPassword;
     @NotEmpty

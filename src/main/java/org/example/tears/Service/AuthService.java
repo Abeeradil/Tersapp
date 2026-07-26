@@ -5,19 +5,25 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.ResetPasswordDTO;
+import org.example.tears.DTO.ResetPasswordDto;
+import org.example.tears.DTO.SendOtpDto;
+import org.example.tears.DTO.VerifyOtpDTO;
+import org.example.tears.DTO.VerifyOtpResponse;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.ChangePasswordDTO;
 import org.example.tears.InpDTO.CustomerRegisterDTO;
 import org.example.tears.InpDTO.LoginDTO;
-import org.example.tears.Model.Customer;
-import org.example.tears.Model.JwtUtil;
-import org.example.tears.Model.User;
+import org.example.tears.Model.*;
 import org.example.tears.OutDTO.AuthStatusDto;
+import org.example.tears.Repository.EmployeeRepository;
+import org.example.tears.Repository.PasswordResetTokenRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +31,11 @@ public class AuthService {
 
     private final UserRepository userRepo;
     private final PasswordEncoder encoder;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
    // private final TwilioConfig twilioConfig;
     private final JwtUtil jwtUtil;
+    private final EmployeeRepository employeeRepo;
+    private final PasswordEncoder passwordEncoder;
 
     // =========================================================
     // 1️⃣ تسجيل العميل
@@ -169,7 +178,6 @@ public class AuthService {
                         new ApiException("بيانات الدخول غير صحيحة")
                 );
         System.out.println("INPUT = " + dto.getEmailOrPhone());
-
         System.out.println("USER FOUND = " + user.getEmail());
 
         System.out.println("PASSWORD MATCH = "
@@ -207,60 +215,133 @@ public class AuthService {
     }
 
     // =========================================================
-    // 6️⃣ تغيير كلمة المرور
+    // 6️⃣ استعاده كلمة المرور
     // =========================================================
-    public ApiResponse changePassword(HttpServletRequest request, ChangePasswordDTO dto) {
 
-        User user = getAuthenticatedUser(request);
+    public void sendResetPasswordOtp(SendOtpDto dto) {
 
-        if (!encoder.matches(dto.getOldPassword(), user.getPassword()))
-            throw new ApiException("كلمة المرور القديمة غير صحيحة");
+        User user = userRepo.findByPhoneNumber(dto.getPhoneNumber())
+                .orElseThrow(() ->
+                        new ApiException("رقم الجوال غير مسجل"));
 
-        user.setPassword(encoder.encode(dto.getNewPassword()));
-
-        if (user.getEmployee() != null) {
-            user.getEmployee().setMustChangePassword(false);
-            user.setStatus(UserStatus.ACTIVE);
+        if (user.getEmployee() == null) {
+            throw new ApiException("هذه الخدمة خاصة بالموظفين");
         }
 
-        userRepo.save(user);
-
-        String token = jwtUtil.generateToken(
-                user.getPhoneNumber(),
-                user.getRole().name()
-        );
-
-        return new ApiResponse(true, "تم تغيير كلمة المرور بنجاح", token);
+        // حالياً مؤقت
+        // بعدين تستبدله بـ Twilio
+        System.out.println("OTP = 123456");
     }
 
     @Transactional
-    public ApiResponse resetPasswordInsideApp(
-            HttpServletRequest request,
-            ResetPasswordDTO dto
-    ){
+    public VerifyOtpResponse verifyResetPasswordOtp(
+    VerifyOtpDTO dto
+    ) {
 
-        User user = getAuthenticatedUser(request);
+        User user = userRepo.findByPhoneNumber(dto.getPhoneNumber())
+                .orElseThrow(() ->
+                        new ApiException("رقم الجوال غير مسجل"));
 
-        if(!dto.getNewPassword().equals(dto.getConfirmPassword())){
-
-            throw new ApiException("Passwords do not match");
+        if (user.getEmployee() == null) {
+            throw new ApiException("هذه الخدمة خاصة بالموظفين");
         }
+
+        // مؤقت
+        if (!dto.getOtp().equals("123456")) {
+            throw new ApiException("رمز التحقق غير صحيح");
+        }
+
+        passwordResetTokenRepository
+                .findByUser(user)
+                .ifPresent(passwordResetTokenRepository::delete);
+
+        PasswordResetToken token = new PasswordResetToken();
+
+        token.setUser(user);
+
+        token.setToken(UUID.randomUUID().toString());
+
+        token.setExpiresAt(
+                LocalDateTime.now().plusMinutes(1)
+        );
+
+        token.setUsed(false);
+
+        passwordResetTokenRepository.save(token);
+
+        return new VerifyOtpResponse(token.getToken());
+    }
+
+
+    @Transactional
+    public void resetPassword(
+            ResetPasswordDto dto
+    ) {
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new ApiException("كلمتا المرور غير متطابقتين");
+        }
+
+        PasswordResetToken token =
+                passwordResetTokenRepository
+                        .findByToken(dto.getResetToken())
+                        .orElseThrow(() ->
+                                new ApiException("رمز إعادة التعيين غير صالح"));
+
+        if (Boolean.TRUE.equals(token.getUsed())) {
+            throw new ApiException("تم استخدام رمز إعادة التعيين");
+        }
+
+        if (token.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new ApiException("انتهت صلاحية رمز إعادة التعيين");
+        }
+
+        User user = token.getUser();
 
         user.setPassword(
                 encoder.encode(dto.getNewPassword())
         );
 
-        if(user.getEmployee()!=null){
+        if (user.getEmployee() != null) {
 
             user.getEmployee().setMustChangePassword(false);
         }
 
         userRepo.save(user);
 
-        return new ApiResponse(
-                true,
-                "تم تغيير كلمة المرور بنجاح"
+        token.setUsed(true);
+
+        passwordResetTokenRepository.save(token);
+    }
+
+    // =========================================================
+    // 6️⃣ تغيير كلمة المرور
+    // =========================================================
+    @Transactional
+    public void changePassword(
+            Employee employee,
+            ChangePasswordDTO dto
+    ) {
+        if (employee == null) {
+            throw new ApiException("هذه الخدمة خاصة بالموظفين");
+        }
+
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new ApiException("كلمتا المرور غير متطابقتين");
+        }
+
+        User user = employee.getUser();
+
+        user.setPassword(
+                encoder.encode(dto.getNewPassword())
         );
+
+        employee.setMustChangePassword(false);
+
+        employeeRepo.save(employee);
+
+        userRepo.save(user);
     }
 
     public ApiResponse verifyEmployeeOtp(

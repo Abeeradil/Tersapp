@@ -9,8 +9,11 @@ import org.example.tears.InpDTO.ChangePasswordDTO;
 import org.example.tears.InpDTO.CustomerRegisterDTO;
 import org.example.tears.InpDTO.LoginDTO;
 import org.example.tears.Model.JwtUtil;
+import org.example.tears.Model.User;
 import org.example.tears.Service.AuthService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -74,27 +77,72 @@ public class AuthController {
         return authService.loginEmployee(dto);
     }
 
-
-    // ================= Change Password =================
-    // تغيير كلمة المرور بعد تسجيل الدخول
-    @PostMapping("/change-password")
-    public ApiResponse changePassword(HttpServletRequest request,
-                                      @RequestBody ChangePasswordDTO dto) {
-        return authService.changePassword(request, dto);
-    }
-
     // ================= OTP Password Reset (Employee) =================
 
 
-    @PutMapping("/reset-password")
-    public ApiResponse resetPassword(
-            HttpServletRequest request,
-            @RequestBody @Valid ResetPasswordDTO dto
+    @PostMapping("/password/reset/send-otp")
+    public ApiResponse sendResetPasswordOtp(
+            @RequestBody @Valid SendOtpDto dto
     ){
 
-        return authService.resetPasswordInsideApp(
-                request,
+        authService.sendResetPasswordOtp(dto);
+
+        return new ApiResponse(
+                true,
+                "تم إرسال رمز التحقق"
+        );
+    }
+
+
+    @PostMapping("/password/reset/verify-otp")
+    public ApiResponse verifyOtp(
+            @RequestBody @Valid VerifyOtpDTO dto
+    ){
+
+        VerifyOtpResponse response =
+                authService.verifyResetPasswordOtp(dto);
+
+        return new ApiResponse(
+                true,
+                "تم التحقق من الرمز",
+                response
+        );
+    }
+
+    @PostMapping("/password/reset")
+    public ApiResponse resetPassword(
+            @RequestBody @Valid ResetPasswordDto dto
+    ){
+
+        authService.resetPassword(dto);
+
+        return new ApiResponse(
+                true,
+                "تم تغيير كلمة المرور بنجاح"
+        );
+    }
+
+
+
+
+    // ================= Change Password =================
+    // تغيير كلمة المرور بعد تسجيل الدخول
+
+    @PutMapping("/change-password")
+    @PreAuthorize("hasRole('EMPLOYEE')")
+    public ApiResponse changePassword(
+            @AuthenticationPrincipal User user,
+            @RequestBody @Valid ChangePasswordDTO dto
+    ){
+
+        authService.changePassword(
+                user.getEmployee(),
                 dto
+        );
+
+        return new ApiResponse(
+                true,
+                "تم تغيير كلمة المرور بنجاح"
         );
     }
 
