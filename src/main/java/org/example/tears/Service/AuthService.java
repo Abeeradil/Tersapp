@@ -35,7 +35,7 @@ public class AuthService {
    // private final TwilioConfig twilioConfig;
     private final JwtUtil jwtUtil;
     private final EmployeeRepository employeeRepo;
-    private final PasswordEncoder passwordEncoder;
+    //private final PasswordEncoder passwordEncoder;
 
     // =========================================================
     // 1️⃣ تسجيل العميل
@@ -251,20 +251,14 @@ public class AuthService {
             throw new ApiException("رمز التحقق غير صحيح");
         }
 
-        passwordResetTokenRepository
-                .findByUser(user)
-                .ifPresent(passwordResetTokenRepository::delete);
-
-        PasswordResetToken token = new PasswordResetToken();
+        PasswordResetToken token =
+                passwordResetTokenRepository
+                        .findByUser(user)
+                        .orElse(new PasswordResetToken());
 
         token.setUser(user);
-
         token.setToken(UUID.randomUUID().toString());
-
-        token.setExpiresAt(
-                LocalDateTime.now().plusMinutes(1)
-        );
-
+        token.setExpiresAt(LocalDateTime.now().plusMinutes(1));
         token.setUsed(false);
 
         passwordResetTokenRepository.save(token);
