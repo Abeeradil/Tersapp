@@ -24,6 +24,7 @@ public class TicketService {
     private final CarServiceRequestRepository requestRepository;
 
     private final AuthService authService;
+    private final ChatService chatService;
 
     @Transactional
     public TicketResponseDto createTicket(
@@ -153,7 +154,7 @@ public class TicketService {
         dto.setTicketNumber(ticket.getTicketNumber());
 
         if (ticket.getServiceOption() != null){
-            dto.setServiceOption(ticket.getServiceOption().getDisplayName());
+            dto.setServiceOption(ticket.getServiceOption().name());
         }
 
         dto.setRequestId(ticket.getRequest().getId());
@@ -360,6 +361,7 @@ public class TicketService {
             ticket.setUpdatedAt(LocalDateTime.now());
 
             ticketRepository.save(ticket);
+            chatService.createRoomIfNotExists(ticket.getRequest());
 
             return;
         }
