@@ -70,6 +70,8 @@ public class TicketService {
         ticket.setCustomer(request.getCustomer());
 
         ticket.setCreatedByEmployee(user.getEmployee());
+        ticket.setLocation(request.getLocation());
+        ticket.setServiceOption(request.getServiceOption());
 
         // نحفظ أول مرة للحصول على الـ ID
         ticket = ticketRepository.save(ticket);
@@ -151,7 +153,7 @@ public class TicketService {
         dto.setTicketNumber(ticket.getTicketNumber());
 
         if (ticket.getServiceOption() != null){
-            dto.setServiceOption(ticket.getServiceOption().name());
+            dto.setServiceOption(ticket.getServiceOption().getDisplayName());
         }
 
         dto.setRequestId(ticket.getRequest().getId());
