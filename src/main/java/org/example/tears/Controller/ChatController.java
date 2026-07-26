@@ -9,7 +9,6 @@ import org.example.tears.Model.ChatRoom;
 import org.example.tears.Model.User;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.ChatService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,28 +22,27 @@ public class ChatController {
     private final ChatService chatService;
     private final AuthService authService;
 
-    @GetMapping("/{requestId}/room")
+    @GetMapping("/{ticketId}/room")
     public ApiResponse room(
-            @PathVariable Integer requestId,
+            @PathVariable Integer ticketId,
             HttpServletRequest request
-    ){
+    ) {
 
-        User user =
-                authService.getAuthenticatedUser(request);
+        User user = authService.getAuthenticatedUser(request);
 
-        ChatRoom room =
-                chatService.getRoom(requestId, user);
+        ChatRoom room = chatService.getRoom(ticketId, user);
 
         return new ApiResponse(
                 true,
                 "success",
                 new ChatRoomResponse(
                         room.getId(),
-                        room.getRequest().getId(),
+                        room.getTicket().getId(),
                         room.getStatus()
                 )
         );
     }
+
     @PostMapping("/upload")
     public ApiResponse upload(
             @RequestParam MultipartFile file
@@ -52,12 +50,16 @@ public class ChatController {
 
         UploadResponse response = chatService.upload(file);
 
-        return new ApiResponse(true, "تم رفع الملف", response);
+        return new ApiResponse(
+                true,
+                "تم رفع الملف",
+                response
+        );
     }
 
-    @GetMapping("/{requestId}/messages")
+    @GetMapping("/{ticketId}/messages")
     public ApiResponse getMessages(
-            @PathVariable Integer requestId,
+            @PathVariable Integer ticketId,
             HttpServletRequest request
     ) {
 
@@ -66,19 +68,19 @@ public class ChatController {
         return new ApiResponse(
                 true,
                 "تم جلب الرسائل",
-                chatService.getMessages(requestId, user)
+                chatService.getMessages(ticketId, user)
         );
     }
 
-    @PutMapping("/{requestId}/read")
+    @PutMapping("/{ticketId}/read")
     public ApiResponse markAsRead(
-            @PathVariable Integer requestId,
+            @PathVariable Integer ticketId,
             HttpServletRequest request
     ) {
 
         User user = authService.getAuthenticatedUser(request);
 
-        chatService.markAsRead(requestId, user);
+        chatService.markAsRead(ticketId, user);
 
         return new ApiResponse(
                 true,
@@ -86,17 +88,19 @@ public class ChatController {
         );
     }
 
-    @GetMapping("/{requestId}/online")
+    @GetMapping("/{ticketId}/online")
     public ApiResponse isOnline(
-            @PathVariable Integer requestId,
-            @AuthenticationPrincipal User user
-    ){
+            @PathVariable Integer ticketId,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
 
         return new ApiResponse(
                 true,
                 "success",
                 chatService.isOtherUserOnline(
-                        requestId,
+                        ticketId,
                         user
                 )
         );

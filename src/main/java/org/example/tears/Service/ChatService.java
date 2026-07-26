@@ -5,12 +5,10 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.ChatMessageResponse;
 import org.example.tears.DTO.SendMessageDto;
 import org.example.tears.DTO.UploadResponse;
+import org.example.tears.Enums.ChatStatus;
 import org.example.tears.Enums.ReadStatus;
 import org.example.tears.Enums.UserRole;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.ChatMessage;
-import org.example.tears.Model.ChatRoom;
-import org.example.tears.Model.User;
+import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,9 +25,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import static org.example.tears.Enums.ChatStatus.OPEN;
-
-
 
 @Service
 @AllArgsConstructor
@@ -37,62 +32,55 @@ public class ChatService {
 
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final TicketRepository ticketRepository;
     private final SimpMessagingTemplate messagingTemplate;
+
     private final UserRepository userRepo;
     private final PresenceService presenceService;
-    private final MessageStatusRepository messageStatusRepository;
 
-    private final CarServiceRequestRepository requestRepository;
 
     @Transactional
     public ChatRoom createRoomIfNotExists(
-            CarServiceRequest request
+            Ticket ticket
     ) {
 
         return chatRoomRepository
-                .findByRequest(request)
+                .findByTicket(ticket)
                 .orElseGet(() -> {
 
                     ChatRoom room = new ChatRoom();
 
-                    room.setRequest(request);
+                    room.setTicket(ticket);
 
                     room.setCreatedAt(LocalDateTime.now());
 
-                   room.setStatus(OPEN);
+                    room.setStatus(ChatStatus.OPEN);
 
                     return chatRoomRepository.save(room);
                 });
     }
 
 
-    public ChatRoom getRoom(
-            Integer requestId,
-            User user
-    ) {
+    public ChatRoom getRoom(Integer ticketId, User user) {
 
-        CarServiceRequest request =
-                requestRepository.findById(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("الطلب غير موجود"));
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() ->
+                        new ApiException("التذكرة غير موجودة"));
 
-        validateUserAccess(request, user);
+        validateUserAccess(ticket, user);
 
         return chatRoomRepository
-                .findByRequest(request)
+                .findByTicket(ticket)
                 .orElseThrow(() ->
                         new ApiException("لا توجد محادثة"));
     }
 
     public List<ChatMessage> getMessages(
-            Integer requestId,
+            Integer ticketId,
             User user
-    ) {
+    ){
 
-        ChatRoom room = getRoom(
-                requestId,
-                user
-        );
+        ChatRoom room = getRoom(ticketId,user);
 
         return chatMessageRepository
                 .findByChatRoomOrderByCreatedAtAsc(room);
@@ -100,12 +88,12 @@ public class ChatService {
 
 
     public Page<ChatMessage> getMessagesPage(
-            Integer requestId,
+            Integer ticketId,
             User user,
             Pageable pageable
     ){
 
-        ChatRoom room = getRoom(requestId, user);
+        ChatRoom room = getRoom(ticketId,user);
 
         return chatMessageRepository
                 .findByChatRoomOrderByCreatedAtDesc(
@@ -115,61 +103,49 @@ public class ChatService {
     }
 
     private void validateUserAccess(
-            CarServiceRequest request,
+            Ticket ticket,
             User user
     ) {
-
-        Integer employeeId = null;
-
-        if (user.getEmployee() != null) {
-            employeeId = user.getEmployee().getId();
-        }
-
-        System.out.println("========== CHAT AUTH ==========");
-        System.out.println("Logged Employee = " + employeeId);
-
-        System.out.println("AssignedEmployee = "
-                + (request.getAssignedEmployee() == null
-                ? null
-                : request.getAssignedEmployee().getId()));
-
-        System.out.println("AssignedPricingEmployee = "
-                + (request.getAssignedPricingEmployee() == null
-                ? null
-                : request.getAssignedPricingEmployee().getId()));
-
-        System.out.println("CurrentEmployee = "
-                + (request.getCurrentEmployee() == null
-                ? null
-                : request.getCurrentEmployee().getId()));
 
         // الأدمن
         if (user.getRole() == UserRole.ADMIN) {
             return;
         }
 
-        // العميل
+        // العميل (إذا مستقبلاً صار في محادثة عميل)
         if (user.getCustomer() != null &&
-                request.getCustomer().getId().equals(user.getCustomer().getId())) {
+                ticket.getCustomer() != null &&
+                ticket.getCustomer().getId().equals(user.getCustomer().getId())) {
             return;
         }
 
         // الموظف
-        if (employeeId != null) {
+        if (user.getEmployee() != null) {
 
-            if ((request.getAssignedEmployee() != null &&
-                    request.getAssignedEmployee().getId().equals(employeeId))
+            Integer employeeId = user.getEmployee().getId();
 
-                    ||
+            System.out.println("========== CHAT AUTH ==========");
+            System.out.println("Logged Employee = " + employeeId);
 
-                    (request.getAssignedPricingEmployee() != null &&
-                            request.getAssignedPricingEmployee().getId().equals(employeeId))
+            System.out.println("Ticket CreatedByEmployee = "
+                    + (ticket.getCreatedByEmployee() == null
+                    ? null
+                    : ticket.getCreatedByEmployee().getId()));
 
-                    ||
+            System.out.println("Ticket AssignedEmployee = "
+                    + (ticket.getAssignedEmployee() == null
+                    ? null
+                    : ticket.getAssignedEmployee().getId()));
 
-                    (request.getCurrentEmployee() != null &&
-                            request.getCurrentEmployee().getId().equals(employeeId))) {
+            // موظف الصيانة (منشئ التذكرة)
+            if (ticket.getCreatedByEmployee() != null &&
+                    ticket.getCreatedByEmployee().getId().equals(employeeId)) {
+                return;
+            }
 
+            // موظف خدمة العملاء
+            if (ticket.getAssignedEmployee() != null &&
+                    ticket.getAssignedEmployee().getId().equals(employeeId)) {
                 return;
             }
         }
@@ -190,7 +166,7 @@ public class ChatService {
                         new ApiException("المستخدم غير موجود"));
 
         ChatRoom room = getRoom(
-                dto.getRequestId(),
+                dto.getTicketId(),
                 sender
         );
 
@@ -250,14 +226,13 @@ public class ChatService {
         return dto;
     }
 
-    @Transactional
     public void markAsRead(
-            Integer requestId,
+            Integer ticketId,
             User currentUser
     ){
 
         ChatRoom room =
-                getRoom(requestId,currentUser);
+                getRoom(ticketId,currentUser);
 
         List<ChatMessage> messages =
                 chatMessageRepository
@@ -266,51 +241,53 @@ public class ChatService {
         for(ChatMessage message : messages){
 
             if(message.getSender().getId()
-                    .equals(currentUser.getId())){
-
+                    .equals(currentUser.getId()))
                 continue;
-            }
 
-            if(message.getReadStatus()==ReadStatus.READ){
-
+            if(message.getReadStatus()==ReadStatus.READ)
                 continue;
-            }
 
             message.setReadStatus(ReadStatus.READ);
 
             chatMessageRepository.save(message);
+
             messagingTemplate.convertAndSend(
-                    "/topic/chat/" + room.getId() + "/read",
+                    "/topic/chat/"+room.getId()+"/read",
                     message.getId()
             );
         }
     }
 
+
     public Boolean isOtherUserOnline(
-            Integer requestId,
+            Integer ticketId,
             User currentUser
     ){
 
-        CarServiceRequest request =
-                requestRepository.findById(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("الطلب غير موجود"));
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() ->
+                        new ApiException("التذكرة غير موجودة"));
 
-        validateUserAccess(request, currentUser);
+        validateUserAccess(ticket,currentUser);
 
         User other;
 
         if(currentUser.getCustomer()!=null){
 
-            other =
-                    request.getAssignedEmployee()
-                            .getUser();
+            other = ticket.getAssignedEmployee().getUser();
 
         }else{
 
-            other =
-                    request.getCustomer()
-                            .getUser();
+            if(ticket.getCreatedByEmployee()
+                    .getId()
+                    .equals(currentUser.getEmployee().getId())){
+
+                other = ticket.getAssignedEmployee().getUser();
+
+            }else{
+
+                other = ticket.getCreatedByEmployee().getUser();
+            }
         }
 
         return presenceService.isOnline(

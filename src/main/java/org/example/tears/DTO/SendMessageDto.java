@@ -8,7 +8,7 @@ import org.example.tears.Enums.MessageType;
 public class SendMessageDto {
 
     @NotNull
-    private Integer requestId;
+    private Integer ticketId;
 
     @NotNull
     private MessageType type;

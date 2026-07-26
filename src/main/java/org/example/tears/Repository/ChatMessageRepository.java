@@ -17,4 +17,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Intege
             ChatRoom chatRoom,
             Pageable pageable
     );
+
+
 }

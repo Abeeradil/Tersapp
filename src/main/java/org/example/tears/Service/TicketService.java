@@ -22,6 +22,7 @@ public class TicketService {
     private final TicketRepository ticketRepository;
 
     private final CarServiceRequestRepository requestRepository;
+    private final NotificationService notificationService;
 
     private final AuthService authService;
     private final ChatService chatService;
@@ -365,11 +366,14 @@ public class TicketService {
             serviceRequest.setLastUpdated(LocalDateTime.now());
 
             requestRepository.save(serviceRequest);
-            ticketRepository.save(ticket);
+            ticket.setAssignedEmployee(employee);
 
-            // إنشاء غرفة الشات
-            chatService.createRoomIfNotExists(serviceRequest);
+            chatService.createRoomIfNotExists(ticket);
 
+            notificationService.send(
+                    ticket.getCreatedByEmployee().getUser(),
+                    "قام موظف خدمة العملاء باستلام التذكرة ويمكنك بدء المحادثة."
+            );
             return;
         }
 

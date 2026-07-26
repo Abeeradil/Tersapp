@@ -21,15 +21,15 @@ public class ChatRoom {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @OneToOne
-    @JoinColumn(nullable = false, unique = true)
-    private CarServiceRequest request;
 
     @Enumerated(EnumType.STRING)
     private ChatStatus status;
 
     @Enumerated(EnumType.STRING)
     private ReadStatus readStatus = ReadStatus.SENT;
+
+    @ManyToOne
+    private Ticket ticket;
 
     @CreationTimestamp
     private LocalDateTime createdAt;
