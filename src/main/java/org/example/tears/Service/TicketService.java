@@ -170,12 +170,6 @@ public class TicketService {
                         .getPhoneNumber()
         );
 
-        dto.setCarModel(
-                ticket.getRequest()
-                        .getCar()
-                        .getModel()
-                        .getNameAr()
-        );
 
         dto.setProblemType(ticket.getProblemType());
 
@@ -204,12 +198,13 @@ public class TicketService {
         );
 
         if (ticket.getLocation() != null) {
-            dto.setAddress(ticket.getLocation().getAddress());
-        }
 
-        dto.setCity(
-                extractCity(ticket.getLocation().getAddress())
-        );
+            dto.setAddress(ticket.getLocation().getAddress());
+
+            dto.setCity(
+                    extractCity(ticket.getLocation().getAddress())
+            );
+        }
 
         if (ticket.getAssignedEmployee() != null) {
 
