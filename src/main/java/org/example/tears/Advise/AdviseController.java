@@ -84,11 +84,20 @@ public class AdviseController {
     }
 
     // ================= NULL POINTER =================
+//    @ExceptionHandler(NullPointerException.class)
+//    public ResponseEntity<ApiResponse> handleNullPointer(NullPointerException e) {
+//
+//        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//              //  .body(new ApiResponse(false, "❌ Null reference error"));
+//    }
+
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<ApiResponse> handleNullPointer(NullPointerException e) {
 
+        e.printStackTrace();
+
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(false, "❌ Null reference error"));
+                .body(new ApiResponse(false, e.getMessage()));
     }
 
     // ================= GENERAL ERROR =================
