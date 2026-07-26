@@ -8,7 +8,6 @@ import org.example.tears.DTO.TimelineItemDto;
 import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
-import org.example.tears.OutDTO.OutLocationDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.springframework.stereotype.Component;
@@ -181,11 +180,8 @@ public class RequestMapper {
         }
 
         if (r.getDeliveryLocation() != null) {
-
-            dto.setDeliveryLocation(
-                    mapLocation(r.getDeliveryLocation())
-            );
-        }
+                dto.setDeliveryLocation(r.getDeliveryLocation().getAddress());
+            }
 
         if (r.getStaffStatus() != null){
             dto.setStatus(r.getStaffStatus().name());
@@ -428,22 +424,6 @@ public class RequestMapper {
         }
 
         return plate;
-    }
-    public OutLocationDto mapLocation(Location loc) {
-
-        if (loc == null) {
-            return null;
-        }
-
-        OutLocationDto dto = new OutLocationDto();
-
-        dto.setId(loc.getId());
-        dto.setLat(loc.getLat());
-        dto.setLng(loc.getLng());
-        dto.setAddress(loc.getAddress());
-        dto.setTitle(loc.getTitle());
-
-        return dto;
     }
 
 

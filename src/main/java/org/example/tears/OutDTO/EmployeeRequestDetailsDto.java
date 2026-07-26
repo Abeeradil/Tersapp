@@ -45,7 +45,7 @@ public class EmployeeRequestDetailsDto {
 
     private String deliveryDay;
 
-    private OutLocationDto deliveryLocation;
+    private String deliveryLocation;
 
     private Boolean customerApproved;
 
