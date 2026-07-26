@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.ChatMessageResponse;
 import org.example.tears.DTO.SendMessageDto;
+import org.example.tears.DTO.UploadResponse;
 import org.example.tears.Enums.ReadStatus;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Model.CarServiceRequest;
@@ -16,9 +17,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.example.tears.Enums.ChatStatus.OPEN;
 
@@ -288,6 +295,30 @@ public class ChatService {
         );
     }
 
+    public UploadResponse upload(MultipartFile file) {
+
+        try {
+
+            String name = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+            Path path = Paths.get("uploads", name);
+
+            Files.createDirectories(path.getParent());
+
+            Files.write(path, file.getBytes());
+
+            return new UploadResponse(
+                    "/uploads/" + name,
+                    file.getOriginalFilename(),
+                    file.getSize()
+            );
+
+        } catch (IOException e) {
+
+            throw new ApiException("فشل رفع الملف");
+
+        }
+    }
 
 
 //    uploadFile()
