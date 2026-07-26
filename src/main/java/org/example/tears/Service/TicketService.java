@@ -7,10 +7,7 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.TicketStatus;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.Employee;
-import org.example.tears.Model.Ticket;
-import org.example.tears.Model.User;
+import org.example.tears.Model.*;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.TicketRepository;
 import org.springframework.stereotype.Service;
@@ -153,6 +150,10 @@ public class TicketService {
 
         dto.setTicketNumber(ticket.getTicketNumber());
 
+        if (ticket.getServiceOption() != null){
+            dto.setServiceOption(ticket.getServiceOption().name());
+        }
+
         dto.setRequestId(ticket.getRequest().getId());
 
         dto.setOrderNumber(ticket.getRequest().getOrderNumber());
@@ -186,12 +187,28 @@ public class TicketService {
                 ticket.getAcceptedByCustomerService()
         );
 
+        dto.setCarModel(
+                formatCarArTitle(ticket.getRequest().getCar())
+        );
+
+        dto.setPlateEnglish(
+                formatCarEnTitle(ticket.getRequest().getCar())
+        );
+
         dto.setAcceptedAt(
                 ticket.getAcceptedAt()
         );
 
         dto.setSolvedAt(
                 ticket.getSolvedAt()
+        );
+
+        if (ticket.getLocation() != null) {
+            dto.setAddress(ticket.getLocation().getAddress());
+        }
+
+        dto.setCity(
+                extractCity(ticket.getLocation().getAddress())
         );
 
         if (ticket.getAssignedEmployee() != null) {
@@ -228,6 +245,71 @@ public class TicketService {
 
         return dto;
     }
+
+    private String extractCity(String address) {
+
+        if (address == null || address.isBlank()) {
+            return address;
+        }
+
+        String[] parts = address.split("،");
+
+        return parts[parts.length - 1].trim();
+    }
+
+    private String formatCarArTitle(Car car) {
+
+        if (car == null) {
+            return null;
+        }
+
+        String model = car.getModel().getNameAr();
+
+        String plate = car.getPlateNumberArabic();
+
+        if (plate == null || plate.isBlank()) {
+            return model;
+        }
+
+        String[] parts = plate.trim().split("\\s+");
+
+        String letters;
+
+        if (parts.length >= 3) {
+            letters = parts[0] + " " + parts[1] + " " + parts[2];
+        } else {
+            letters = plate;
+        }
+
+        return model + " - " + letters;
+    }
+
+
+    private String formatCarEnTitle(Car car) {
+
+        if (car == null) {
+            return null;
+        }
+
+        String model = car.getModel().getName();
+
+        String plate = car.getPlateNumberEnglish();
+
+        if (plate == null || plate.isBlank()) {
+            return model;
+        }
+
+        String letters;
+
+        if (plate.length() >= 3) {
+            letters = plate.substring(0, 3);
+        } else {
+            letters = plate;
+        }
+
+        return model + " - " + letters;
+    }
+
 
     @Transactional
     public void updateStatus(

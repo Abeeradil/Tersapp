@@ -2,6 +2,7 @@ package org.example.tears.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.tears.Enums.ServiceOption;
 import org.example.tears.Enums.TicketPriority;
 import org.example.tears.Enums.TicketProblemType;
 import org.example.tears.Enums.TicketStatus;
@@ -25,6 +26,9 @@ public class Ticket {
         private TicketProblemType problemType;
 
         @Enumerated(EnumType.STRING)
+        private ServiceOption serviceOption;
+
+        @Enumerated(EnumType.STRING)
         @Column(nullable = false)
         private TicketPriority priority;
 
@@ -35,6 +39,9 @@ public class Ticket {
         @Column(nullable = false, columnDefinition = "TEXT")
         private String description;
 
+        private String plateArabic;
+        private String plateEnglish;
+
         private LocalDateTime createdAt;
 
         private LocalDateTime updatedAt;
@@ -44,6 +51,11 @@ public class Ticket {
         private Boolean acceptedByCustomerService = false;
 
         private LocalDateTime acceptedAt;
+
+        @ManyToOne
+        @JoinColumn(name = "location_id")
+        private Location location;
+
 
         @ManyToOne
         @JoinColumn(name = "request_id", nullable = false)

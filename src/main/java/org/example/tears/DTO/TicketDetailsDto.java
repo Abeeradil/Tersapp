@@ -14,6 +14,8 @@ public class TicketDetailsDto {
 
     private String ticketNumber;
 
+    private String serviceOption;
+
     private Integer requestId;
 
     private String orderNumber;
@@ -23,6 +25,8 @@ public class TicketDetailsDto {
     private String customerPhone;
 
     private String carModel;
+
+    private String city;
 
     private TicketProblemType problemType;
 
@@ -35,6 +39,11 @@ public class TicketDetailsDto {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    private String address;
+
+    private String plateArabic;
+    private String plateEnglish;
 
     private Boolean acceptedByCustomerService;
     
