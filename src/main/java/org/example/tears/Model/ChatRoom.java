@@ -29,7 +29,7 @@ public class ChatRoom {
     private ChatStatus status;
 
     @Enumerated(EnumType.STRING)
-    private ReadStatus readStatus;
+    private ReadStatus readStatus = ReadStatus.SENT;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

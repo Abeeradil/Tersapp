@@ -357,12 +357,10 @@ public class TicketService {
             ticket.setAcceptedAt(LocalDateTime.now());
 
             ticket.setStatus(TicketStatus.IN_PROGRESS);
-
+            chatService.createRoomIfNotExists(ticket.getRequest());
             ticket.setUpdatedAt(LocalDateTime.now());
 
             ticketRepository.save(ticket);
-            chatService.createRoomIfNotExists(ticket.getRequest());
-
             return;
         }
 

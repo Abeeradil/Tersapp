@@ -249,6 +249,10 @@ public class ChatService {
             message.setReadStatus(ReadStatus.READ);
 
             chatMessageRepository.save(message);
+            messagingTemplate.convertAndSend(
+                    "/topic/chat/" + room.getId() + "/read",
+                    message.getId()
+            );
         }
     }
 
