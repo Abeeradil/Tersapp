@@ -119,6 +119,30 @@ public class ChatService {
             User user
     ) {
 
+        Integer employeeId = null;
+
+        if (user.getEmployee() != null) {
+            employeeId = user.getEmployee().getId();
+        }
+
+        System.out.println("========== CHAT AUTH ==========");
+        System.out.println("Logged Employee = " + employeeId);
+
+        System.out.println("AssignedEmployee = "
+                + (request.getAssignedEmployee() == null
+                ? null
+                : request.getAssignedEmployee().getId()));
+
+        System.out.println("AssignedPricingEmployee = "
+                + (request.getAssignedPricingEmployee() == null
+                ? null
+                : request.getAssignedPricingEmployee().getId()));
+
+        System.out.println("CurrentEmployee = "
+                + (request.getCurrentEmployee() == null
+                ? null
+                : request.getCurrentEmployee().getId()));
+
         // الأدمن
         if (user.getRole() == UserRole.ADMIN) {
             return;
@@ -131,9 +155,7 @@ public class ChatService {
         }
 
         // الموظف
-        if (user.getEmployee() != null) {
-
-            Integer employeeId = user.getEmployee().getId();
+        if (employeeId != null) {
 
             if ((request.getAssignedEmployee() != null &&
                     request.getAssignedEmployee().getId().equals(employeeId))
@@ -154,6 +176,7 @@ public class ChatService {
 
         throw new ApiException("غير مصرح لك بالدخول لهذه المحادثة");
     }
+
 
     @Transactional
     public void sendMessage(

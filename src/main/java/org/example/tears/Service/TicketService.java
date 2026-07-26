@@ -318,10 +318,10 @@ public class TicketService {
     public void updateStatus(
             Integer ticketId,
             UpdateTicketStatusDto dto,
-            HttpServletRequest request
+            HttpServletRequest httpRequest
     ) {
 
-        User user = authService.getAuthenticatedUser(request);
+        User user = authService.getAuthenticatedUser(httpRequest);
 
         if (user.getEmployee() == null) {
             throw new ApiException("غير مصرح");
@@ -337,6 +337,8 @@ public class TicketService {
                 .orElseThrow(() ->
                         new ApiException("التذكرة غير موجودة"));
 
+        CarServiceRequest serviceRequest = ticket.getRequest();
+
         TicketStatus newStatus = dto.getStatus();
 
         // ============================
@@ -347,23 +349,27 @@ public class TicketService {
                 newStatus == TicketStatus.IN_PROGRESS) {
 
             if (ticket.getAssignedEmployee() != null) {
-
-                throw new ApiException(
-                        "تم استلام التذكرة بواسطة موظف آخر"
-                );
+                throw new ApiException("تم استلام التذكرة بواسطة موظف آخر");
             }
 
+            // التذكرة
             ticket.setAssignedEmployee(employee);
-
             ticket.setAcceptedByCustomerService(true);
-
             ticket.setAcceptedAt(LocalDateTime.now());
-
             ticket.setStatus(TicketStatus.IN_PROGRESS);
-            chatService.createRoomIfNotExists(ticket.getRequest());
             ticket.setUpdatedAt(LocalDateTime.now());
 
+            // الطلب
+            serviceRequest.setAssignedEmployee(employee);
+            serviceRequest.setCurrentEmployee(employee);
+            serviceRequest.setLastUpdated(LocalDateTime.now());
+
+            requestRepository.save(serviceRequest);
             ticketRepository.save(ticket);
+
+            // إنشاء غرفة الشات
+            chatService.createRoomIfNotExists(serviceRequest);
+
             return;
         }
 
@@ -375,20 +381,19 @@ public class TicketService {
                 newStatus == TicketStatus.SOLVED) {
 
             if (ticket.getAssignedEmployee() == null ||
-                    !ticket.getAssignedEmployee().getId()
-                            .equals(employee.getId())) {
+                    !ticket.getAssignedEmployee().getId().equals(employee.getId())) {
 
-                throw new ApiException(
-                        "ليست التذكرة الخاصة بك"
-                );
+                throw new ApiException("ليست التذكرة الخاصة بك");
             }
 
             ticket.setStatus(TicketStatus.SOLVED);
-
             ticket.setSolvedAt(LocalDateTime.now());
-
             ticket.setUpdatedAt(LocalDateTime.now());
 
+            serviceRequest.setCurrentEmployee(employee);
+            serviceRequest.setLastUpdated(LocalDateTime.now());
+
+            requestRepository.save(serviceRequest);
             ticketRepository.save(ticket);
 
             return;
