@@ -22,8 +22,13 @@ public class ChatSocketController {
             Principal principal
     ) {
 
-        chatService.sendMessage(dto, principal.getName());
+        System.out.println("========== SOCKET ==========");
+        System.out.println("Principal = "
+                + (principal == null ? "NULL" : principal.getName()));
 
+        System.out.println("TicketId = " + dto.getTicketId());
+
+        chatService.sendMessage(dto, principal.getName());
     }
 
 

@@ -6,9 +6,11 @@ import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.EmployeeRole;
+import org.example.tears.Enums.MessageType;
 import org.example.tears.Enums.TicketStatus;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.CarServiceRequestRepository;
+import org.example.tears.Repository.ChatMessageRepository;
 import org.example.tears.Repository.TicketRepository;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +25,8 @@ public class TicketService {
 
     private final CarServiceRequestRepository requestRepository;
     private final NotificationService notificationService;
+    private final ChatMessageRepository chatMessageRepository;
+
 
     private final AuthService authService;
     private final ChatService chatService;
@@ -352,6 +356,16 @@ public class TicketService {
             if (ticket.getAssignedEmployee() != null) {
                 throw new ApiException("تم استلام التذكرة بواسطة موظف آخر");
             }
+
+            ChatRoom room = chatService.createRoomIfNotExists(ticket);
+
+            ChatMessage systemMessage = new ChatMessage();
+            systemMessage.setChatRoom(room);
+            systemMessage.setType(MessageType.SYSTEM);
+            systemMessage.setMessage("تم إنشاء المحادثة الخاصة بهذه التذكرة.");
+            systemMessage.setCreatedAt(LocalDateTime.now());
+
+            chatMessageRepository.save(systemMessage);
 
             // التذكرة
             ticket.setAssignedEmployee(employee);

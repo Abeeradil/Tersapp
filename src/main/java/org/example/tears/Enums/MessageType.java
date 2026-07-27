@@ -8,5 +8,7 @@ public enum MessageType {
 
     FILE,
 
-    VOICE
+    VOICE,
+
+    SYSTEM
 }

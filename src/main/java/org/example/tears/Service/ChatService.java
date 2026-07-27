@@ -153,22 +153,31 @@ public class ChatService {
         throw new ApiException("غير مصرح لك بالدخول لهذه المحادثة");
     }
 
-
     @Transactional
     public void sendMessage(
             SendMessageDto dto,
             String phone
     ) {
 
+        System.out.println("========== SEND MESSAGE ==========");
+        System.out.println("Phone = " + phone);
+        System.out.println("TicketId = " + dto.getTicketId());
+        System.out.println("Type = " + dto.getType());
+        System.out.println("Message = " + dto.getMessage());
+
         User sender = userRepo
                 .findByPhoneNumber(phone)
                 .orElseThrow(() ->
                         new ApiException("المستخدم غير موجود"));
 
+        System.out.println("Sender = " + sender.getId());
+
         ChatRoom room = getRoom(
                 dto.getTicketId(),
                 sender
         );
+
+        System.out.println("Room = " + room.getId());
 
         ChatMessage message = new ChatMessage();
 
@@ -184,10 +193,14 @@ public class ChatService {
 
         chatMessageRepository.save(message);
 
+        System.out.println("Saved Message Id = " + message.getId());
+
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + room.getId(),
                 mapToResponse(message, sender)
         );
+
+        System.out.println("Broadcast -> /topic/chat/" + room.getId());
     }
 
     private ChatMessageResponse mapToResponse(
