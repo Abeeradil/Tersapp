@@ -225,6 +225,9 @@ public class ChatService {
 
         dto.setMessage(message.getMessage());
 
+        dto.setStatus(message.getReadStatus());
+
+
         dto.setFileUrl(message.getFileUrl());
 
         dto.setFileName(message.getFileName());
