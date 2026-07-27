@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.ChatRoomResponse;
+import org.example.tears.DTO.SendMessageDto;
 import org.example.tears.DTO.UploadResponse;
 import org.example.tears.Model.ChatRoom;
 import org.example.tears.Model.User;
@@ -22,6 +23,14 @@ public class ChatController {
 
     private final ChatService chatService;
     private final AuthService authService;
+
+    @PostMapping("/chat/test-send")
+    public void testSend(
+            @RequestBody SendMessageDto dto,
+            HttpServletRequest request
+    ) {
+        chatService.sendMessage(dto, authService.getAuthenticatedUser(request).getPhoneNumber());
+    }
 
     @GetMapping("/{ticketId}/room")
     public ApiResponse room(
