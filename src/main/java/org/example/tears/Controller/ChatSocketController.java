@@ -3,9 +3,11 @@ package org.example.tears.Controller;
 
 import lombok.AllArgsConstructor;
 import org.example.tears.DTO.SendMessageDto;
+import org.example.tears.Model.User;
 import org.example.tears.Service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
@@ -21,14 +23,18 @@ public class ChatSocketController {
             @Payload SendMessageDto dto,
             Principal principal
     ) {
+        System.out.println("Principal class = " + principal.getClass());
+        System.out.println("Principal = " + principal);
 
-        System.out.println("========== SOCKET ==========");
-        System.out.println("Principal = "
-                + (principal == null ? "NULL" : principal.getName()));
+        Authentication authentication = (Authentication) principal;
 
-        System.out.println("TicketId = " + dto.getTicketId());
+        System.out.println("Authentication Principal = " + authentication.getPrincipal());
 
-        chatService.sendMessage(dto, principal.getName());
+        User user = (User) authentication.getPrincipal();
+
+        System.out.println("Phone = " + user.getPhoneNumber());
+
+        chatService.sendMessage(dto, user.getPhoneNumber());
     }
 
 
