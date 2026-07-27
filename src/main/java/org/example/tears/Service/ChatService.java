@@ -75,15 +75,18 @@ public class ChatService {
                         new ApiException("لا توجد محادثة"));
     }
 
-    public List<ChatMessage> getMessages(
+    public List<ChatMessageResponse> getMessages(
             Integer ticketId,
             User user
-    ){
+    ) {
 
-        ChatRoom room = getRoom(ticketId,user);
+        ChatRoom room = getRoom(ticketId, user);
 
         return chatMessageRepository
-                .findByChatRoomOrderByCreatedAtAsc(room);
+                .findByChatRoomOrderByCreatedAtAsc(room)
+                .stream()
+                .map(message -> mapToResponse(message, user))
+                .toList();
     }
 
 
