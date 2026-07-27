@@ -10,7 +10,7 @@ public class ChatRoomResponse {
 
     private Integer roomId;
 
-    private Integer requestId;
+    private Integer ticketId;
 
     private ChatStatus status;
 }
