@@ -238,10 +238,6 @@ public class ChatService {
 
         dto.setCreatedAt(message.getCreatedAt());
 
-        dto.setMine(
-                message.getSender().getId().equals(currentUser.getId())
-        );
-
         return dto;
     }
 
