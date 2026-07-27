@@ -307,8 +307,14 @@ public class ChatService {
 
             Files.write(path, file.getBytes());
 
+            System.out.println("Saved to: " + path.toAbsolutePath());
+            System.out.println("Exists: " + Files.exists(path));
+
+            String url =
+                    "https://tersapp-production.up.railway.app/uploads/" + name;
+
             return new UploadResponse(
-                    "/uploads/" + name,
+                    url,
                     file.getOriginalFilename(),
                     file.getSize()
             );
@@ -321,7 +327,5 @@ public class ChatService {
     }
 
 
-//    uploadFile()
-//
-//    deleteMessage()
+    //    deleteMessage()
 }
