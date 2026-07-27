@@ -1,5 +1,6 @@
 package org.example.tears.Controller;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiResponse;
@@ -7,12 +8,12 @@ import org.example.tears.DTO.ChatRoomResponse;
 import org.example.tears.DTO.UploadResponse;
 import org.example.tears.Model.ChatRoom;
 import org.example.tears.Model.User;
+import org.springframework.http.MediaType;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.ChatService;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/v1/chat")
@@ -43,10 +44,17 @@ public class ChatController {
         );
     }
 
-    @PostMapping("/upload")
+
+    @PostMapping(
+            value = "/upload",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ApiResponse upload(
-            @RequestParam MultipartFile file
-    ) throws IOException {
+
+            @Parameter(description = "File")
+            @RequestPart("file")
+            MultipartFile file
+    ) {
 
         UploadResponse response = chatService.upload(file);
 
