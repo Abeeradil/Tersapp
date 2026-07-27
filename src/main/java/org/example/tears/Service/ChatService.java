@@ -199,14 +199,14 @@ public class ChatService {
 
         System.out.println("Saved Message Id = " + message.getId());
 
-        chatMessageRepository.save(message);
-
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + room.getId(),
                 mapToResponse(message, sender)
         );
 
         System.out.println("Broadcast -> /topic/chat/" + room.getId());
+
+        System.out.println("========== DONE ==========");
     }
 
     private ChatMessageResponse mapToResponse(

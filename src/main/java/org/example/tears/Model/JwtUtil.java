@@ -30,6 +30,10 @@ public class JwtUtil {
         this.userRepository = userRepository;
     }
 
+    public String extractUsername(String token){
+        return getPhoneFromToken(token);
+    }
+
     // ================= TOKEN GENERATION =================
     public String generateToken(String phone, String role) {
         return Jwts.builder()
