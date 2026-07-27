@@ -43,6 +43,10 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 User user =
                         userRepository.findByPhoneNumber(phone)
                                 .orElseThrow();
+                System.out.println("========== CONNECT ==========");
+                System.out.println("PHONE = " + phone);
+                System.out.println("TOKEN USER = " + user.getPhoneNumber());
+                System.out.println("COMMAND = " + accessor.getCommand());
 
                 accessor.setUser(
                         new UsernamePasswordAuthenticationToken(
@@ -51,6 +55,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                                 List.of()
                         )
                 );
+                System.out.println("Principal Set = " + accessor.getUser());
             }
         }
 
