@@ -26,6 +26,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import static org.example.tears.Enums.ReadStatus.SENT;
+
 
 @Service
 @AllArgsConstructor
@@ -192,6 +194,7 @@ public class ChatService {
         message.setFileUrl(dto.getFileUrl());
         message.setFileName(dto.getFileName());
         message.setFileSize(dto.getFileSize());
+        message.setReadStatus(ReadStatus.SENT);
         message.setVoiceDuration(dto.getVoiceDuration());
         message.setCreatedAt(LocalDateTime.now());
 
@@ -222,18 +225,19 @@ public class ChatService {
         dto.setSenderName(message.getSender().getFullName());
 
         dto.setType(message.getType());
-
         dto.setMessage(message.getMessage());
 
         dto.setStatus(message.getReadStatus());
 
+        dto.setMine(
+                currentUser != null &&
+                        message.getSender() != null &&
+                        message.getSender().getId().equals(currentUser.getId())
+        );
 
         dto.setFileUrl(message.getFileUrl());
-
         dto.setFileName(message.getFileName());
-
         dto.setFileSize(message.getFileSize());
-
         dto.setVoiceDuration(message.getVoiceDuration());
 
         dto.setCreatedAt(message.getCreatedAt());
@@ -353,7 +357,7 @@ public class ChatService {
         message.setType(MessageType.SYSTEM);
         message.setMessage(text);
         message.setCreatedAt(LocalDateTime.now());
-        message.setReadStatus(ReadStatus.SENT);
+        message.setReadStatus(SENT);
 
         chatMessageRepository.save(message);
 
