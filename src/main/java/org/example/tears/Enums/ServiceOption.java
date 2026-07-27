@@ -16,6 +16,4 @@ public enum ServiceOption {
     private final String displayName;
     private final int price;
 
-
-
 }

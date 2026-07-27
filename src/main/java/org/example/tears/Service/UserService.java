@@ -103,6 +103,15 @@ public class UserService {
                     user.getEmail()
             );
 
+            data.put(
+                    "userID",
+                    user.getId()
+            );
+
+            data.put(
+                    "empID",
+                    user.getEmployee().getId()
+            );
 
             data.put(
                     "jobTitle",
