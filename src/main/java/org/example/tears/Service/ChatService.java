@@ -165,25 +165,35 @@ public class ChatService {
             String phone
     ) {
 
+        long totalStart = System.currentTimeMillis();
+
         System.out.println("========== SEND MESSAGE ==========");
         System.out.println("Phone = " + phone);
         System.out.println("TicketId = " + dto.getTicketId());
         System.out.println("Type = " + dto.getType());
         System.out.println("Message = " + dto.getMessage());
 
+        long start = System.currentTimeMillis();
+
         User sender = userRepo
                 .findByPhoneNumber(phone)
                 .orElseThrow(() ->
                         new ApiException("المستخدم غير موجود"));
 
-        System.out.println("Sender = " + sender.getId());
+        System.out.println("✔ findByPhoneNumber = "
+                + (System.currentTimeMillis() - start) + " ms");
+
+        start = System.currentTimeMillis();
 
         ChatRoom room = getRoom(
                 dto.getTicketId(),
                 sender
         );
 
-        System.out.println("Room = " + room.getId());
+        System.out.println("✔ getRoom = "
+                + (System.currentTimeMillis() - start) + " ms");
+
+        start = System.currentTimeMillis();
 
         ChatMessage message = new ChatMessage();
 
@@ -198,18 +208,37 @@ public class ChatService {
         message.setVoiceDuration(dto.getVoiceDuration());
         message.setCreatedAt(LocalDateTime.now());
 
+        System.out.println("✔ build message = "
+                + (System.currentTimeMillis() - start) + " ms");
+
+        start = System.currentTimeMillis();
+
         chatMessageRepository.save(message);
 
-        System.out.println("Saved Message Id = " + message.getId());
+        System.out.println("✔ save message = "
+                + (System.currentTimeMillis() - start) + " ms");
+
+        start = System.currentTimeMillis();
+
+        ChatMessageResponse response =
+                mapToResponse(message, sender);
+
+        System.out.println("✔ mapToResponse = "
+                + (System.currentTimeMillis() - start) + " ms");
+
+        start = System.currentTimeMillis();
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + room.getId(),
-                mapToResponse(message, sender)
+                response
         );
 
-        System.out.println("Broadcast -> /topic/chat/" + room.getId());
+        System.out.println("✔ websocket broadcast = "
+                + (System.currentTimeMillis() - start) + " ms");
 
-        System.out.println("========== DONE ==========");
+        System.out.println("========== TOTAL TIME = "
+                + (System.currentTimeMillis() - totalStart)
+                + " ms ==========");
     }
 
     private ChatMessageResponse mapToResponse(
