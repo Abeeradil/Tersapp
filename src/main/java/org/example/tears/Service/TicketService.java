@@ -7,11 +7,14 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.MessageType;
+import org.example.tears.Enums.ReadStatus;
 import org.example.tears.Enums.TicketStatus;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.ChatMessageRepository;
 import org.example.tears.Repository.TicketRepository;
+import org.example.tears.Repository.UserRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,6 +29,9 @@ public class TicketService {
     private final CarServiceRequestRepository requestRepository;
     private final NotificationService notificationService;
     private final ChatMessageRepository chatMessageRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private final UserRepository userRepo;
 
 
     private final AuthService authService;
@@ -359,13 +365,23 @@ public class TicketService {
 
             ChatRoom room = chatService.createRoomIfNotExists(ticket);
 
+
+            User admin = userRepo.findById(8)
+                    .orElseThrow(() -> new ApiException("Admin غير موجود"));
+
             ChatMessage systemMessage = new ChatMessage();
             systemMessage.setChatRoom(room);
+            systemMessage.setSender(admin);
             systemMessage.setType(MessageType.SYSTEM);
             systemMessage.setMessage("تم إنشاء المحادثة الخاصة بهذه التذكرة.");
             systemMessage.setCreatedAt(LocalDateTime.now());
+            systemMessage.setReadStatus(ReadStatus.SENT);
 
             chatMessageRepository.save(systemMessage);
+            chatService.sendSystemMessage(
+                    room,
+                    "تم إنشاء المحادثة"
+            );
 
             // التذكرة
             ticket.setAssignedEmployee(employee);

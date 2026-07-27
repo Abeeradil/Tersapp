@@ -6,6 +6,7 @@ import org.example.tears.DTO.ChatMessageResponse;
 import org.example.tears.DTO.SendMessageDto;
 import org.example.tears.DTO.UploadResponse;
 import org.example.tears.Enums.ChatStatus;
+import org.example.tears.Enums.MessageType;
 import org.example.tears.Enums.ReadStatus;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Model.*;
@@ -198,6 +199,8 @@ public class ChatService {
 
         System.out.println("Saved Message Id = " + message.getId());
 
+        chatMessageRepository.save(message);
+
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + room.getId(),
                 mapToResponse(message, sender)
@@ -216,10 +219,7 @@ public class ChatService {
         dto.setId(message.getId());
 
         dto.setSenderId(message.getSender().getId());
-
-        dto.setSenderName(
-                message.getSender().getFullName()
-        );
+        dto.setSenderName(message.getSender().getFullName());
 
         dto.setType(message.getType());
 
@@ -343,6 +343,28 @@ public class ChatService {
             throw new ApiException("فشل رفع الملف");
 
         }
+    }
+
+    @Transactional
+    public void sendSystemMessage(ChatRoom room, String text) {
+
+        User admin = userRepo.findById(8)
+                .orElseThrow(() -> new ApiException("Admin غير موجود"));
+
+        ChatMessage message = new ChatMessage();
+        message.setChatRoom(room);
+        message.setSender(admin);
+        message.setType(MessageType.SYSTEM);
+        message.setMessage(text);
+        message.setCreatedAt(LocalDateTime.now());
+        message.setReadStatus(ReadStatus.SENT);
+
+        chatMessageRepository.save(message);
+
+        messagingTemplate.convertAndSend(
+                "/topic/chat/" + room.getId(),
+                mapToResponse(message, admin)
+        );
     }
 
 
