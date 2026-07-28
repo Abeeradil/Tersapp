@@ -2,7 +2,9 @@ package org.example.tears.Controller;
 
 
 import lombok.AllArgsConstructor;
+import org.example.tears.DTO.DeleteMessageDto;
 import org.example.tears.DTO.SendMessageDto;
+import org.example.tears.DTO.TypingDto;
 import org.example.tears.Model.User;
 import org.example.tears.Service.ChatService;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -35,6 +37,22 @@ public class ChatSocketController {
         System.out.println("Phone = " + user.getPhoneNumber());
 
         chatService.sendMessage(dto, user.getPhoneNumber());
+    }
+
+    @MessageMapping("/chat.typing")
+    public void typing(
+            @Payload TypingDto dto,
+            Principal principal
+    ) {
+        chatService.sendTyping(dto, principal.getName());
+    }
+
+    @MessageMapping("/chat.delete")
+    public void delete(
+            @Payload DeleteMessageDto dto,
+            Principal principal
+    ) {
+        chatService.deleteMessage(dto, principal.getName());
     }
 
 

@@ -2,9 +2,7 @@ package org.example.tears.Service;
 
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.ChatMessageResponse;
-import org.example.tears.DTO.SendMessageDto;
-import org.example.tears.DTO.UploadResponse;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.ChatStatus;
 import org.example.tears.Enums.MessageType;
 import org.example.tears.Enums.ReadStatus;
@@ -13,6 +11,7 @@ import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.example.tears.Enums.ReadStatus.SENT;
@@ -395,7 +395,54 @@ public class ChatService {
                 mapToResponse(message, admin)
         );
     }
+    public void sendTyping(
+            TypingDto dto,
+            String phone
+    ) {
 
+        User sender = userRepo.findByPhoneNumber(phone)
+                .orElseThrow(() -> new ApiException("المستخدم غير موجود"));
 
-    //    deleteMessage()
+        ChatRoom room = getRoom(dto.getTicketId(), sender);
+
+        messagingTemplate.convertAndSend(
+                "/topic/chat/" + room.getId() + "/typing",
+                Map.of(
+                        "userId", sender.getId(),
+                        "userName", sender.getFullName(),
+                        "typing", dto.getTyping()
+                )
+        );
+    }
+
+    @Transactional
+    public void deleteMessage(
+            DeleteMessageDto dto,
+            String phone
+    ) {
+
+        User user = userRepo.findByPhoneNumber(phone)
+                .orElseThrow(() -> new ApiException("المستخدم غير موجود"));
+
+        ChatMessage message = chatMessageRepository.findById(dto.getMessageId())
+                .orElseThrow(() -> new ApiException("الرسالة غير موجودة"));
+
+        // فقط صاحب الرسالة أو الأدمن
+        if (!message.getSender().getId().equals(user.getId())
+                && user.getRole() != UserRole.ADMIN) {
+            throw new ApiException("غير مصرح لك بحذف الرسالة");
+        }
+
+        message.setDeleted(true);
+
+        chatMessageRepository.save(message);
+
+        messagingTemplate.convertAndSend(
+                "/topic/chat/" + message.getChatRoom().getId() + "/delete",
+                Map.of(
+                        "messageId", message.getId()
+                )
+        );
+    }
+
 }

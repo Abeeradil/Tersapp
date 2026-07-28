@@ -814,7 +814,9 @@ public class CarServiceRequestService {
         );
         req.setPaymentMethod(method);
         req.setLocation(location);
-        req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
+        req.setOrderNumber(
+                String.format("ORD-%06d", req.getId())
+        );
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
         req.setCreatedAt(LocalDateTime.now());
 
