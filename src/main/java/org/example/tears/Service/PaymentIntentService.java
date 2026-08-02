@@ -6,10 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.CheckoutResponse;
-import org.example.tears.DTO.ConfirmMobilePaymentRequest;
-import org.example.tears.DTO.ConfirmMobilePaymentResponse;
-import org.example.tears.DTO.MobilePaymentResponse;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Model.*;
@@ -816,4 +813,274 @@ public class PaymentIntentService {
         return new RestTemplate();
     }
 
+
+    @Transactional
+    public FinalMobilePaymentResponse prepareFinalMobilePayment(
+            Integer requestId,
+            HttpServletRequest httpRequest
+    ) {
+
+        User user = authService.getAuthenticatedUser(httpRequest);
+
+        CarServiceRequest request =
+                requestRepository.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+
+        if (!request.getCustomer().getId()
+                .equals(user.getCustomer().getId())) {
+
+            throw new ApiException("غير مصرح لك");
+        }
+
+
+        if (request.isFinalPaid()) {
+            throw new ApiException("تم الدفع مسبقاً");
+        }
+
+
+        if (request.getFinalPrice() == null ||
+                request.getFinalPrice() <= 0) {
+
+            throw new ApiException("لا يوجد مبلغ للدفع");
+        }
+
+
+        PaymentIntent intent = new PaymentIntent();
+
+
+        intent.setCustomer(user.getCustomer());
+
+        intent.setServiceRequest(request);
+
+
+        intent.setPaymentMethod(
+                request.getPaymentMethod()
+        );
+
+
+        intent.setInitialPaymentAmount(
+                request.getFinalPrice().doubleValue()
+        );
+
+
+        int amount =
+                request.getFinalPrice() * 100;
+
+
+        intent.setInitialPaymentAmountHalalah(amount);
+
+
+        intent.setPaymentStatus(
+                PaymentStatus.INITIATED
+        );
+
+
+        intent.setCreatedAt(LocalDateTime.now());
+
+        intent.setExpiresAt(
+                LocalDateTime.now().plusMinutes(5)
+        );
+
+
+        String givenId =
+                UUID.randomUUID().toString();
+
+
+        intent.setGivenId(givenId);
+
+
+        paymentIntentRepository.save(intent);
+
+
+
+        return new FinalMobilePaymentResponse(
+
+                intent.getId(),
+
+                givenId,
+
+                amount,
+
+                "SAR",
+
+                "PREPARED"
+
+        );
+    }
+
+    @Transactional
+    public ConfirmMobilePaymentResponse confirmFinalMobilePayment(
+            ConfirmMobilePaymentRequest dto
+    ) {
+
+        PaymentIntent intent =
+                paymentIntentRepository.findById(
+                                dto.getPaymentAttemptId()
+                        )
+                        .orElseThrow(() ->
+                                new ApiException("Payment attempt not found"));
+
+
+        if (intent.getServiceRequest() == null) {
+            throw new ApiException("Not a final payment");
+        }
+
+
+        if (intent.getPaymentStatus() == PaymentStatus.PAID) {
+
+            CarServiceRequest oldRequest =
+                    intent.getServiceRequest();
+
+            return new ConfirmMobilePaymentResponse(
+                    oldRequest.getId(),
+                    intent.getId(),
+                    intent.getPaymentId(),
+                    PaymentStatus.PAID.name(),
+                    oldRequest.getCustomerStatus().name()
+            );
+        }
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(secretKey, "");
+
+
+        ResponseEntity<Map> response =
+                restTemplate.exchange(
+                        "https://api.moyasar.com/v1/payments/"
+                                + dto.getPaymentId(),
+                        HttpMethod.GET,
+                        new HttpEntity<>(headers),
+                        Map.class
+                );
+
+
+        Map<String,Object> payment =
+                response.getBody();
+
+
+        if(payment == null)
+            throw new ApiException("Payment not found");
+
+
+        if(!"paid".equalsIgnoreCase(
+                payment.get("status").toString()
+        )){
+            throw new ApiException("Payment not completed");
+        }
+
+
+        Integer amount =
+                ((Number) payment.get("amount"))
+                        .intValue();
+
+
+        if(!amount.equals(
+                intent.getInitialPaymentAmountHalalah()
+        )){
+            throw new ApiException("Amount mismatch");
+        }
+
+
+        if(!"SAR".equals(
+                payment.get("currency").toString()
+        )){
+            throw new ApiException("Currency mismatch");
+        }
+
+
+
+        CarServiceRequest request =
+                intent.getServiceRequest();
+
+
+
+        // تحديث موافقة العميل بعد الدفع
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(request.getId())
+                        .orElseThrow(() ->
+                                new ApiException("Approval not found"));
+
+
+        approval.setApproved(true);
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
+
+
+
+        // تحديث الطلب
+        request.setFinalPaid(true);
+
+        request.setFinalTransactionId(
+                dto.getPaymentId()
+        );
+
+
+        request.setNextPaymentStatus(
+                PaymentStatus.PAID
+        );
+
+
+        request.setCustomerStatus(
+                CustomerRequestStatus.UNDER_REPAIR
+        );
+
+
+        request.setStaffStatus(
+                StaffRequestStatus.REPAIRING
+        );
+
+
+        request.setStage(
+                WorkflowStage.REPAIRING
+        );
+
+
+        request.setRepairAt(
+                LocalDateTime.now()
+        );
+
+        request.setLastUpdated(
+                LocalDateTime.now()
+        );
+
+
+        requestRepository.save(request);
+
+
+
+        // تحديث عملية الدفع
+        intent.setPaymentStatus(
+                PaymentStatus.PAID
+        );
+
+        intent.setPaymentId(
+                dto.getPaymentId()
+        );
+
+        intent.setPaidAt(
+                LocalDateTime.now()
+        );
+
+
+        paymentIntentRepository.save(intent);
+
+
+
+        return new ConfirmMobilePaymentResponse(
+
+                request.getId(),
+
+                intent.getId(),
+
+                dto.getPaymentId(),
+
+                PaymentStatus.PAID.name(),
+
+                request.getCustomerStatus().name()
+        );
+    }
 }

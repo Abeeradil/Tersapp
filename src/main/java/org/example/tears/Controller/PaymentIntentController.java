@@ -110,6 +110,34 @@ public class PaymentIntentController {
         return ResponseEntity.ok("OK");
     }
 
+    @PostMapping("/mobile/final/confirm")
+    public ResponseEntity<ConfirmMobilePaymentResponse> confirmFinalMobilePayment(
+            @RequestBody ConfirmMobilePaymentRequest dto
+    ) {
+
+        ConfirmMobilePaymentResponse response =
+                paymentIntentService.confirmFinalMobilePayment(dto);
+
+
+        return ResponseEntity.ok(response);
+    }
+
+
+    @PostMapping("/mobile/final/prepare/{requestId}")
+    public ResponseEntity<FinalMobilePaymentResponse> prepareFinalMobilePayment(
+            @PathVariable Integer requestId,
+            HttpServletRequest request
+    ) {
+
+        FinalMobilePaymentResponse response =
+                paymentIntentService.prepareFinalMobilePayment(
+                        requestId,
+                        request
+                );
+
+        return ResponseEntity.ok(response);
+    }
+
     @GetMapping("/success")
     public ResponseEntity<String> success() {
         return ResponseEntity.ok("Payment success. You can close this page.");
