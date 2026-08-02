@@ -83,6 +83,7 @@ import java.util.List;
             dto.setRequestId(request.getId());
             dto.setOrderNumber(request.getOrderNumber());
             dto.setProblemDescription(request.getProblemDescription());
+            dto.setServiceType(request.getServiceOption().name());
 
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(requestId)
@@ -94,38 +95,56 @@ import java.util.List;
             );
         }
             List<CustomerReportPartDto> list = new ArrayList<>();
+        int totalPartsPrice = 0;
+        int totalLabor = 0;
+        double grandTotal = 0;
 
-            double grandTotal = 0;
+        for (RequestPart part : parts) {
 
-            for (RequestPart part : parts) {
+            CustomerReportPartDto p = new CustomerReportPartDto();
 
-                CustomerReportPartDto p =
-                        new CustomerReportPartDto();
+            p.setPartId(part.getId());
+            p.setName(part.getName());
+            p.setType(part.getType());
 
-                p.setPartId(part.getId());
+            p.setQuantity(part.getQuantity());
+            p.setFinalPrice(part.getFinalPrice());
+            p.setLaborCost(part.getLaborCost());
 
-                p.setName(part.getName());
+            int partsCost =
+                    part.getFinalPrice() * part.getQuantity();
 
-                p.setQuantity(part.getQuantity());
+            int labor =
+                    part.getLaborCost();
 
-                p.setFinalPrice(part.getFinalPrice());
+            double total =
+                    partsCost + labor;
 
-                p.setLaborCost(part.getLaborCost());
+            p.setTotal(total);
 
-                double total =
-                        (part.getFinalPrice() * part.getQuantity())
-                                + part.getLaborCost();
+            totalPartsPrice += partsCost;
+            totalLabor += labor;
+            grandTotal += total;
 
-                p.setTotal(total);
+            list.add(p);
 
-                grandTotal += total;
-
-                list.add(p);
             }
 
-            dto.setParts(list);
+        dto.setParts(list);
 
-            dto.setGrandTotal(grandTotal);
+        dto.setTotalPartsPrice(totalPartsPrice);
+
+        dto.setTotalLabor(totalLabor);
+
+        dto.setDiscount(
+                request.getDiscount() == null ? 0 : request.getDiscount()
+        );
+
+        dto.setGrandTotal(grandTotal);
+
+        dto.setServiceType(
+                request.getServiceOption().name()
+        );
 
             return dto;
         }

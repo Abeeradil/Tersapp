@@ -420,6 +420,7 @@ public class RequestPricingService {
         dto.setCustomerName(request.getCustomer().getUser().getFullName());
         dto.setCarModel(request.getCar().getModel().getName());
         dto.setProblemDescription(request.getProblemDescription());
+        dto.setServiceType(request.getServiceOption().name());
 
         approvalRepo.findByRequest_Id(requestId)
                 .ifPresent(a -> dto.setCustomerApproved(a.getApproved()));
@@ -439,6 +440,7 @@ public class RequestPricingService {
             p.setQuantity(part.getQuantity());
             p.setFinalPrice(part.getFinalPrice());
             p.setLaborCost(part.getLaborCost());
+            p.setType(part.getType());
 
             int partPrice =
                     part.getFinalPrice() == null ? 0 : part.getFinalPrice();
@@ -466,6 +468,10 @@ public class RequestPricingService {
         dto.setTotalPartsPrice(totalPartsPrice);
         dto.setTotalLabor(totalLabor);
         dto.setGrandTotal(grandTotal);
+
+        dto.setDiscount(
+                request.getDiscount() == null ? 0 : request.getDiscount()
+        );
 
         return dto;
     }

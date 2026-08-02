@@ -9,6 +9,8 @@ public class CustomerReportPartDto {
 
     private String name;
 
+    private String type;
+
     private Integer quantity;
 
     private Integer finalPrice;
