@@ -8,8 +8,5 @@ public class PreviewResponseDto {
 
         private double hydraulicTruckPrice;
 
-        private double estimatedPrice;
-
-        private String details;
 
 }

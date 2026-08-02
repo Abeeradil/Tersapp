@@ -50,21 +50,12 @@ public class CarServiceRequestService {
 
         double servicePrice = option.getPrice() * 1.15;
 
-        double hydraulicPrice = dto.isHydraulicTruck()
-                ? 150 * 1.15
-                : 0;
+        double hydraulicPrice = 150 * 1.15;
 
         PreviewResponseDto resp = new PreviewResponseDto();
 
         resp.setServicePrice(servicePrice);
         resp.setHydraulicTruckPrice(hydraulicPrice);
-
-        // إذا ما زال الفرونت يحتاج المجموع
-        resp.setEstimatedPrice(servicePrice + hydraulicPrice);
-
-        resp.setDetails(
-                "خدمة: " + option.getDisplayName()
-        );
 
         return resp;
     }
