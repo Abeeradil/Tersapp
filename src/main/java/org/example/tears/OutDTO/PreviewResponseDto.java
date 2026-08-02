@@ -4,6 +4,12 @@ import lombok.Data;
 
 @Data
 public class PreviewResponseDto {
-    private Double estimatedPrice;
-    private String details;
+        private double servicePrice;
+
+        private double hydraulicTruckPrice;
+
+        private double estimatedPrice;
+
+        private String details;
+
 }

@@ -45,16 +45,26 @@ public class CarServiceRequestService {
     // ---------------------------
     public PreviewResponseDto preview(PreviewRequestDto dto) {
 
-        double price = pricingCalculationService.calculatePreview(
-                dto.getServiceOption(),
-                dto.isHydraulicTruck()
-        );
+        ServiceOption option =
+                ServiceOption.valueOf(dto.getServiceOption());
+
+        double servicePrice = option.getPrice() * 1.15;
+
+        double hydraulicPrice = dto.isHydraulicTruck()
+                ? 150 * 1.15
+                : 0;
 
         PreviewResponseDto resp = new PreviewResponseDto();
-        resp.setEstimatedPrice(price);
 
-        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption());
-        resp.setDetails("خدمة: " + option.getDisplayName() + " — سعر تقديري: " + price + " ريال");
+        resp.setServicePrice(servicePrice);
+        resp.setHydraulicTruckPrice(hydraulicPrice);
+
+        // إذا ما زال الفرونت يحتاج المجموع
+        resp.setEstimatedPrice(servicePrice + hydraulicPrice);
+
+        resp.setDetails(
+                "خدمة: " + option.getDisplayName()
+        );
 
         return resp;
     }
