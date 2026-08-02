@@ -233,6 +233,7 @@ import java.util.List;
         );
 
         request.setLastUpdated(LocalDateTime.now());
+        request.setCustomerSelectedDelivery(false);
 
         requestRepo.save(request);
 
@@ -250,7 +251,7 @@ import java.util.List;
     }
 
 
-    public void reject(Integer requestId, String note) {
+    public void reject(Integer requestId) {
 
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(requestId)
@@ -259,7 +260,6 @@ import java.util.List;
 
         approval.setApproved(false);
         approval.setDecisionAt(LocalDateTime.now());
-        approval.setCustomerNote(note);
 
         approvalRepo.save(approval);
 

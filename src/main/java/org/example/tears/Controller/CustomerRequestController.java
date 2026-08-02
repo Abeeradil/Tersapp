@@ -101,11 +101,9 @@ import java.util.List;
 
     @PutMapping("/{requestId}/reject")
     public ApiResponse rejectReport(
-            @PathVariable Integer requestId,
-            @RequestParam(required = false) String note
-    ) {
+            @PathVariable Integer requestId) {
 
-        requestApprovalService.reject(requestId, note);
+        requestApprovalService.reject(requestId);
 
         return new ApiResponse(
                 true,
