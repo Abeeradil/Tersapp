@@ -606,10 +606,17 @@ public class CarServiceRequestService {
             throw new ApiException("غير مصرح");
         }
 
-        if (req.isInitialPaid()) {
+        if (
+                req.getCustomerStatus() == CustomerRequestStatus.CAR_RECEIVED
+                        || req.getCustomerStatus() == CustomerRequestStatus.CAR_INSPECTION
+                        || req.getCustomerStatus() == CustomerRequestStatus.WAITING_APPROVAL
+                        || req.getCustomerStatus() == CustomerRequestStatus.UNDER_REPAIR
+                        || req.getCustomerStatus() == CustomerRequestStatus.READY_FOR_DELIVERY
+                        || req.getCustomerStatus() == CustomerRequestStatus.DELIVERED
+        ) {
 
             throw new ApiException(
-                    "لا يمكن إلغاء الطلب بعد الدفع"
+                    "لا يمكن إلغاء الطلب بعد استلام السيارة"
             );
         }
 
