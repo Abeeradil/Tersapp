@@ -82,7 +82,6 @@ public class PaymentIntentService {
         intent.setHydraulicTruck(draft.isHydraulicTruck());
         intent.setLocation(draft.getLocation());
         intent.setPaymentMethod(draft.getPaymentMethod());
-        intent.setPaymentMethod(draft.getPaymentMethod());
         intent.setEstimatedPrice(draft.getEstimatedPrice());
 
         intent.setInitialPaymentAmount(draft.getEstimatedPrice());
@@ -239,7 +238,6 @@ public class PaymentIntentService {
         req.setCouponValid(intent.getCouponValid());
         req.setPricingMessage(intent.getPricingMessage());
 
-        req.setOrderNumber("#" + UUID.randomUUID().toString().substring(0, 8));
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
 
         req.setStaffStatus(StaffRequestStatus.NEW);
@@ -402,6 +400,10 @@ public class PaymentIntentService {
 
         CarServiceRequest request = intent.getServiceRequest();
 
+        if (request == null) {
+            throw new ApiException("Request not found");
+        }
+
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(request.getId())
                         .orElseThrow(() ->
@@ -459,35 +461,47 @@ public class PaymentIntentService {
             return carServiceRequestService.toResponseDto(
                     intent.getServiceRequest()
             );
-
         }
 
         CarServiceRequest request = intent.getServiceRequest();
 
-        RequestApproval approval =
-                approvalRepo.findByRequest_Id(request.getId())
-                        .orElseThrow(() ->
-                                new ApiException("Approval not found"));
+        // أول دفعة: إنشاء الطلب
+        if (request == null) {
 
-        approval.setApproved(true);
-        approval.setDecisionAt(LocalDateTime.now());
+            request = createRequestFromIntent(intent);
 
-        approvalRepo.save(approval);
+            intent.setServiceRequest(request);
 
-        request.setFinalPaid(true);
-        request.setFinalTransactionId(paymentId);
+        }
+        // دفعة نهائية: تحديث الطلب الموجود
+        else {
 
-        request.setNextPaymentMethod(intent.getPaymentMethod());
-        request.setNextPaymentStatus(PaymentStatus.PAID);
+            RequestApproval approval =
+                    approvalRepo.findByRequest_Id(request.getId())
+                            .orElseThrow(() ->
+                                    new ApiException("Approval not found"));
 
-        request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
-        request.setStaffStatus(StaffRequestStatus.REPAIRING);
-        request.setStage(WorkflowStage.REPAIRING);
+            approval.setApproved(true);
+            approval.setDecisionAt(LocalDateTime.now());
 
-        request.setRepairAt(LocalDateTime.now());
-        request.setLastUpdated(LocalDateTime.now());
+            approvalRepo.save(approval);
 
-        requestRepository.save(request);
+            request.setFinalPaid(true);
+            request.setFinalTransactionId(paymentId);
+
+            request.setNextPaymentMethod(intent.getPaymentMethod());
+            request.setNextPaymentStatus(PaymentStatus.PAID);
+
+            request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+            request.setStaffStatus(StaffRequestStatus.REPAIRING);
+            request.setStage(WorkflowStage.REPAIRING);
+
+            request.setRepairAt(LocalDateTime.now());
+            request.setLastUpdated(LocalDateTime.now());
+
+            requestRepository.save(request);
+        }
+
 
         intent.setPaymentStatus(PaymentStatus.PAID);
         intent.setPaymentId(paymentId);
@@ -495,11 +509,16 @@ public class PaymentIntentService {
 
         paymentIntentRepository.save(intent);
 
-        notificationService.send(
-                request.getCurrentEmployee().getUser(),
-                "تم دفع الدفعة النهائية للطلب #" +
-                        request.getOrderNumber()
-        );
+
+        if (request.getCurrentEmployee() != null) {
+
+            notificationService.send(
+                    request.getCurrentEmployee().getUser(),
+                    "تم دفع الدفعة النهائية للطلب #" +
+                            request.getOrderNumber()
+            );
+        }
+
 
         return carServiceRequestService.toResponseDto(request);
     }
@@ -516,7 +535,6 @@ public class PaymentIntentService {
                 carServiceRequestService.buildValidatedRequest(user, dto);
 
         PaymentIntent intent = new PaymentIntent();
-
         intent.setCustomer(user.getCustomer());
         intent.setCar(draft.getCar());
         intent.setServiceOption(draft.getServiceOption());
@@ -529,7 +547,6 @@ public class PaymentIntentService {
         intent.setPaymentMethod(draft.getPaymentMethod());
 
         intent.setEstimatedPrice(draft.getEstimatedPrice());
-
         intent.setOriginalPrice(draft.getOriginalPrice());
         intent.setDiscount(draft.getDiscount());
         intent.setVatAmount(draft.getVatAmount());
@@ -537,11 +554,9 @@ public class PaymentIntentService {
         intent.setPricingMessage(draft.getPricingMessage());
 
         intent.setInitialPaymentAmount(draft.getEstimatedPrice());
-
-        int amountHalalah =
-                (int) Math.round(draft.getEstimatedPrice() * 100);
-
-        intent.setInitialPaymentAmountHalalah(amountHalalah);
+        intent.setInitialPaymentAmountHalalah(
+                (int)Math.round(draft.getEstimatedPrice()*100)
+        );
 
         intent.setInitialPaymentMethod(draft.getPaymentMethod());
 
@@ -562,6 +577,8 @@ public class PaymentIntentService {
                 intent.getId(),
                 intent.getGivenId()
         );
+        int amountHalalah =
+                (int) Math.round(intent.getEstimatedPrice() * 100);
 
         return new MobilePaymentResponse(
 
@@ -732,6 +749,66 @@ public class PaymentIntentService {
         }
 
 
+    }
+
+    private CarServiceRequest createRequestFromIntent(PaymentIntent intent) {
+
+        CarServiceRequest req = new CarServiceRequest();
+
+        req.setCustomer(intent.getCustomer());
+        req.setCar(intent.getCar());
+
+        req.setServiceOption(intent.getServiceOption());
+        req.setProblemDescription(intent.getProblemDescription());
+
+        req.setAppointmentDate(intent.getAppointmentDate());
+        req.setAppointmentTime(intent.getAppointmentTime());
+
+        req.setHydraulicTruck(intent.getHydraulicTruck());
+
+        req.setLocation(intent.getLocation());
+
+        req.setPaymentMethod(intent.getPaymentMethod());
+
+        req.setEstimatedPrice(intent.getEstimatedPrice());
+        req.setOriginalPrice(intent.getOriginalPrice());
+        req.setDiscount(intent.getDiscount());
+        req.setVatAmount(intent.getVatAmount());
+
+        req.setCouponValid(intent.getCouponValid());
+        req.setPricingMessage(intent.getPricingMessage());
+
+        req.setInitialPaid(true);
+
+        req.setInitialPaymentMethod(intent.getPaymentMethod());
+
+        req.setInitialPaymentStatus(PaymentStatus.PAID);
+
+        req.setInitialPaymentAmount(intent.getEstimatedPrice());
+
+        req.setInitialPaymentAmountHalalah(
+                intent.getInitialPaymentAmountHalalah()
+        );
+
+        req.setRemainingAmount(0.0);
+
+        req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
+
+        req.setStaffStatus(StaffRequestStatus.NEW);
+
+        req.setStage(WorkflowStage.NEW_REQUEST);
+
+        req.setCreatedAt(LocalDateTime.now());
+
+        req.setLastUpdated(LocalDateTime.now());
+
+        CarServiceRequest saved = requestRepository.save(req);
+
+        saved.setOrderNumber(
+                String.format("ORD-%06d", saved.getId())
+        );
+
+        return requestRepository.save(saved);
     }
 
     @Bean
