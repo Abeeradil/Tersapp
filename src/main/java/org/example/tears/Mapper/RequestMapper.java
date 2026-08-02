@@ -291,14 +291,6 @@ public class RequestMapper {
         ));
 
         list.add(new TimelineItemDto(
-                "قيد التجربة",
-                StaffRequestStatus.TESTING,
-                r.getTestingAt(),
-                r.getTestingAt() != null,
-                r.getStaffStatus() == StaffRequestStatus.TESTING
-        ));
-
-        list.add(new TimelineItemDto(
                 "تسجيل القطع",
                 StaffRequestStatus.PARTS_REGISTERING,
                 r.getPartsRegisteredAt(),
@@ -338,7 +330,6 @@ public class RequestMapper {
                         >= StaffRequestStatus.REPORT_WRITING.ordinal(),
                 r.getStaffStatus() == StaffRequestStatus.REPORT_WRITING
         ));
-
         list.add(new TimelineItemDto(
                 "جاري الإصلاح",
                 StaffRequestStatus.REPAIRING,
@@ -348,7 +339,15 @@ public class RequestMapper {
         ));
 
         list.add(new TimelineItemDto(
-                "جاري التسليم",
+                "قيد التجربة",
+                StaffRequestStatus.TESTING,
+                r.getTestingAt(),
+                r.getTestingAt() != null,
+                r.getStaffStatus() == StaffRequestStatus.TESTING
+        ));
+
+        list.add(new TimelineItemDto(
+                "جاهز للتسليم",
                 StaffRequestStatus.DELIVERY_IN_PROGRESS,
                 r.getLastUpdated(),
                 r.getStaffStatus().ordinal()
