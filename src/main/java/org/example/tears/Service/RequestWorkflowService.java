@@ -173,11 +173,6 @@ public class RequestWorkflowService {
             StaffRequestStatus next
     ) {
 
-        // الحالات التي لها Endpoints خاصة (RECEIVED أُزيلت — تُدخل عبر /status)
-        if (next == StaffRequestStatus.REPAIRING) {
-
-            throw new ApiException("هذه الحالة لها عملية خاصة");
-        }
 
         switch (current) {
 
@@ -190,11 +185,6 @@ public class RequestWorkflowService {
                     throw new ApiException("استخدم زر استلام السيارة");
 
             case INSPECTION_IN_PROGRESS -> {
-                if (next != StaffRequestStatus.TESTING)
-                    throw new ApiException("انتقال غير صحيح");
-            }
-
-            case TESTING -> {
                 if (next != StaffRequestStatus.PARTS_REGISTERING)
                     throw new ApiException("انتقال غير صحيح");
             }
@@ -204,22 +194,24 @@ public class RequestWorkflowService {
                     throw new ApiException("انتقال غير صحيح");
             }
 
-            case PRICING ->
-                throw new ApiException("استخدم أزرار المسعر");
-
             case REPORT_WRITING -> {
                 if (next != StaffRequestStatus.REPAIRING)
                     throw new ApiException("انتقال غير صحيح");
             }
 
             case REPAIRING -> {
-                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS &&
+                if (next != StaffRequestStatus.TESTING &&
                         next != StaffRequestStatus.PARTS_REGISTERING) {
 
                     throw new ApiException("انتقال غير صحيح");
                 }
-
             }
+
+            case TESTING -> {
+                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS)
+                    throw new ApiException("انتقال غير صحيح");
+            }
+
             case DELIVERY_IN_PROGRESS -> {
                 if (next != StaffRequestStatus.DELIVERED)
                     throw new ApiException("انتقال غير صحيح");
@@ -447,10 +439,11 @@ public class RequestWorkflowService {
             case REPAIRING ->
                     req.setRepairAt(now);
 
-            case DELIVERY_IN_PROGRESS -> {
-                // إذا عندك حقل deliveryStartedAt أضيفيه هنا
-                // req.setDeliveryStartedAt(now);
-            }
+            case PARTS_REGISTERING ->
+                    req.setPartsRegisteredAt(now);
+
+            case REPORT_WRITING ->
+                    req.setReportWrittenAt(now);
 
             case DELIVERED ->
                     req.setDeliveredAt(now);
@@ -532,7 +525,7 @@ public class RequestWorkflowService {
             case PARTS_REGISTERING -> "تسجيل القطع";
             case PRICING -> "جاري تسعير القطع";
             case REPAIRING -> "جاري الإصلاح";
-            case DELIVERY_IN_PROGRESS -> "جاري التسليم";
+            case DELIVERY_IN_PROGRESS -> "جاهز للتسليم";
             case DELIVERED -> "تم التسليم";
         };
     }
