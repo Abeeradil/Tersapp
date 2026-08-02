@@ -4,12 +4,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
-import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.PaymentIntentService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -103,20 +101,14 @@ public class PaymentIntentController {
 
     }
 
-
     @PostMapping("/webhook")
     public ResponseEntity<String> webhook(
-            @RequestHeader Map<String, String> headers,
+            @RequestHeader("X-Moyasar-Token") String token,
             @RequestBody String body
     ) {
-
-        System.out.println("========== WEBHOOK ==========");
-        System.out.println(headers);
-        System.out.println(body);
-
+        paymentIntentService.handleWebhook(token, body);
         return ResponseEntity.ok("OK");
     }
-
 
     @GetMapping("/success")
     public ResponseEntity<String> success() {

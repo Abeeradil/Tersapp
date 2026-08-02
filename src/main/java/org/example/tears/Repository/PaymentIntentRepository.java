@@ -16,6 +16,8 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, In
     Optional<PaymentIntent> findByInvoiceId(
             String invoiceId
     );
+    Optional<PaymentIntent> findByGivenId(String givenId);
+
 
     boolean existsByAppointmentDateAndAppointmentTimeAndPaymentStatusInAndExpiresAtAfter(
             LocalDate date,

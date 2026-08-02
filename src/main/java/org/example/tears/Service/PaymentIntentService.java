@@ -1,5 +1,7 @@
 package org.example.tears.Service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +22,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentIntentService {
@@ -55,7 +59,7 @@ public class PaymentIntentService {
     @Value("${moyasar.webhook.token}")
     private String webhookToken;
 
-    //private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Transactional
     public CheckoutResponse createCheckout(
@@ -450,6 +454,14 @@ public class PaymentIntentService {
             String paymentId
     ) {
 
+        if (intent.getPaymentStatus() == PaymentStatus.PAID) {
+
+            return carServiceRequestService.toResponseDto(
+                    intent.getServiceRequest()
+            );
+
+        }
+
         CarServiceRequest request = intent.getServiceRequest();
 
         RequestApproval approval =
@@ -605,8 +617,11 @@ public class PaymentIntentService {
         if (!payment.get("currency").toString().equals("SAR"))
             throw new ApiException("Currency mismatch");
 
+        Map<String, Object> metadata =
+                (Map<String, Object>) payment.get("metadata");
+
         String givenId =
-                payment.get("given_id").toString();
+                metadata.get("givenId").toString();
 
         if (!givenId.equals(intent.getGivenId()))
             throw new ApiException("GivenId mismatch");
@@ -627,6 +642,78 @@ public class PaymentIntentService {
                 request.getStatus()
 
         );
+    }
+
+    @Transactional
+    public void handleWebhook(
+            String token,
+            String body
+    ) {
+
+        if (!webhookToken.equals(token)) {
+            throw new ApiException("Invalid webhook token");
+        }
+
+        try {
+            log.info("========== MOYASAR WEBHOOK ==========");
+            log.info(body);
+
+            JsonNode root = objectMapper.readTree(body);
+
+            JsonNode data = root;
+
+            String paymentId =
+                    data.path("id").asText();
+
+            String status =
+                    data.path("status").asText();
+
+            Integer amount =
+                    data.path("amount").asInt();
+
+            String currency =
+                    data.path("currency").asText();
+
+            String givenId =
+                    data.path("metadata")
+                            .path("givenId")
+                            .asText();
+
+            PaymentIntent intent =
+                    paymentIntentRepository
+                            .findByGivenId(givenId)
+                            .orElseThrow(() ->
+                                    new ApiException("PaymentIntent not found"));
+
+            if (intent.getPaymentStatus() == PaymentStatus.PAID) {
+                return;
+            }
+
+            if (!"paid".equalsIgnoreCase(status)) {
+
+                intent.setPaymentStatus(PaymentStatus.FAILED);
+
+                paymentIntentRepository.save(intent);
+
+                return;
+            }
+
+            if (!currency.equals("SAR")) {
+                throw new ApiException("Currency mismatch");
+            }
+
+            if (!amount.equals(intent.getInitialPaymentAmountHalalah())) {
+                throw new ApiException("Amount mismatch");
+            }
+
+            completePayment(intent, paymentId);
+            intent.setPaymentId(paymentId);
+            paymentIntentRepository.save(intent);
+
+        }
+        catch (Exception e) {
+            log.error("Webhook Error", e);
+        }
     }
 
     @Bean
