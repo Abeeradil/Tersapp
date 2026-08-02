@@ -103,6 +103,9 @@ public class ConfigurationSecurity {
                         // ================= STATIC =================
                         .requestMatchers("/uploads/**","brands/**", "/carimage/**").permitAll()
 
+                        .requestMatchers("/api/v1/tears/payment/webhook")
+                        .permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

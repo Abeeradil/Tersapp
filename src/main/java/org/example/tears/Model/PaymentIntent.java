@@ -72,6 +72,8 @@ public class PaymentIntent {
     // Moyasar
     private String paymentId;
     private LocalDateTime createdAt;
+
+    @Column(unique = true)
     private String givenId;
 
 

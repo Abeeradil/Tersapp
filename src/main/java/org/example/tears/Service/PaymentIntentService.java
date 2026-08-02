@@ -557,6 +557,12 @@ public class PaymentIntentService {
 
         paymentIntentRepository.save(intent);
 
+        log.info(
+                "Prepared mobile payment {}, givenId={}",
+                intent.getId(),
+                intent.getGivenId()
+        );
+
         return new MobilePaymentResponse(
 
                 intent.getId(),
@@ -617,8 +623,12 @@ public class PaymentIntentService {
         if (!payment.get("currency").toString().equals("SAR"))
             throw new ApiException("Currency mismatch");
 
-        Map<String, Object> metadata =
-                (Map<String, Object>) payment.get("metadata");
+        Object metaObj = payment.get("metadata");
+
+        if (!(metaObj instanceof Map<?, ?> metadata)) {
+            throw new ApiException("Metadata missing");
+        }
+
 
         String givenId =
                 metadata.get("givenId").toString();
@@ -710,10 +720,18 @@ public class PaymentIntentService {
             intent.setPaymentId(paymentId);
             paymentIntentRepository.save(intent);
 
+            log.info(
+                    "Payment {} confirmed for intent {}",
+                    paymentId,
+                    intent.getId()
+            );
+
         }
         catch (Exception e) {
             log.error("Webhook Error", e);
         }
+
+
     }
 
     @Bean
