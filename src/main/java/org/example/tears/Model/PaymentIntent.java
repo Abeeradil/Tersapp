@@ -72,6 +72,7 @@ public class PaymentIntent {
     // Moyasar
     private String paymentId;
     private LocalDateTime createdAt;
+    private String givenId;
 
 
     private Double originalPrice;

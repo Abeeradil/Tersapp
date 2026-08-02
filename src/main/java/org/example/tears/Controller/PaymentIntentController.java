@@ -2,8 +2,7 @@ package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import org.example.tears.DTO.CheckoutResponse;
-import org.example.tears.DTO.CreatePaymentIntentRequest;
+import org.example.tears.DTO.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -79,6 +78,43 @@ public class PaymentIntentController {
 
         return paymentIntentService.handleFinalInvoiceCallback(payload);
 
+    }
+
+
+    @PostMapping("/mobile/prepare")
+    public ResponseEntity<MobilePaymentResponse> prepareMobilePayment(
+            HttpServletRequest request,
+            @RequestBody CreateRequestStepDto dto
+    ) {
+
+        return ResponseEntity.ok(
+                paymentIntentService.prepareMobilePayment(request, dto)
+        );
+    }
+
+    @PostMapping("/mobile/confirm")
+    public ResponseEntity<ConfirmMobilePaymentResponse> confirmMobilePayment(
+            @RequestBody ConfirmMobilePaymentRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                paymentIntentService.confirmMobilePayment(request)
+        );
+
+    }
+
+
+    @PostMapping("/webhook")
+    public ResponseEntity<String> webhook(
+            @RequestHeader Map<String, String> headers,
+            @RequestBody String body
+    ) {
+
+        System.out.println("========== WEBHOOK ==========");
+        System.out.println(headers);
+        System.out.println(body);
+
+        return ResponseEntity.ok("OK");
     }
 
 

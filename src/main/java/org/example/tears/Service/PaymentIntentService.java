@@ -5,6 +5,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.CheckoutResponse;
+import org.example.tears.DTO.ConfirmMobilePaymentRequest;
+import org.example.tears.DTO.ConfirmMobilePaymentResponse;
+import org.example.tears.DTO.MobilePaymentResponse;
 import org.example.tears.Enums.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Model.*;
@@ -13,6 +16,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.PaymentIntentRepository;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -47,6 +51,11 @@ public class PaymentIntentService {
 
     @Value("${MOYASAR_BACK_URL}")
     private String backUrl;
+
+    @Value("${moyasar.webhook.token}")
+    private String webhookToken;
+
+    //private final RestTemplate restTemplate;
 
     @Transactional
     public CheckoutResponse createCheckout(
@@ -434,6 +443,195 @@ public class PaymentIntentService {
         );
 
         return carServiceRequestService.toResponseDto(request);
+    }
+
+    private RequestResponseDto completePayment(
+            PaymentIntent intent,
+            String paymentId
+    ) {
+
+        CarServiceRequest request = intent.getServiceRequest();
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(request.getId())
+                        .orElseThrow(() ->
+                                new ApiException("Approval not found"));
+
+        approval.setApproved(true);
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
+
+        request.setFinalPaid(true);
+        request.setFinalTransactionId(paymentId);
+
+        request.setNextPaymentMethod(intent.getPaymentMethod());
+        request.setNextPaymentStatus(PaymentStatus.PAID);
+
+        request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+        request.setStaffStatus(StaffRequestStatus.REPAIRING);
+        request.setStage(WorkflowStage.REPAIRING);
+
+        request.setRepairAt(LocalDateTime.now());
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepository.save(request);
+
+        intent.setPaymentStatus(PaymentStatus.PAID);
+        intent.setPaymentId(paymentId);
+        intent.setPaidAt(LocalDateTime.now());
+
+        paymentIntentRepository.save(intent);
+
+        notificationService.send(
+                request.getCurrentEmployee().getUser(),
+                "تم دفع الدفعة النهائية للطلب #" +
+                        request.getOrderNumber()
+        );
+
+        return carServiceRequestService.toResponseDto(request);
+    }
+
+    @Transactional
+    public MobilePaymentResponse prepareMobilePayment(
+            HttpServletRequest request,
+            CreateRequestStepDto dto
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        CarServiceRequest draft =
+                carServiceRequestService.buildValidatedRequest(user, dto);
+
+        PaymentIntent intent = new PaymentIntent();
+
+        intent.setCustomer(user.getCustomer());
+        intent.setCar(draft.getCar());
+        intent.setServiceOption(draft.getServiceOption());
+        intent.setProblemDescription(draft.getProblemDescription());
+        intent.setAppointmentDate(draft.getAppointmentDate());
+        intent.setAppointmentTime(draft.getAppointmentTime());
+        intent.setHydraulicTruck(draft.isHydraulicTruck());
+        intent.setLocation(draft.getLocation());
+
+        intent.setPaymentMethod(draft.getPaymentMethod());
+
+        intent.setEstimatedPrice(draft.getEstimatedPrice());
+
+        intent.setOriginalPrice(draft.getOriginalPrice());
+        intent.setDiscount(draft.getDiscount());
+        intent.setVatAmount(draft.getVatAmount());
+        intent.setCouponValid(draft.getCouponValid());
+        intent.setPricingMessage(draft.getPricingMessage());
+
+        intent.setInitialPaymentAmount(draft.getEstimatedPrice());
+
+        int amountHalalah =
+                (int) Math.round(draft.getEstimatedPrice() * 100);
+
+        intent.setInitialPaymentAmountHalalah(amountHalalah);
+
+        intent.setInitialPaymentMethod(draft.getPaymentMethod());
+
+        intent.setPaymentStatus(PaymentStatus.INITIATED);
+
+        intent.setCreatedAt(LocalDateTime.now());
+
+        intent.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+
+        String givenId = UUID.randomUUID().toString();
+
+        intent.setGivenId(givenId);
+
+        paymentIntentRepository.save(intent);
+
+        return new MobilePaymentResponse(
+
+                intent.getId(),
+
+                intent.getId(),
+
+                givenId,
+
+                amountHalalah,
+
+                "SAR",
+
+                "Payment for order #" + intent.getId(),
+
+                "PREPARED"
+        );
+    }
+
+    @Transactional
+    public ConfirmMobilePaymentResponse confirmMobilePayment(
+            ConfirmMobilePaymentRequest dto
+    ) {
+
+        PaymentIntent intent =
+                paymentIntentRepository
+                        .findById(dto.getPaymentAttemptId())
+                        .orElseThrow(() ->
+                                new ApiException("Payment attempt not found"));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBasicAuth(secretKey, "");
+
+        ResponseEntity<Map> response =
+                restTemplate.exchange(
+                        "https://api.moyasar.com/v1/payments/" + dto.getPaymentId(),
+                        HttpMethod.GET,
+                        new HttpEntity<>(headers),
+                        Map.class
+                );
+
+        Map<String, Object> payment = response.getBody();
+
+        if (payment == null)
+            throw new ApiException("Payment not found");
+
+        String status =
+                payment.get("status").toString();
+
+        if (!"paid".equalsIgnoreCase(status))
+            throw new ApiException("Payment not completed");
+
+        Integer amount =
+                ((Number) payment.get("amount")).intValue();
+
+        if (!amount.equals(intent.getInitialPaymentAmountHalalah()))
+            throw new ApiException("Amount mismatch");
+
+        if (!payment.get("currency").toString().equals("SAR"))
+            throw new ApiException("Currency mismatch");
+
+        String givenId =
+                payment.get("given_id").toString();
+
+        if (!givenId.equals(intent.getGivenId()))
+            throw new ApiException("GivenId mismatch");
+
+        RequestResponseDto request =
+                completePayment(intent, dto.getPaymentId());
+
+        return new ConfirmMobilePaymentResponse(
+
+                request.getId(),
+
+                intent.getId(),
+
+                dto.getPaymentId(),
+
+                PaymentStatus.PAID.name(),
+
+                request.getStatus()
+
+        );
+    }
+
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 
 }
