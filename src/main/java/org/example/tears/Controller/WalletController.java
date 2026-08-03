@@ -1,10 +1,9 @@
 package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.AllArgsConstructor;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.tears.DTO.WalletResponseDto;
-import org.example.tears.DTO.WalletTransactionResponseDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Model.User;
 import org.example.tears.Model.Wallet;
 import org.example.tears.Service.AuthService;
@@ -78,6 +77,36 @@ public class WalletController {
                         wallet.getBalance(),
                         wallet.getBalance() / 100.0
                 )
+        );
+    }
+
+    @PostMapping("/topup/mobile/prepare")
+    public ResponseEntity<MobilePaymentResponse> prepareWalletTopup(
+
+            HttpServletRequest request,
+
+            @RequestBody @Valid WalletTopupRequest dto
+    ) {
+
+        return ResponseEntity.ok(
+
+                walletService.prepareWalletTopUp(request, dto)
+
+        );
+    }
+
+    @PostMapping("/topup/mobile/confirm")
+    public ResponseEntity<WalletResponseDto> confirmWalletTopup(
+
+            HttpServletRequest request,
+
+            @RequestBody ConfirmMobilePaymentRequest dto
+    ) {
+
+        return ResponseEntity.ok(
+
+                walletService.confirmWalletTopup(dto, request)
+
         );
     }
 }

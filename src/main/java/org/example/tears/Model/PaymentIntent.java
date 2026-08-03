@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.tears.Enums.PaymentIntentType;
 import org.example.tears.Enums.PaymentMethod;
 import org.example.tears.Enums.PaymentStatus;
 import org.example.tears.Enums.ServiceOption;
@@ -59,6 +60,8 @@ public class PaymentIntent {
 
     private String couponCode;
 
+    @Enumerated(EnumType.STRING)
+    private PaymentIntentType type;
 
     @OneToOne
     private CarServiceRequest serviceRequest;

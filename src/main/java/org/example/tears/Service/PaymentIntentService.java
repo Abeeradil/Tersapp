@@ -546,6 +546,7 @@ public class PaymentIntentService {
         intent.setAppointmentTime(draft.getAppointmentTime());
         intent.setHydraulicTruck(draft.isHydraulicTruck());
         intent.setLocation(draft.getLocation());
+        intent.setType(PaymentIntentType.REQUEST);
 
         intent.setPaymentMethod(draft.getPaymentMethod());
 
@@ -925,6 +926,8 @@ public class PaymentIntentService {
 
 
         intent.setGivenId(givenId);
+        intent.setType(PaymentIntentType.FINAL_PAYMENT);
+
 
 
         paymentIntentRepository.save(intent);
