@@ -114,7 +114,7 @@ public class WalletController {
         );
     }
 
-    @PostMapping("/wallet/initial")
+    @PostMapping("/initial")
     public ResponseEntity<RequestResponseDto> payInitialWithWallet(
             HttpServletRequest request,
             @RequestBody CreateRequestStepDto dto
@@ -125,7 +125,7 @@ public class WalletController {
         );
     }
 
-    @PostMapping("/wallet/final/{requestId}")
+    @PostMapping("/final/{requestId}")
     public ResponseEntity<RequestResponseDto> payFinalWithWallet(
             HttpServletRequest request,
             @PathVariable Integer requestId
