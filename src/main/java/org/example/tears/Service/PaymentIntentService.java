@@ -59,6 +59,7 @@ public class PaymentIntentService {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+   // انشاء فاتوره دفع خارجي لانشاء الطلب
     @Transactional
     public CheckoutResponse createCheckout(
             HttpServletRequest request,
@@ -143,7 +144,7 @@ public class PaymentIntentService {
                 amountHalalah
         );
     }
-
+ //الدفع عن طريق المحفظه لانشاء الطلب
     @Transactional
     public RequestResponseDto payRequestWithWallet(
             HttpServletRequest request,
@@ -181,6 +182,7 @@ public class PaymentIntentService {
         return carServiceRequestService.toResponseDto(savedRequest);
     }
 
+    // الرد على فاتوره الدفع الخارجي لانشاء الطلب
     @Transactional
     public RequestResponseDto handleInvoiceCallback(Map<String, Object> payload) {
 
@@ -273,6 +275,7 @@ public class PaymentIntentService {
         return carServiceRequestService.toResponseDto(intent.getServiceRequest());
     }
 
+    //انشاء فاتوره الدفع للتقرير
     @Transactional
     public CheckoutResponse createFinalCheckout(
             Integer requestId,
@@ -374,6 +377,8 @@ public class PaymentIntentService {
         );
     }
 
+
+   // الرد على فاتورة الدفع للتقرير
     @Transactional
     public RequestResponseDto handleFinalInvoiceCallback(
             Map<String, Object> payload
@@ -448,7 +453,7 @@ public class PaymentIntentService {
 
         return carServiceRequestService.toResponseDto(request);
     }
-
+// الدفع النهائي
     private RequestResponseDto completePayment(
             PaymentIntent intent,
             String paymentId
@@ -520,7 +525,7 @@ public class PaymentIntentService {
 
         return carServiceRequestService.toResponseDto(request);
     }
-
+     // انشاء دفعه داخل التطبيق
     @Transactional
     public MobilePaymentResponse prepareMobilePayment(
             HttpServletRequest request,
@@ -596,6 +601,7 @@ public class PaymentIntentService {
         );
     }
 
+   // الرد على الدفعه داخل التطبيق
     @Transactional
     public ConfirmMobilePaymentResponse confirmMobilePayment(
             ConfirmMobilePaymentRequest dto
@@ -668,6 +674,8 @@ public class PaymentIntentService {
 
                 request.getId(),
 
+                request.getOrderNumber(),
+
                 intent.getId(),
 
                 request.getStatus(),
@@ -676,7 +684,7 @@ public class PaymentIntentService {
 
                 serviceRequest.getLocation().getAddress(),
 
-                serviceRequest.getAppointmentDate().toString(),
+                appointmentDate,
 
                 carInfo,
 
@@ -690,6 +698,7 @@ public class PaymentIntentService {
         );
     }
 
+    // wephook
     @Transactional
     public void handleWebhook(
             String token,
@@ -836,6 +845,7 @@ public class PaymentIntentService {
     }
 
 
+    //انشاء الدفعه الثانيه من الدفع بالتطبيق
     @Transactional
     public FinalMobilePaymentResponse prepareFinalMobilePayment(
             Integer requestId,
@@ -932,6 +942,7 @@ public class PaymentIntentService {
         );
     }
 
+    // الرد على الدفعه الثانيه من التطبيق
     @Transactional
     public ConfirmFinalMobilePaymentResponse confirmFinalMobilePayment(
             ConfirmMobilePaymentRequest dto
@@ -1110,7 +1121,7 @@ public class PaymentIntentService {
                 request.getCustomerStatus().name()
         );
     }
-
+// helpar
     private String formatEnglishPlate(String plate) {
 
         if (plate == null || plate.length() < 4) {
@@ -1137,4 +1148,7 @@ public class PaymentIntentService {
 
         return plate;
     }
+
+
+
 }

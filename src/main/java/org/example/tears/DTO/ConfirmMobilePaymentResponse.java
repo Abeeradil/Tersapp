@@ -8,6 +8,7 @@ import lombok.Data;
 public class ConfirmMobilePaymentResponse {
 
         private Integer requestId;
+        private String orderNumber;
         private Integer paymentIntentId;
         private String requestStatus;
         private String serviceOption;
