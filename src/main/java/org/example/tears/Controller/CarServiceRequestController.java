@@ -54,6 +54,15 @@ public class CarServiceRequestController {
         );
     }
 
+    @GetMapping("/availability/all")
+    public ResponseEntity<?> getAllAvailability() {
+
+        return ResponseEntity.ok(
+                appointmentService.getAllAvailability()
+        );
+
+    }
+
         @GetMapping("/services")
         public ApiResponse getServices() {
             return new ApiResponse(true, ServiceOption.values());

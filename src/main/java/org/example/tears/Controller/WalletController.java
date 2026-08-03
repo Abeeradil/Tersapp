@@ -85,7 +85,7 @@ public class WalletController {
     }
 
     @PostMapping("/topup/mobile/prepare")
-    public ResponseEntity<MobilePaymentResponse> prepareWalletTopup(
+    public ResponseEntity<MobilePaymentResponse> prepareWalletTopUp(
 
             HttpServletRequest request,
 
@@ -100,7 +100,7 @@ public class WalletController {
     }
 
     @PostMapping("/topup/mobile/confirm")
-    public ResponseEntity<WalletResponseDto> confirmWalletTopup(
+    public ResponseEntity<WalletResponseDto> confirmWalletTopUp(
 
             HttpServletRequest request,
 
