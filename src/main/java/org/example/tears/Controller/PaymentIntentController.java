@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.*;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.OutDTO.RequestResponseDto;
-import org.example.tears.Service.AuthService;
 import org.example.tears.Service.PaymentIntentService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +17,6 @@ import java.util.Map;
 public class PaymentIntentController {
 
         private final PaymentIntentService paymentIntentService;
-        private final AuthService authService;
 
     @PostMapping("/checkout")
     public ResponseEntity<CheckoutResponse> createCheckout(
@@ -111,11 +109,11 @@ public class PaymentIntentController {
     }
 
     @PostMapping("/mobile/final/confirm")
-    public ResponseEntity<ConfirmMobilePaymentResponse> confirmFinalMobilePayment(
+    public ResponseEntity<ConfirmFinalMobilePaymentResponse> confirmFinalMobilePayment(
             @RequestBody ConfirmMobilePaymentRequest dto
     ) {
 
-        ConfirmMobilePaymentResponse response =
+        ConfirmFinalMobilePaymentResponse response =
                 paymentIntentService.confirmFinalMobilePayment(dto);
 
 
@@ -137,6 +135,7 @@ public class PaymentIntentController {
 
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/success")
     public ResponseEntity<String> success() {

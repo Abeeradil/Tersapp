@@ -22,6 +22,7 @@ import org.springframework.web.client.RestTemplate;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -650,21 +651,42 @@ public class PaymentIntentService {
         if (!givenId.equals(intent.getGivenId()))
             throw new ApiException("GivenId mismatch");
 
+
         RequestResponseDto request =
                 completePayment(intent, dto.getPaymentId());
 
+        CarServiceRequest serviceRequest = intent.getServiceRequest();
+
+        String carInfo =
+                formatArabicPlate(serviceRequest.getCar().getPlateNumberArabic())
+                        + "\n"
+                        + formatEnglishPlate(serviceRequest.getCar().getPlateNumberEnglish());
+        String appointmentDate =
+                serviceRequest.getAppointmentDate()
+                        .format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         return new ConfirmMobilePaymentResponse(
 
                 request.getId(),
 
                 intent.getId(),
 
+                request.getStatus(),
+
+                serviceRequest.getServiceOption().getDisplayName(),
+
+                serviceRequest.getLocation().getAddress(),
+
+                serviceRequest.getAppointmentDate().toString(),
+
+                carInfo,
+
+                serviceRequest.getEstimatedPrice(),
+
+                intent.getId(),
+
                 dto.getPaymentId(),
 
-                PaymentStatus.PAID.name(),
-
-                request.getStatus()
-
+                PaymentStatus.PAID.name()
         );
     }
 
@@ -911,7 +933,7 @@ public class PaymentIntentService {
     }
 
     @Transactional
-    public ConfirmMobilePaymentResponse confirmFinalMobilePayment(
+    public ConfirmFinalMobilePaymentResponse confirmFinalMobilePayment(
             ConfirmMobilePaymentRequest dto
     ) {
 
@@ -930,15 +952,20 @@ public class PaymentIntentService {
 
         if (intent.getPaymentStatus() == PaymentStatus.PAID) {
 
-            CarServiceRequest oldRequest =
+            CarServiceRequest request =
                     intent.getServiceRequest();
 
-            return new ConfirmMobilePaymentResponse(
-                    oldRequest.getId(),
+            return new ConfirmFinalMobilePaymentResponse(
+
+                    request.getId(),
+
                     intent.getId(),
-                    intent.getPaymentId(),
+
+                    dto.getPaymentId(),
+
                     PaymentStatus.PAID.name(),
-                    oldRequest.getCustomerStatus().name()
+
+                    request.getCustomerStatus().name()
             );
         }
 
@@ -1070,7 +1097,7 @@ public class PaymentIntentService {
 
 
 
-        return new ConfirmMobilePaymentResponse(
+        return new ConfirmFinalMobilePaymentResponse(
 
                 request.getId(),
 
@@ -1082,5 +1109,32 @@ public class PaymentIntentService {
 
                 request.getCustomerStatus().name()
         );
+    }
+
+    private String formatEnglishPlate(String plate) {
+
+        if (plate == null || plate.length() < 4) {
+            return plate;
+        }
+
+        String letters = plate.substring(0, 3);
+        String numbers = plate.substring(3);
+
+        return letters + "-" + numbers;
+    }
+
+    private String formatArabicPlate(String plate) {
+
+        if (plate == null || plate.isBlank()) {
+            return plate;
+        }
+
+        String[] parts = plate.trim().split("\\s+");
+
+        if (parts.length == 4) {
+            return parts[0] + " " + parts[1] + " " + parts[2] + " - " + parts[3];
+        }
+
+        return plate;
     }
 }

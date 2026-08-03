@@ -1,16 +1,12 @@
 package org.example.tears.OutDTO;
 
-import jakarta.persistence.Column;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.example.tears.InpDTO.LocationDto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 
 @Data
 @Setter
@@ -58,7 +54,6 @@ public class RequestResponseDto {
         private String initialPaymentMethod;
 
         private String initialPaymentStatus;
-
 
         private Double remainingAmount;
 

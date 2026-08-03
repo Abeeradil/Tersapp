@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,14 +29,12 @@ public class CarServiceRequestService {
     private final CarServiceRequestRepository requestRepository;
     private final CarRepository carRepository;
     private final AuthService authService;
-    private final CouponRepository couponRepository;
     private final LocationService locationService;
     private final LocationRepository locationRepository;
     private final AppointmentService appointmentService;
     private final RequestImageRepository imageRepo;
     private final PricingCalculationService pricingCalculationService;
     private final RequestReviewRepository reviewRepository;
-    private final RequestMapper requestMapper;
 
     // ---------------------------
     // Step 1: Preview
@@ -50,11 +46,15 @@ public class CarServiceRequestService {
 
         double servicePrice = option.getPrice() * 1.15;
 
-        double hydraulicPrice = 150 * 1.15;
+        double hydraulicPrice =
+                option == ServiceOption.ELECTRONIC_CHECK
+                        ? 0
+                        : 150 * 1.15;
 
         PreviewResponseDto resp = new PreviewResponseDto();
 
         resp.setServicePrice(servicePrice);
+
         resp.setHydraulicTruckPrice(hydraulicPrice);
 
         return resp;
