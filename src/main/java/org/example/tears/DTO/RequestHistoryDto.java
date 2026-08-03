@@ -27,9 +27,14 @@ public class RequestHistoryDto {
 
     private Boolean warrantyRequest;
     private String warrantyStatus;
+    private LocalDate warrantyExpiryDate;
+    private Long warrantyRemainingDays;
+    private Boolean underWarranty;
 
 
     private String customerStatus;
 
     private String requestState;
+
+
 }

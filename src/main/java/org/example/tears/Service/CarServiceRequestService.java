@@ -17,7 +17,9 @@ import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -269,7 +271,20 @@ public class CarServiceRequestService {
 
         requests.sort(
                 Comparator
-                        .comparing((CarServiceRequest r) -> !warrantyIds.contains(r.getId()))
+                        .comparing((CarServiceRequest r) -> {
+
+                            if (r.getCustomerStatus() != CustomerRequestStatus.DELIVERED
+                                    || r.getDeliveredAt() == null) {
+                                return 2;
+                            }
+
+                            LocalDate expiry =
+                                    r.getDeliveredAt().toLocalDate().plusDays(30);
+
+                            return LocalDate.now().isAfter(expiry) ? 1 : 0;
+
+                        })
+                        .thenComparing(r -> !warrantyIds.contains(r.getId()))
                         .thenComparing(CarServiceRequest::getCreatedAt, Comparator.reverseOrder())
         );
 
@@ -354,6 +369,26 @@ public class CarServiceRequestService {
 
         if (req.getCustomerStatus() != null) {
             dto.setCustomerStatus(req.getCustomerStatus().name());
+        }
+        if (req.getCustomerStatus() == CustomerRequestStatus.DELIVERED
+                && req.getDeliveredAt() != null) {
+
+            LocalDate deliveryDate = req.getDeliveredAt().toLocalDate();
+            LocalDate expiryDate = deliveryDate.plusDays(30);
+
+            dto.setWarrantyExpiryDate(expiryDate);
+
+            boolean underWarranty = !LocalDate.now().isAfter(expiryDate);
+
+            dto.setUnderWarranty(underWarranty);
+
+            if (underWarranty) {
+                dto.setWarrantyRemainingDays(
+                        ChronoUnit.DAYS.between(LocalDate.now(), expiryDate)
+                );
+            } else {
+                dto.setWarrantyRemainingDays(0L);
+            }
         }
 
         return dto;
