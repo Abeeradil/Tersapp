@@ -15,6 +15,8 @@ public class ConfirmMobilePaymentResponse {
         private String location;
         private String appointmentDate;
         private String carInfo;
+        private String plateNumberArabic;
+        private String plateNumberEnglish;
         private Double totalAmount;
         private Integer paymentAttemptId;
         private String paymentId;

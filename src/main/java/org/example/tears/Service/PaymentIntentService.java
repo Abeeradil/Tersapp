@@ -688,6 +688,10 @@ public class PaymentIntentService {
 
                 carInfo,
 
+                formatArabicPlate(serviceRequest.getCar().getPlateNumberArabic()),
+
+                formatEnglishPlate(serviceRequest.getCar().getPlateNumberEnglish()),
+
                 serviceRequest.getEstimatedPrice(),
 
                 intent.getId(),
