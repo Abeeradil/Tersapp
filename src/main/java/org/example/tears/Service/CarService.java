@@ -16,18 +16,18 @@ import java.util.*;
 @RequiredArgsConstructor
 public class CarService {
 
-    private static final Logger log = LoggerFactory.getLogger(CarService.class);
 
     // ================= DEPENDENCIES =================
     private final CarRepository carRepository;
     private final AuthService authService;
     private final CarBrandRepository carBrandRepository;
     private final CarModelRepository carModelRepository;
+    private final SocketService socketService;
+
 
     private final OcrService ocrService;
     private final CarValidator carValidator;
     private final CarMapper carMapper;
-    private final PlateService plateService;
     // ================= MANUAL =================
     public Map<String, Object> registerCarManual(
             HttpServletRequest request,
@@ -50,6 +50,10 @@ public class CarService {
         Car car = carMapper.buildManualCar(dto, image, user, brand, model);
 
         carRepository.save(car);
+        socketService.send(
+                "/topic/cars/" + user.getId(),
+                carMapper.toResponse(car, user.getFullName())
+        );
 
         return carMapper.toResponse(car, user.getFullName());
     }

@@ -10,7 +10,6 @@ import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.UpdateRequestDto;
-import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -35,6 +34,9 @@ public class CarServiceRequestService {
     private final RequestImageRepository imageRepo;
     private final PricingCalculationService pricingCalculationService;
     private final RequestReviewRepository reviewRepository;
+    private final SocketService socketService;
+
+
 
     // ---------------------------
     // Step 1: Preview
@@ -639,6 +641,10 @@ public class CarServiceRequestService {
         );
 
         requestRepository.save(req);
+        socketService.send(
+                "/topic/past-orders/" + req.getCustomer().getUser().getId(),
+                toHistoryDto(req)
+        );
     }
 
 

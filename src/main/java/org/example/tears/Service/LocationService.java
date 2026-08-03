@@ -19,6 +19,7 @@ public class LocationService {
 
     private final LocationRepository locationRepository;
     private final AuthService authService;
+    private final SocketService socketService;
 
     public OutLocationDto addLocation(
             HttpServletRequest request,
@@ -47,6 +48,8 @@ public class LocationService {
 
         Location saved = locationRepository.save(location);
 
+
+
         OutLocationDto out = new OutLocationDto();
 
         out.setId(saved.getId());
@@ -55,6 +58,11 @@ public class LocationService {
 
         out.setAddress(saved.getAddress());
         out.setTitle(saved.getTitle());
+
+        socketService.send(
+                "/topic/locations/" + user.getId(),
+                mapToDto(saved)
+        );
 
         return mapToDto(saved);
 

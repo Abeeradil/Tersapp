@@ -39,6 +39,8 @@ public class PaymentIntentService {
     private final RequestApprovalRepository approvalRepo;
     private final AuthService authService;
     private final WalletService walletService;
+    private final SocketService socketService;
+
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -244,6 +246,10 @@ public class PaymentIntentService {
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepository.save(request);
+        socketService.send(
+                "/topic/current-orders/" + request.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
 
         if (request.getCurrentEmployee() != null) {
             notificationService.send(
@@ -511,6 +517,10 @@ public class PaymentIntentService {
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepository.save(request);
+        socketService.send(
+                "/topic/current-orders/" + request.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
 
         // تحديث عملية الدفع
         intent.setPaymentStatus(PaymentStatus.PAID);
@@ -577,6 +587,10 @@ public class PaymentIntentService {
             request.setLastUpdated(LocalDateTime.now());
 
             requestRepository.save(request);
+            socketService.send(
+                    "/topic/current-orders/" + request.getCustomer().getUser().getId(),
+                    carServiceRequestService.toCurrentDto(request)
+            );
         }
 
 
@@ -1168,6 +1182,10 @@ public class PaymentIntentService {
 
 
         requestRepository.save(request);
+        socketService.send(
+                "/topic/current-orders/" + request.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
 
 
 

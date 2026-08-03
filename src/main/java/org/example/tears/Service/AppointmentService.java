@@ -20,7 +20,7 @@ import java.util.Map;
 public class AppointmentService {
 
     private final CarServiceRequestRepository requestRepository;
-
+    private final SocketService socketService;
     private final PaymentIntentRepository paymentIntentRepository;
 
     private static final List<LocalTime> AVAILABLE_TIMES =
@@ -157,7 +157,10 @@ public class AppointmentService {
             );
 
         }
-
+        socketService.send(
+                "/topic/availability",
+                getAllAvailability()
+        );
         return result;
     }
 
