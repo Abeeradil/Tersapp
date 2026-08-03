@@ -4,9 +4,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.*;
+import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.Model.User;
 import org.example.tears.Model.Wallet;
+import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.AuthService;
+import org.example.tears.Service.PaymentIntentService;
 import org.example.tears.Service.WalletService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +23,7 @@ public class WalletController {
 
     private final WalletService walletService;
     private final AuthService authService;
+    private final PaymentIntentService paymentIntentService;
 
     @GetMapping("/me")
     public ResponseEntity<WalletResponseDto> getMyWallet(HttpServletRequest request) {
@@ -107,6 +111,28 @@ public class WalletController {
 
                 walletService.confirmWalletTopup(dto, request)
 
+        );
+    }
+
+    @PostMapping("/wallet/initial")
+    public ResponseEntity<RequestResponseDto> payInitialWithWallet(
+            HttpServletRequest request,
+            @RequestBody CreateRequestStepDto dto
+    ) {
+
+        return ResponseEntity.ok(
+                paymentIntentService.payRequestWithWallet(request, dto)
+        );
+    }
+
+    @PostMapping("/wallet/final/{requestId}")
+    public ResponseEntity<RequestResponseDto> payFinalWithWallet(
+            HttpServletRequest request,
+            @PathVariable Integer requestId
+    ) {
+
+        return ResponseEntity.ok(
+                paymentIntentService.payFinalWithWallet(requestId, request)
         );
     }
 }

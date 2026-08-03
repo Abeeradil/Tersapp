@@ -1,6 +1,5 @@
 package org.example.tears.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
@@ -14,8 +13,8 @@ import org.example.tears.Enums.TransactionType;
 import org.example.tears.Model.PaymentIntent;
 import org.example.tears.Model.User;
 import org.example.tears.Model.Wallet;
-import org.example.tears.Repository.PaymentIntentRepository;
 import org.example.tears.Model.WalletTransaction;
+import org.example.tears.Repository.PaymentIntentRepository;
 import org.example.tears.Repository.WalletRepository;
 import org.example.tears.Repository.WalletTransactionRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,9 +40,9 @@ public class WalletService {
 
     private final WalletRepository walletRepository;
     private final WalletTransactionRepository walletTransactionRepository;
-    private final WalletService walletService;
-    private final PaymentIntentRepository paymentIntentRepository;
     private final AuthService authService;
+    private final PaymentIntentRepository paymentIntentRepository;
+
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -241,10 +240,7 @@ public class WalletService {
 
         if (intent.getPaymentStatus() != PaymentStatus.PAID) {
 
-            walletService.deposit(
-                    user,
-                    amount
-            );
+            deposit(user, amount);
 
             intent.setPaymentStatus(PaymentStatus.PAID);
             intent.setPaymentId(dto.getPaymentId());
@@ -253,7 +249,7 @@ public class WalletService {
             paymentIntentRepository.save(intent);
         }
 
-        Wallet wallet = walletService.getMyWallet(user);
+        Wallet wallet = getMyWallet(user);
 
         return new WalletResponseDto(
                 wallet.getId(),

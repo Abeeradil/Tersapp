@@ -182,6 +182,80 @@ public class PaymentIntentService {
         return carServiceRequestService.toResponseDto(savedRequest);
     }
 
+    @Transactional
+    public RequestResponseDto payFinalWithWallet(
+            Integer requestId,
+            HttpServletRequest httpRequest
+    ) {
+
+        User user = authService.getAuthenticatedUser(httpRequest);
+
+        CarServiceRequest request =
+                requestRepository.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (!request.getCustomer().getId().equals(user.getCustomer().getId())) {
+            throw new ApiException("غير مصرح لك");
+        }
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير"));
+
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تمت الموافقة مسبقاً");
+        }
+
+        if (request.isFinalPaid()) {
+            throw new ApiException("تم السداد مسبقاً");
+        }
+
+        if (request.getFinalPrice() == null || request.getFinalPrice() <= 0) {
+            throw new ApiException("لا يوجد مبلغ للدفع");
+        }
+
+        walletService.payFromWallet(
+                user,
+                request.getFinalPrice() * 100,
+                "FINAL-" + request.getOrderNumber()
+        );
+
+        approval.setApproved(true);
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
+
+        request.setFinalPaid(true);
+
+        request.setNextPaymentMethod(PaymentMethod.WALLET);
+
+        request.setNextPaymentStatus(PaymentStatus.PAID);
+
+        request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+
+        request.setStaffStatus(StaffRequestStatus.REPAIRING);
+
+        request.setStage(WorkflowStage.REPAIRING);
+
+        request.setRepairAt(LocalDateTime.now());
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepository.save(request);
+
+        if (request.getCurrentEmployee() != null) {
+            notificationService.send(
+                    request.getCurrentEmployee().getUser(),
+                    "تم سداد الدفعة النهائية للطلب #"
+                            + request.getOrderNumber()
+            );
+        }
+
+        return carServiceRequestService.toResponseDto(request);
+    }
+
     // الرد على فاتوره الدفع الخارجي لانشاء الطلب
     @Transactional
     public RequestResponseDto handleInvoiceCallback(Map<String, Object> payload) {
