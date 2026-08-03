@@ -5,7 +5,6 @@ import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
-import org.example.tears.Model.RequestPart;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,7 +21,8 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
             Employee employee,
             StaffRequestStatus status
     );
-    List<CarServiceRequest> findByCustomer_Id(Integer customerId);
+
+
 
 
     long countByAssignedPricingEmployee_IdAndPricingStatus(
@@ -71,12 +71,18 @@ AND
             List<CustomerRequestStatus> statuses
     );
 
+
     List<CarServiceRequest>
-    findByCustomerIdAndCustomerStatusNotInOrderByIdDesc(
+    findByCustomerIdAndCustomerStatusNotInOrderByCreatedAtDesc(
+    Integer customerId,
+    List<CustomerRequestStatus> statuses
+    );
+
+
+    List<CarServiceRequest> findByCustomerIdAndCustomerStatusInOrderByCreatedAtDesc(
             Integer customerId,
             List<CustomerRequestStatus> statuses
     );
-
     List<CarServiceRequest> findByAppointmentDate(LocalDate appointmentDate);
 
     List<CarServiceRequest> findAllByOrderByIdDesc();

@@ -1,7 +1,6 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
-import org.example.tears.InpDTO.LocationDto;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -25,6 +24,10 @@ public class RequestHistoryDto {
     private Boolean reviewed;
 
     private String status;
+
+    private Boolean warrantyRequest;
+    private String warrantyStatus;
+
 
     private String customerStatus;
 

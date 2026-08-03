@@ -18,7 +18,10 @@ import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +37,7 @@ public class CarServiceRequestService {
     private final RequestImageRepository imageRepo;
     private final PricingCalculationService pricingCalculationService;
     private final RequestReviewRepository reviewRepository;
+    private final WarrantyRepository warrantyRequestRepository;
     private final SocketService socketService;
 
 
@@ -233,7 +237,7 @@ public class CarServiceRequestService {
     public List<CurrentRequestDto> getCurrentRequests(Integer customerId) {
 
         return requestRepository
-                .findByCustomerIdAndCustomerStatusNotInOrderByIdDesc(
+                .findByCustomerIdAndCustomerStatusNotInOrderByCreatedAtDesc(
                         customerId,
                         List.of(
                                 CustomerRequestStatus.DELIVERED,
@@ -247,15 +251,29 @@ public class CarServiceRequestService {
 
     public List<RequestHistoryDto> getPastRequests(Integer customerId) {
 
-        return requestRepository
-                .findByCustomerIdAndCustomerStatusInOrderByIdDesc(
-                        customerId,
-                        List.of(
-                                CustomerRequestStatus.DELIVERED,
-                                CustomerRequestStatus.CANCELED
-                        )
-                )
-                .stream()
+        List<CarServiceRequest> requests =
+                requestRepository
+                        .findByCustomerIdAndCustomerStatusInOrderByCreatedAtDesc(
+                                customerId,
+                                List.of(
+                                        CustomerRequestStatus.DELIVERED,
+                                        CustomerRequestStatus.CANCELED
+                                )
+                        );
+
+        Set<Integer> warrantyIds =
+                warrantyRequestRepository.findByCustomer_Id(customerId)
+                        .stream()
+                        .map(w -> w.getRequest().getId())
+                        .collect(Collectors.toSet());
+
+        requests.sort(
+                Comparator
+                        .comparing((CarServiceRequest r) -> !warrantyIds.contains(r.getId()))
+                        .thenComparing(CarServiceRequest::getCreatedAt, Comparator.reverseOrder())
+        );
+
+        return requests.stream()
                 .map(this::toHistoryDto)
                 .toList();
     }
@@ -296,6 +314,14 @@ public class CarServiceRequestService {
 
         RequestHistoryDto dto = new RequestHistoryDto();
 
+        Optional<WarrantyRequest> warranty =
+                warrantyRequestRepository.findByRequestId(req.getId());
+
+        dto.setWarrantyRequest(warranty.isPresent());
+
+        dto.setWarrantyStatus(
+                warranty.map(w -> w.getStatus().name()).orElse(null)
+        );
         dto.setId(req.getId());
         dto.setOrderNumber(req.getOrderNumber());
 
@@ -341,19 +367,29 @@ public class CarServiceRequestService {
         dto.setOrderNumber(r.getOrderNumber());
 
 
-        dto.setWarrantyEligible(
+        boolean warrantyRequestExists =
+                warrantyRequestRepository.existsByRequestId(r.getId());
 
-                r.getDeliveredAt() != null
+        dto.setWarrantyRequest(warrantyRequestExists);
 
-                        && LocalDateTime.now()
-                        .isBefore(r.getDeliveredAt().plusDays(30))
-
-        );
 
         dto.setStatus(
                 r.getCustomerStatus() != null
                         ? r.getCustomerStatus().name()
                         : "REQUEST_CREATED"
+        );
+
+        WarrantyStatus warrantyStatus = null;
+
+        Optional<WarrantyRequest> warranty =
+                warrantyRequestRepository.findByRequestId(r.getId());
+
+        if (warranty.isPresent()) {
+            warrantyStatus = warranty.get().getStatus();
+        }
+
+        dto.setWarrantyStatus(
+                warrantyStatus != null ? warrantyStatus.name() : null
         );
 
         dto.setTotalPrice(

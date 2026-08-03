@@ -19,7 +19,8 @@ public class RequestResponseDto {
 
         private String status;
 
-        private Boolean warrantyEligible;
+        private Boolean warrantyRequest;
+        private String warrantyStatus;
 
         private Double totalPrice;
 
