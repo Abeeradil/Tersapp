@@ -150,16 +150,14 @@ public class AppointmentService {
         LocalDate start = LocalDate.now();
 
         for (int i = 0; i < 10; i++) {
-
-            result.add(
-                    getAvailability(start.plusDays(i))
-            );
-
+            result.add(getAvailability(start.plusDays(i)));
         }
+
         socketService.send(
                 "/topic/availability",
-                getAllAvailability()
+                result
         );
+
         return result;
     }
 
