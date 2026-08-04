@@ -86,7 +86,7 @@ public class WarrantyService {
         );
 
         List<User> admins =
-                userRepo.findByUserRoll(UserRole.ADMIN);
+                userRepo.findByRole(UserRole.ADMIN);
 
         for (User admin : admins) {
 
