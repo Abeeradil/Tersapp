@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
     private final RequestPricingService requestPricingService;
     private final LocationRepository locationRepository;
     private final SocketService socketService;
-    private final CarServiceRequestService carServiceRequestService;
 
 
 
@@ -257,16 +256,12 @@ import java.util.stream.Collectors;
 
         approval.setApproved(null);
         approval.setDecisionAt(null);
-
         approvalRepo.save(approval);
 
         RequestReport oldReport =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
                         .orElseThrow(() ->
                                 new ApiException("التقرير غير موجود"));
-
-        List<RequestPart> reportParts =
-                partRepo.findByReport_Id(oldReport.getId());
 
         Map<Integer, CustomerPartDto> selectedParts =
                 dto.getParts()
@@ -276,21 +271,21 @@ import java.util.stream.Collectors;
                                 Function.identity()
                         ));
 
-        int totalPartsPrice = 0;
-        int totalLabor = 0;
-
         List<RequestPart> requestParts =
                 partRepo.findByRequestId(requestId);
+
+        int totalPartsPrice = 0;
+        int totalLabor = 0;
 
         for (RequestPart requestPart : requestParts) {
 
             CustomerPartDto selected =
                     selectedParts.get(requestPart.getId());
 
+            // العميل حذف القطعة
             if (selected == null || selected.getQuantity() <= 0) {
 
                 partRepo.delete(requestPart);
-
                 continue;
             }
 
@@ -310,7 +305,7 @@ import java.util.stream.Collectors;
             partRepo.save(requestPart);
 
             totalPartsPrice +=
-                    requestPart.getFinalPrice() * selected.getQuantity();
+                    requestPart.getFinalPrice() * requestPart.getQuantity();
 
             totalLabor +=
                     requestPart.getLaborCost();
@@ -319,31 +314,23 @@ import java.util.stream.Collectors;
         request.setFinalPrice(totalPartsPrice + totalLabor);
 
         request.setPricingStatus(PricingStatus.PRICED);
-
         request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
-
         request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
-
         request.setCurrentEmployee(request.getAssignedEmployee());
-
         request.setLastUpdated(LocalDateTime.now());
 
-        oldReport.setLatest(false);
+        requestRepo.save(request);
 
+        oldReport.setLatest(false);
         reportRepo.save(oldReport);
 
         RequestReport newReport = new RequestReport();
 
         newReport.setRequest(request);
-
         newReport.setCreatedBy(request.getAssignedPricingEmployee());
-
         newReport.setCreatedAt(LocalDateTime.now());
-
         newReport.setVersion(oldReport.getVersion() + 1);
-
         newReport.setLatest(true);
-
         newReport.setSent(true);
 
         reportRepo.save(newReport);
@@ -359,17 +346,16 @@ import java.util.stream.Collectors;
                 newReport
         );
 
-        requestRepo.save(request);
-
-        socketService.send(
-                "/topic/current-orders/" +
-                        request.getCustomer().getUser().getId(),
-                carServiceRequestService.toCurrentDto(request)
-        );
-
+        // إشعار للعميل
         notificationService.send(
                 request.getCustomer().getUser(),
                 "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى."
+        );
+
+        // تحديث مباشر للواجهة
+        socketService.send(
+                "/topic/report/" + requestId,
+                getReport(requestId, request.getCustomer())
         );
     }
 
