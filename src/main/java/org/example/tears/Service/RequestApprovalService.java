@@ -15,6 +15,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
     @RequiredArgsConstructor
@@ -27,6 +30,8 @@ import java.util.List;
         private final NotificationService notificationService;
     private final RequestPricingService requestPricingService;
     private final LocationRepository locationRepository;
+    private final SocketService socketService;
+    private final CarServiceRequestService carServiceRequestService;
 
 
 
@@ -230,7 +235,7 @@ import java.util.List;
     public void requestModification(
             Integer requestId,
             CustomerModifyReportDto dto
-    ){
+    ) {
 
         CarServiceRequest request =
                 requestRepo.findById(requestId)
@@ -242,52 +247,73 @@ import java.util.List;
                         .orElseThrow(() ->
                                 new ApiException("لا يوجد تقرير"));
 
-        approval.setApproved(false);
-        approval.setCustomerNote(dto.getNote());
-        approval.setDecisionAt(LocalDateTime.now());
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تم اعتماد التقرير");
+        }
+
+        if (Boolean.FALSE.equals(approval.getApproved())) {
+            throw new ApiException("تم رفض التقرير");
+        }
+
+        approval.setApproved(null);
+        approval.setDecisionAt(null);
 
         approvalRepo.save(approval);
+
+        RequestReport oldReport =
+                reportRepo.findByRequest_IdAndLatestTrue(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("التقرير غير موجود"));
+
+        List<RequestPart> reportParts =
+                partRepo.findByReport_Id(oldReport.getId());
+
+        Map<Integer, CustomerPartDto> selectedParts =
+                dto.getParts()
+                        .stream()
+                        .collect(Collectors.toMap(
+                                CustomerPartDto::getPartId,
+                                Function.identity()
+                        ));
 
         int totalPartsPrice = 0;
         int totalLabor = 0;
 
-        for (CustomerPartDto item : dto.getParts()) {
+        List<RequestPart> requestParts =
+                partRepo.findByRequestId(requestId);
 
-            RequestPart part =
-                    partRepo.findById(item.getPartId())
-                            .orElseThrow(() ->
-                                    new ApiException("القطعة غير موجودة"));
+        for (RequestPart requestPart : requestParts) {
 
-            if (!part.getRequest().getId().equals(requestId)) {
-                throw new ApiException("القطعة لا تتبع هذا الطلب");
+            CustomerPartDto selected =
+                    selectedParts.get(requestPart.getId());
+
+            if (selected == null || selected.getQuantity() <= 0) {
+
+                partRepo.delete(requestPart);
+
+                continue;
             }
 
-            int oldQty = part.getQuantity();
-
-            int newQty = item.getQuantity();
-
-            if (newQty < 0) {
-                throw new ApiException("الكمية غير صحيحة");
-            }
-
-            int oldLabor =
-                    part.getLaborCost() == null ? 0 : part.getLaborCost();
+            int oldQty = requestPart.getQuantity();
 
             int laborPerPiece =
-                    oldQty == 0 ? 0 : oldLabor / oldQty;
+                    oldQty == 0
+                            ? 0
+                            : requestPart.getLaborCost() / oldQty;
 
-            part.setQuantity(newQty);
+            requestPart.setQuantity(selected.getQuantity());
 
-            part.setLaborCost(laborPerPiece * newQty);
+            requestPart.setLaborCost(
+                    laborPerPiece * selected.getQuantity()
+            );
 
-            partRepo.save(part);
+            partRepo.save(requestPart);
 
-            int unitPrice =
-                    part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+            totalPartsPrice +=
+                    requestPart.getFinalPrice() * selected.getQuantity();
 
-            totalPartsPrice += unitPrice * newQty;
-
-            totalLabor += part.getLaborCost();
+            totalLabor +=
+                    requestPart.getLaborCost();
         }
 
         request.setFinalPrice(totalPartsPrice + totalLabor);
@@ -302,44 +328,51 @@ import java.util.List;
 
         request.setLastUpdated(LocalDateTime.now());
 
-        RequestReport oldReport =
-                reportRepo.findByRequest_IdAndLatestTrue(requestId)
-                        .orElse(null);
+        oldReport.setLatest(false);
 
-        int version = 1;
+        reportRepo.save(oldReport);
 
-        if (oldReport != null) {
+        RequestReport newReport = new RequestReport();
 
-            oldReport.setLatest(false);
+        newReport.setRequest(request);
 
-            reportRepo.save(oldReport);
+        newReport.setCreatedBy(request.getAssignedPricingEmployee());
 
-            version = oldReport.getVersion() + 1;
-        }
+        newReport.setCreatedAt(LocalDateTime.now());
 
-        RequestReport report = new RequestReport();
+        newReport.setVersion(oldReport.getVersion() + 1);
 
-        report.setRequest(request);
+        newReport.setLatest(true);
 
-        report.setCreatedBy(request.getAssignedPricingEmployee());
+        newReport.setSent(true);
 
-        report.setCreatedAt(LocalDateTime.now());
+        reportRepo.save(newReport);
 
-        report.setVersion(version);
+        newReport.setReportNumber(
+                "PR-" + String.format("%06d", newReport.getId())
+        );
 
-        report.setLatest(true);
+        reportRepo.save(newReport);
 
-        report.setSent(true);
-
-        reportRepo.save(report);
+        requestPricingService.clonePartsToReport(
+                request,
+                newReport
+        );
 
         requestRepo.save(request);
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        request.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
 
         notificationService.send(
                 request.getCustomer().getUser(),
                 "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى."
         );
     }
+
 
     @Transactional
     public void chooseDelivery(

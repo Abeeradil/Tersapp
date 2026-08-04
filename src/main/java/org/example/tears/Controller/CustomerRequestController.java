@@ -114,13 +114,11 @@ import java.util.List;
     @PutMapping("/{requestId}/modify")
     public ApiResponse modifyReport(
             @PathVariable Integer requestId,
-            @RequestBody CustomerModifyReportDto dto
-    ) {
+            @RequestBody CustomerModifyReportDto dto) {
 
         requestApprovalService.requestModification(
                 requestId,
-                dto
-        );
+                dto);
 
         return new ApiResponse(
                 true,

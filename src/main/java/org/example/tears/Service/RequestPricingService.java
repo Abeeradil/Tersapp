@@ -476,7 +476,7 @@ public class RequestPricingService {
         return dto;
     }
 
-    private void clonePartsToReport(
+    public void clonePartsToReport(
             CarServiceRequest request,
             RequestReport report
     ) {

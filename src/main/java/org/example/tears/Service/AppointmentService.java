@@ -20,7 +20,7 @@ import java.util.Map;
 public class AppointmentService {
 
     private final CarServiceRequestRepository requestRepository;
-    private final SocketService socketService;
+    //private final SocketService socketService;
     private final PaymentIntentRepository paymentIntentRepository;
 
     private static final List<LocalTime> AVAILABLE_TIMES =
@@ -149,7 +149,7 @@ public class AppointmentService {
         List<Map<String, Object>> result = new ArrayList<>();
         LocalDate start = LocalDate.now();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 15; i++) {
             result.add(getAvailability(start.plusDays(i)));
         }
 

@@ -9,6 +9,4 @@ public class CustomerModifyReportDto {
 
     private List<CustomerPartDto> parts;
 
-    private String note;
-
 }
