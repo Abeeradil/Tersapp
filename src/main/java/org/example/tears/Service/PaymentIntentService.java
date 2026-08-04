@@ -932,10 +932,7 @@ public class PaymentIntentService {
 
         return requestRepository.save(saved);
 
-        socketService.send(
-                "/topic/availability",
-                appointmentService.getAllAvailability()
-        );
+
 
     }
 
