@@ -133,8 +133,11 @@ public class AppointmentService {
                 .filter(s -> s.getStatus() == AppointmentSlotStatus.BOOKED)
                 .count();
 
+        boolean fullBooked = available == 0;
+
         return Map.of(
                 "date", date,
+                "fullBooked", fullBooked,
                 "summary", Map.of(
                         "available", available,
                         "pending", pending,
