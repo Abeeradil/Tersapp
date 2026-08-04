@@ -321,8 +321,6 @@ import java.util.stream.Collectors;
 
         requestRepo.save(request);
 
-        oldReport.setLatest(false);
-        reportRepo.save(oldReport);
 
         RequestReport newReport = new RequestReport();
 
@@ -330,8 +328,7 @@ import java.util.stream.Collectors;
         newReport.setCreatedBy(request.getAssignedPricingEmployee());
         newReport.setCreatedAt(LocalDateTime.now());
         newReport.setVersion(oldReport.getVersion() + 1);
-        newReport.setLatest(true);
-        newReport.setSent(true);
+        newReport.setLatest(false);
 
         reportRepo.save(newReport);
 
