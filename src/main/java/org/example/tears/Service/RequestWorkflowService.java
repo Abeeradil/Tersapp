@@ -1,6 +1,5 @@
 package org.example.tears.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
@@ -29,6 +28,7 @@ public class RequestWorkflowService {
     private final NotificationService notificationService;
     private final RequestImageRepository imageRepo;
     private final FileStorageService fileStorageService;
+    private final WarrantyRepository warrantyRepo;
 
 
     @Transactional
@@ -83,9 +83,28 @@ public class RequestWorkflowService {
             throw new ApiException("يجب إضافة ملاحظة لهذه الحالة");
         }
 
+        boolean isWarranty =
+                warrantyRepo.existsByRequestIdAndStatus(
+                        req.getId(),
+                        WarrantyStatus.APPROVED
+                );
+
+        boolean hasOpenWarranty = warrantyRepo
+                .findByRequestId(requestId)
+                .stream()
+                .anyMatch(w ->
+                        w.getStatus() != WarrantyStatus.REJECTED &&
+                                w.getStatus() != WarrantyStatus.DELIVERED
+                );
+
+        if (hasOpenWarranty) {
+            throw new ApiException("يوجد طلب ضمان قائم لهذا الطلب");
+        }
+
         validateStatusTransition(
                 req.getStaffStatus(),
-                status
+                status,
+                isWarranty
         );
 
         if (status == StaffRequestStatus.DELIVERED &&
@@ -170,9 +189,45 @@ public class RequestWorkflowService {
 
     private void validateStatusTransition(
             StaffRequestStatus current,
-            StaffRequestStatus next
+            StaffRequestStatus next,
+            boolean warranty
     ) {
 
+        if (warranty) {
+
+            switch (current) {
+
+                case NEW -> {
+                    if (next != StaffRequestStatus.RECEIVED)
+                        throw new ApiException("انتقال غير صحيح");
+                }
+
+                case RECEIVED -> {
+                    if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
+                        throw new ApiException("انتقال غير صحيح");
+                }
+
+                case INSPECTION_IN_PROGRESS -> {
+                    if (next != StaffRequestStatus.TESTING)
+                        throw new ApiException("انتقال غير صحيح");
+                }
+
+                case TESTING -> {
+                    if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS)
+                        throw new ApiException("انتقال غير صحيح");
+                }
+
+                case DELIVERY_IN_PROGRESS -> {
+                    if (next != StaffRequestStatus.DELIVERED)
+                        throw new ApiException("انتقال غير صحيح");
+                }
+
+                default ->
+                        throw new ApiException("لا يمكن تحديث هذه الحالة");
+            }
+
+            return;
+        }
 
         switch (current) {
 
@@ -218,7 +273,7 @@ public class RequestWorkflowService {
             }
 
             default ->
-                    throw new ApiException("لا يمكن تحديث هذه الحالة من هنا");
+                    throw new ApiException("لا يمكن تحديث هذه الحالة");
         }
     }
 

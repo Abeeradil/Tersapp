@@ -12,6 +12,7 @@ public enum WarrantyStatus {
     REPAIRING,
     TESTING,
     READY,
+    IN_PROGRESS,
     DELIVERED
 
 }

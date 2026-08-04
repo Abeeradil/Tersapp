@@ -574,8 +574,6 @@ public class PaymentIntentService {
 
             request.setFinalPaid(true);
 
-            request.setPaymentReady(false);
-
             request.setFinalTransactionId(paymentId);
 
             request.setNextPaymentMethod(intent.getPaymentMethod());

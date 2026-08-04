@@ -197,7 +197,5 @@ public class CarServiceRequest {
     private LocalTime deliveryTime;
 
     private Boolean customerSelectedDelivery = false;
-
-    private Boolean paymentReady = false;
-
+    
         }
