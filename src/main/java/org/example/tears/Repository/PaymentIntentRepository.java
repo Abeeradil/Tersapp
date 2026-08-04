@@ -26,6 +26,11 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, In
             LocalDateTime now
     );
 
+    Optional<PaymentIntent> findByServiceRequestIdAndType(
+            Integer serviceRequestId,
+            PaymentIntentType type
+    );
+
     boolean existsByAppointmentDateAndAppointmentTimeAndPaymentStatusInAndExpiresAtAfter(
             LocalDate date,
             LocalTime time,

@@ -965,6 +965,35 @@ public class PaymentIntentService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
+        PaymentIntent existingIntent =
+                paymentIntentRepository.findByServiceRequestIdAndType(
+                        request.getId(),
+                        PaymentIntentType.FINAL_PAYMENT
+                ).orElse(null);
+
+        if (existingIntent != null) {
+
+            if (existingIntent.getPaymentStatus() == PaymentStatus.PAID) {
+                throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
+            }
+
+            if (existingIntent.getExpiresAt() != null
+                    && existingIntent.getExpiresAt().isAfter(LocalDateTime.now())
+                    && (existingIntent.getPaymentStatus() == PaymentStatus.INITIATED
+                    || existingIntent.getPaymentStatus() == PaymentStatus.PENDING)) {
+
+                return new FinalMobilePaymentResponse(
+                        existingIntent.getId(),
+                        existingIntent.getGivenId(),
+                        existingIntent.getInitialPaymentAmountHalalah(),
+                        "SAR",
+                        "PREPARED"
+                );
+            }
+
+            paymentIntentRepository.delete(existingIntent);
+        }
+
         if (!request.getCustomer().getId()
                 .equals(user.getCustomer().getId())) {
 
