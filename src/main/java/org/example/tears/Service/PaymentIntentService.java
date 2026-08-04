@@ -43,7 +43,6 @@ public class PaymentIntentService {
 
 
     private final RestTemplate restTemplate = new RestTemplate();
-    private final AppointmentService appointmentService;
 
     @Value("${MOYASAR_SECRET_KEY}")
     private String secretKey;
@@ -963,6 +962,10 @@ public class PaymentIntentService {
             throw new ApiException("غير مصرح لك");
         }
 
+        if (!Boolean.TRUE.equals(request.getPaymentReady())) {
+            throw new ApiException("يجب الموافقة على التقرير أولاً");
+        }
+
 
         if (request.isFinalPaid()) {
             throw new ApiException("تم الدفع مسبقاً");
@@ -1150,6 +1153,7 @@ public class PaymentIntentService {
 
         // تحديث الطلب
         request.setFinalPaid(true);
+        request.setPaymentReady(false);
 
         request.setFinalTransactionId(
                 dto.getPaymentId()

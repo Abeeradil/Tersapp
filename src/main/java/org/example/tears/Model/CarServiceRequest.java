@@ -198,4 +198,6 @@ public class CarServiceRequest {
 
     private Boolean customerSelectedDelivery = false;
 
+    private Boolean paymentReady = false;
+
         }

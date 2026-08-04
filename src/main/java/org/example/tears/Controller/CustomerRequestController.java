@@ -99,15 +99,36 @@ import java.util.List;
             );
         }
 
-    @PutMapping("/{requestId}/reject")
-    public ApiResponse rejectReport(
-            @PathVariable Integer requestId) {
+//    @PutMapping("/{requestId}/reject")
+//    public ApiResponse oldrejectReport(
+//            @PathVariable Integer requestId) {
+//
+//        requestApprovalService.reject(requestId);
+//
+//        return new ApiResponse(
+//                true,
+//                "تم رفض التقرير"
+//        );
+//    }
 
-        requestApprovalService.reject(requestId);
+    @PutMapping("/{requestId}/reject")
+    public ApiResponse reject(
+            @PathVariable Integer requestId,
+            @RequestBody DeliveryRequestDto dto,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        requestApprovalService.reject(
+                requestId,
+                dto,
+                user.getCustomer()
+        );
 
         return new ApiResponse(
                 true,
-                "تم رفض التقرير"
+                "تم رفض التقرير وتحديد موعد الاستلام"
         );
     }
 

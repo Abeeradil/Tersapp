@@ -175,6 +175,7 @@ import java.util.stream.Collectors;
 
         CarServiceRequest request = approval.getRequest();
 
+        request.setPaymentReady(true);
         request.setPaymentStatus(PaymentStatus.PENDING);
         request.setCustomerStatus(
                 CustomerRequestStatus.WAITING_APPROVAL
@@ -182,6 +183,7 @@ import java.util.stream.Collectors;
 
         request.setLastUpdated(LocalDateTime.now());
         request.setCustomerSelectedDelivery(false);
+
 
         requestRepo.save(request);
 
@@ -199,7 +201,7 @@ import java.util.stream.Collectors;
     }
 
 
-    public void reject(Integer requestId) {
+    public void oldreject(Integer requestId) {
 
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(requestId)
@@ -226,6 +228,70 @@ import java.util.stream.Collectors;
                 "رفض العميل تقرير التسعير للطلب #" +
                         request.getOrderNumber() +
                         "، يرجى تجهيز السيارة للتسليم."
+        );
+    }
+
+    @Transactional
+    public void reject(
+            Integer requestId,
+            DeliveryRequestDto dto,
+            Customer customer
+    ) {
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (!request.getCustomer().getId().equals(customer.getId())) {
+            throw new ApiException("غير مصرح لك");
+        }
+
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير"));
+
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تمت معالجة التقرير مسبقاً");
+        }
+
+        approval.setApproved(false);
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
+
+        if (dto.getDeliveryDate().isBefore(LocalDate.now())) {
+            throw new ApiException("لا يمكن اختيار تاريخ سابق");
+        }
+
+        if (dto.getDeliveryDate().getDayOfWeek() == DayOfWeek.FRIDAY) {
+            throw new ApiException("لا يمكن اختيار يوم الجمعة");
+        }
+
+        Location location =
+                locationRepository.findById(dto.getLocationId())
+                        .orElseThrow(() ->
+                                new ApiException("الموقع غير موجود"));
+
+        request.setDeliveryLocation(location);
+        request.setDeliveryDate(dto.getDeliveryDate());
+        request.setDeliveryTime(dto.getDeliveryTime());
+
+        request.setCustomerSelectedDelivery(true);
+
+        request.setCustomerStatus(CustomerRequestStatus.READY_FOR_DELIVERY);
+
+        request.setStaffStatus(StaffRequestStatus.DELIVERY_IN_PROGRESS);
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepo.save(request);
+
+        notificationService.send(
+                request.getAssignedEmployee().getUser(),
+                "رفض العميل تقرير التسعير وحدد موعد استلام السيارة للطلب #"
+                        + request.getOrderNumber()
         );
     }
 
