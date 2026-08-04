@@ -56,7 +56,6 @@ public class CarServiceRequestController {
 
     @GetMapping("/availability/all")
     public ResponseEntity<?> getAllAvailability() {
-
         return ResponseEntity.ok(
                 appointmentService.getAllAvailability()
         );

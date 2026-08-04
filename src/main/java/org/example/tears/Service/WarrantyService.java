@@ -3,11 +3,9 @@ package org.example.tears.Service;
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.WarrantyDetailsDto;
-import org.example.tears.DTO.WarrantyListDto;
 import org.example.tears.DTO.WarrantyRequestDto;
 import org.example.tears.DTO.WarrantyResponseDto;
-import org.example.tears.Enums.WarrantyProblemType;
-import org.example.tears.Enums.WarrantyStatus;
+import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
@@ -28,6 +26,8 @@ public class WarrantyService {
     private final WarrantyImageRepository warrantyImageRepo;
     private final WarrantyStatusHistoryRepository historyRepo;
     private final NotificationService notificationService;
+    private final EmployeeRepository employeeRepo;
+    private final UserRepository userRepo;
 
 
     @Transactional
@@ -47,6 +47,19 @@ public class WarrantyService {
             throw new ApiException("غير مصرح لك");
         }
 
+        if(request.getDeliveredAt()==null
+                || LocalDateTime.now().isAfter(request.getDeliveredAt().plusDays(30))){
+            throw new ApiException("انتهت فترة الضمان");
+        }
+
+        if(request.getCustomerStatus()!= CustomerRequestStatus.DELIVERED){
+            throw new ApiException("لا يمكن إنشاء طلب ضمان");
+        }
+
+        if (warrantyRepo.existsByRequestId(requestId)) {
+            throw new ApiException("تم إنشاء طلب ضمان مسبقاً");
+        }
+
         WarrantyRequest warranty = new WarrantyRequest();
 
         warranty.setRequest(request);
@@ -62,6 +75,26 @@ public class WarrantyService {
         warranty.setUpdatedAt(LocalDateTime.now());
 
         warrantyRepo.save(warranty);
+
+        String message =
+                "يوجد طلب ضمان جديد للطلب #"
+                        + request.getOrderNumber();
+
+        notifyEmployees(
+                EmployeeRole.SUPPORT,
+                message
+        );
+
+        List<User> admins =
+                userRepo.findByUserRoll(UserRole.ADMIN);
+
+        for (User admin : admins) {
+
+            notificationService.send(
+                    admin,
+                    message
+            );
+        }
 
         saveImages(warranty, images);
 
@@ -111,48 +144,7 @@ public class WarrantyService {
         historyRepo.save(history);
     }
 
-    @Transactional(readOnly = true)
-    public List<WarrantyListDto> getMyWarrantyRequests(
-            Customer customer
-    ) {
 
-        List<WarrantyRequest> warranties =
-                warrantyRepo.findByCustomer_IdOrderByCreatedAtDesc(
-                        customer.getId()
-                );
-
-        List<WarrantyListDto> list = new ArrayList<>();
-
-        for (WarrantyRequest warranty : warranties) {
-
-            WarrantyListDto dto =
-                    new WarrantyListDto();
-
-            dto.setId(
-                    warranty.getId()
-            );
-
-            dto.setOrderNumber(
-                    warranty.getRequest().getOrderNumber()
-            );
-
-            dto.setProblemType(
-                    warranty.getProblemType()
-            );
-
-            dto.setStatus(
-                    warranty.getStatus()
-            );
-
-            dto.setCreatedAt(
-                    warranty.getCreatedAt()
-            );
-
-            list.add(dto);
-        }
-
-        return list;
-    }
 
     @Transactional(readOnly = true)
     public List<WarrantyResponseDto> getCustomerWarrantyRequests(
@@ -222,19 +214,39 @@ public class WarrantyService {
             throw new ApiException("تمت معالجة الطلب مسبقاً");
         }
 
+
         warranty.setStatus(WarrantyStatus.APPROVED);
 
         warranty.setApprovedBy(employee);
         warranty.setApprovedAt(LocalDateTime.now());
+        warranty.setUpdatedAt(LocalDateTime.now());
+
+        saveHistory(
+                warranty,
+                WarrantyStatus.APPROVED
+        );
 
         warrantyRepo.save(warranty);
+
+        if (warranty.getRequest().getCurrentEmployee() != null) {
+
+            notificationService.send(
+                    warranty.getRequest()
+                            .getCurrentEmployee()
+                            .getUser(),
+                    "تمت الموافقة على طلب ضمان للطلب #"
+                            + warranty.getRequest().getOrderNumber()
+            );
+        }
 
         notificationService.send(
                 warranty.getRequest()
                         .getCustomer()
                         .getUser(),
-                "تمت الموافقة على طلب الضمان"
+                "تمت الموافقة على طلب الضمان للطلب #"
+                        + warranty.getRequest().getOrderNumber()
         );
+
     }
 
     @Transactional
@@ -260,15 +272,34 @@ public class WarrantyService {
         warranty.setApprovedAt(LocalDateTime.now());
 
         warranty.setRejectReason(reason);
-
+        saveHistory(
+                warranty,
+                WarrantyStatus.REJECTED
+        );
         warrantyRepo.save(warranty);
 
         notificationService.send(
                 warranty.getRequest()
                         .getCustomer()
                         .getUser(),
-                "تم رفض طلب الضمان"
+                "تم رفض طلب الضمان للطلب #"
+                        + warranty.getRequest().getOrderNumber()
+                        + "\nالسبب: " + reason
         );
+
+    }
+
+    private void notifyEmployees(EmployeeRole role, String message) {
+
+        List<Employee> employees =
+                employeeRepo.findByEmployeeRole(role);
+
+        for (Employee employee : employees) {
+            notificationService.send(
+                    employee.getUser(),
+                    message
+            );
+        }
     }
 
 

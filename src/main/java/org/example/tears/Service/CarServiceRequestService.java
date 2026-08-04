@@ -716,6 +716,10 @@ public class CarServiceRequestService {
                 "/topic/past-orders/" + req.getCustomer().getUser().getId(),
                 toHistoryDto(req)
         );
+        socketService.send(
+                "/topic/availability",
+                appointmentService.getAllAvailability()
+        );
     }
 
 

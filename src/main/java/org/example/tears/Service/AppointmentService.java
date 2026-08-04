@@ -153,11 +153,6 @@ public class AppointmentService {
             result.add(getAvailability(start.plusDays(i)));
         }
 
-        socketService.send(
-                "/topic/availability",
-                result
-        );
-
         return result;
     }
 

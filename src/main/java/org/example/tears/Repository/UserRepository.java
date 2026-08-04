@@ -1,6 +1,9 @@
 package org.example.tears.Repository;
 
+import org.example.tears.Enums.EmployeeRole;
+import org.example.tears.Enums.UserRole;
 import org.example.tears.Model.Car;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,6 +16,9 @@ public interface UserRepository extends JpaRepository<User,Integer> {
     Optional<User> findByPhoneNumber(String phone);
 
     Optional<User> findByEmailOrPhoneNumber(String email, String phoneNumber);
+
+    List<User> findByUserRoll(UserRole userRole);
+
 
     boolean existsByPhoneNumber(String phone);
 

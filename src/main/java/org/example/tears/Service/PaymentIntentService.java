@@ -43,6 +43,7 @@ public class PaymentIntentService {
 
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final AppointmentService appointmentService;
 
     @Value("${MOYASAR_SECRET_KEY}")
     private String secretKey;
@@ -930,6 +931,12 @@ public class PaymentIntentService {
         );
 
         return requestRepository.save(saved);
+
+        socketService.send(
+                "/topic/availability",
+                appointmentService.getAllAvailability()
+        );
+
     }
 
     @Bean
