@@ -147,10 +147,9 @@ public class AppointmentService {
     public List<Map<String, Object>> getAllAvailability() {
 
         List<Map<String, Object>> result = new ArrayList<>();
-
         LocalDate start = LocalDate.now();
 
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 10; i++) {
 
             result.add(
                     getAvailability(start.plusDays(i))
