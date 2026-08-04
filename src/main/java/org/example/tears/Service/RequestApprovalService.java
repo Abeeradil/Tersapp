@@ -155,50 +155,7 @@ import java.util.stream.Collectors;
 
 
 
-    @Transactional
-    public void approve(Integer requestId, String note) {
 
-        RequestApproval approval =
-                approvalRepo.findByRequest_Id(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("لا يوجد تقرير للموافقة"));
-
-        if (Boolean.TRUE.equals(approval.getApproved())) {
-            throw new ApiException("تمت الموافقة مسبقاً");
-        }
-
-        approval.setDecisionAt(LocalDateTime.now());
-        approval.setCustomerNote(note);
-
-        approvalRepo.save(approval);
-
-
-        CarServiceRequest request = approval.getRequest();
-
-        request.setPaymentReady(true);
-        request.setPaymentStatus(PaymentStatus.PENDING);
-        request.setCustomerStatus(
-                CustomerRequestStatus.WAITING_APPROVAL
-        );
-
-        request.setLastUpdated(LocalDateTime.now());
-        request.setCustomerSelectedDelivery(false);
-
-
-        requestRepo.save(request);
-
-        notificationService.send(
-                request.getCustomer().getUser(),
-                "تمت الموافقة على التقرير، يمكنك الآن إتمام الدفع."
-        );
-
-        notificationService.send(
-                request.getAssignedEmployee().getUser(),
-                "وافق العميل على تقرير التسعير للطلب #"
-                        + request.getOrderNumber()
-                        + " وبانتظار سداد الدفعة النهائية."
-        );
-    }
 
 
     public void oldreject(Integer requestId) {

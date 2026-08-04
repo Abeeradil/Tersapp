@@ -1,5 +1,6 @@
 package org.example.tears.Repository;
 
+import org.example.tears.Enums.PaymentIntentType;
 import org.example.tears.Enums.PaymentStatus;
 import org.example.tears.Model.PaymentIntent;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,6 +19,12 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, In
     );
     Optional<PaymentIntent> findByGivenId(String givenId);
 
+    Optional<PaymentIntent> findByServiceRequestIdAndTypeAndPaymentStatusInAndExpiresAtAfter(
+            Integer serviceRequestId,
+            PaymentIntentType type,
+            List<PaymentStatus> statuses,
+            LocalDateTime now
+    );
 
     boolean existsByAppointmentDateAndAppointmentTimeAndPaymentStatusInAndExpiresAtAfter(
             LocalDate date,

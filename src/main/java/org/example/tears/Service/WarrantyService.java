@@ -204,11 +204,15 @@ public class WarrantyService {
             Integer warrantyId,
             Employee employee
     ){
-
         WarrantyRequest warranty =
                 warrantyRepo.findById(warrantyId)
                         .orElseThrow(() ->
                                 new ApiException("طلب الضمان غير موجود"));
+
+        if (employee.getEmployeeRole() != EmployeeRole.SUPPORT
+                && employee.getUser().getRole() != UserRole.ADMIN) {
+            throw new ApiException("غير مصرح لك بمعالجة طلبات الضمان");
+        }
 
         if(warranty.getStatus()!=WarrantyStatus.PENDING_REVIEW){
             throw new ApiException("تمت معالجة الطلب مسبقاً");
@@ -226,13 +230,18 @@ public class WarrantyService {
                 WarrantyStatus.APPROVED
         );
 
+        Employee technician =
+                warranty.getRequest().getAssignedEmployee();
+
+        warranty.setAssignedEmployee(technician);
+
         warrantyRepo.save(warranty);
 
-        if (warranty.getRequest().getCurrentEmployee() != null) {
+        if (warranty.getRequest().getAssignedEmployee() != null) {
 
             notificationService.send(
                     warranty.getRequest()
-                            .getCurrentEmployee()
+                            .getAssignedEmployee()
                             .getUser(),
                     "تمت الموافقة على طلب ضمان للطلب #"
                             + warranty.getRequest().getOrderNumber()
@@ -261,6 +270,11 @@ public class WarrantyService {
                         .orElseThrow(() ->
                                 new ApiException("طلب الضمان غير موجود"));
 
+        if (employee.getEmployeeRole() != EmployeeRole.SUPPORT
+                && employee.getUser().getRole() != UserRole.ADMIN) {
+            throw new ApiException("غير مصرح لك بمعالجة طلبات الضمان");
+        }
+
         if(warranty.getStatus()!=WarrantyStatus.PENDING_REVIEW){
             throw new ApiException("تمت معالجة الطلب مسبقاً");
         }
@@ -276,6 +290,7 @@ public class WarrantyService {
                 warranty,
                 WarrantyStatus.REJECTED
         );
+        warranty.setUpdatedAt(LocalDateTime.now());
         warrantyRepo.save(warranty);
 
         notificationService.send(

@@ -73,19 +73,6 @@ import java.util.List;
     }
 
 
-        // الموافقة على التقرير
-        @PutMapping("/{requestId}/approve")
-        public ApiResponse approveReport(
-                @PathVariable Integer requestId,
-                @RequestParam(required = false) String note
-        ){
-            requestApprovalService.approve(requestId, note);
-
-            return new ApiResponse(
-                    true,
-                    "تمت الموافقة على التقرير"
-            );
-        }
 
         @PostMapping("/{requestId}/final-payment")
         public CheckoutResponse createFinalPayment(

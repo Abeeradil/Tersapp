@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -537,7 +538,8 @@ public class PaymentIntentService {
 
         return carServiceRequestService.toResponseDto(request);
     }
-// الدفع النهائي
+
+    // الدفع النهائي
     private RequestResponseDto completePayment(
             PaymentIntent intent,
             String paymentId
@@ -552,16 +554,13 @@ public class PaymentIntentService {
 
         CarServiceRequest request = intent.getServiceRequest();
 
-        // أول دفعة: إنشاء الطلب
         if (request == null) {
 
             request = createRequestFromIntent(intent);
 
             intent.setServiceRequest(request);
 
-        }
-        // دفعة نهائية: تحديث الطلب الموجود
-        else {
+        } else {
 
             RequestApproval approval =
                     approvalRepo.findByRequest_Id(request.getId())
@@ -574,45 +573,60 @@ public class PaymentIntentService {
             approvalRepo.save(approval);
 
             request.setFinalPaid(true);
+
+            request.setPaymentReady(false);
+
             request.setFinalTransactionId(paymentId);
 
             request.setNextPaymentMethod(intent.getPaymentMethod());
+
             request.setNextPaymentStatus(PaymentStatus.PAID);
 
             request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+
             request.setStaffStatus(StaffRequestStatus.REPAIRING);
+
             request.setStage(WorkflowStage.REPAIRING);
 
             request.setRepairAt(LocalDateTime.now());
+
             request.setLastUpdated(LocalDateTime.now());
 
             requestRepository.save(request);
+
             socketService.send(
-                    "/topic/current-orders/" + request.getCustomer().getUser().getId(),
+                    "/topic/current-orders/" +
+                            request.getCustomer().getUser().getId(),
                     carServiceRequestService.toCurrentDto(request)
+            );
+
+            if (request.getCurrentEmployee() != null) {
+
+                notificationService.send(
+                        request.getCurrentEmployee().getUser(),
+                        "تم دفع الدفعة النهائية للطلب #" +
+                                request.getOrderNumber()
+                );
+            }
+
+            notificationService.send(
+                    request.getCustomer().getUser(),
+                    "تم استلام الدفعة بنجاح، وتم تحويل الطلب إلى مرحلة الإصلاح."
             );
         }
 
-
         intent.setPaymentStatus(PaymentStatus.PAID);
+
         intent.setPaymentId(paymentId);
+
         intent.setPaidAt(LocalDateTime.now());
 
         paymentIntentRepository.save(intent);
 
-
-        if (request.getCurrentEmployee() != null) {
-
-            notificationService.send(
-                    request.getCurrentEmployee().getUser(),
-                    "تم دفع الدفعة النهائية للطلب #" +
-                            request.getOrderNumber()
-            );
-        }
-
-
         return carServiceRequestService.toResponseDto(request);
     }
+
+
      // انشاء دفعه داخل التطبيق
     @Transactional
     public MobilePaymentResponse prepareMobilePayment(
@@ -931,8 +945,6 @@ public class PaymentIntentService {
 
         return requestRepository.save(saved);
 
-
-
     }
 
     @Bean
@@ -955,22 +967,15 @@ public class PaymentIntentService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-
         if (!request.getCustomer().getId()
                 .equals(user.getCustomer().getId())) {
 
             throw new ApiException("غير مصرح لك");
         }
 
-        if (!Boolean.TRUE.equals(request.getPaymentReady())) {
-            throw new ApiException("يجب الموافقة على التقرير أولاً");
-        }
-
-
         if (request.isFinalPaid()) {
             throw new ApiException("تم الدفع مسبقاً");
         }
-
 
         if (request.getFinalPrice() == null ||
                 request.getFinalPrice() <= 0) {
@@ -978,69 +983,80 @@ public class PaymentIntentService {
             throw new ApiException("لا يوجد مبلغ للدفع");
         }
 
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير للموافقة"));
+
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تمت الموافقة على التقرير مسبقاً");
+        }
+
+        PaymentIntent oldIntent =
+                paymentIntentRepository
+                        .findByServiceRequestIdAndTypeAndPaymentStatusInAndExpiresAtAfter(
+                                request.getId(),
+                                PaymentIntentType.FINAL_PAYMENT,
+                                List.of(
+                                        PaymentStatus.INITIATED,
+                                        PaymentStatus.PENDING
+                                ),
+                                LocalDateTime.now()
+                        )
+                        .orElse(null);
+
+        if (oldIntent != null) {
+
+            return new FinalMobilePaymentResponse(
+
+                    oldIntent.getId(),
+
+                    oldIntent.getGivenId(),
+
+                    oldIntent.getInitialPaymentAmountHalalah(),
+
+                    "SAR",
+
+                    "PREPARED"
+            );
+        }
 
         PaymentIntent intent = new PaymentIntent();
 
-
         intent.setCustomer(user.getCustomer());
-
         intent.setServiceRequest(request);
-
-
-        intent.setPaymentMethod(
-                request.getPaymentMethod()
-        );
-
+        intent.setPaymentMethod(request.getPaymentMethod());
 
         intent.setInitialPaymentAmount(
                 request.getFinalPrice().doubleValue()
         );
 
-
-        int amount =
-                request.getFinalPrice() * 100;
-
+        int amount = request.getFinalPrice() * 100;
 
         intent.setInitialPaymentAmountHalalah(amount);
 
-
-        intent.setPaymentStatus(
-                PaymentStatus.INITIATED
-        );
-
+        intent.setPaymentStatus(PaymentStatus.INITIATED);
 
         intent.setCreatedAt(LocalDateTime.now());
+        intent.setExpiresAt(LocalDateTime.now().plusMinutes(5));
 
-        intent.setExpiresAt(
-                LocalDateTime.now().plusMinutes(5)
-        );
+        intent.setGivenId(UUID.randomUUID().toString());
 
-
-        String givenId =
-                UUID.randomUUID().toString();
-
-
-        intent.setGivenId(givenId);
         intent.setType(PaymentIntentType.FINAL_PAYMENT);
 
-
-
         paymentIntentRepository.save(intent);
-
-
 
         return new FinalMobilePaymentResponse(
 
                 intent.getId(),
 
-                givenId,
+                intent.getGivenId(),
 
                 amount,
 
                 "SAR",
 
                 "PREPARED"
-
         );
     }
 
@@ -1051,169 +1067,73 @@ public class PaymentIntentService {
     ) {
 
         PaymentIntent intent =
-                paymentIntentRepository.findById(
-                                dto.getPaymentAttemptId()
-                        )
+                paymentIntentRepository.findById(dto.getPaymentAttemptId())
                         .orElseThrow(() ->
                                 new ApiException("Payment attempt not found"));
-
 
         if (intent.getServiceRequest() == null) {
             throw new ApiException("Not a final payment");
         }
 
-
         if (intent.getPaymentStatus() == PaymentStatus.PAID) {
 
-            CarServiceRequest request =
-                    intent.getServiceRequest();
+            CarServiceRequest request = intent.getServiceRequest();
 
             return new ConfirmFinalMobilePaymentResponse(
-
                     request.getId(),
-
                     intent.getId(),
-
-                    dto.getPaymentId(),
-
+                    intent.getPaymentId(),
                     PaymentStatus.PAID.name(),
-
                     request.getCustomerStatus().name()
             );
         }
 
-
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(secretKey, "");
 
-
         ResponseEntity<Map> response =
                 restTemplate.exchange(
-                        "https://api.moyasar.com/v1/payments/"
-                                + dto.getPaymentId(),
+                        "https://api.moyasar.com/v1/payments/" + dto.getPaymentId(),
                         HttpMethod.GET,
                         new HttpEntity<>(headers),
                         Map.class
                 );
 
+        Map<String, Object> payment = response.getBody();
 
-        Map<String,Object> payment =
-                response.getBody();
-
-
-        if(payment == null)
+        if (payment == null) {
             throw new ApiException("Payment not found");
-
-
-        if(!"paid".equalsIgnoreCase(
-                payment.get("status").toString()
-        )){
-            throw new ApiException("Payment not completed");
         }
 
+        if (!"paid".equalsIgnoreCase(payment.get("status").toString())) {
+            throw new ApiException(
+                    "لم يتم إكمال عملية الدفع، يرجى المحاولة مرة أخرى."
+            );
+        }
 
         Integer amount =
-                ((Number) payment.get("amount"))
-                        .intValue();
+                ((Number) payment.get("amount")).intValue();
 
-
-        if(!amount.equals(
-                intent.getInitialPaymentAmountHalalah()
-        )){
+        if (!amount.equals(intent.getInitialPaymentAmountHalalah())) {
             throw new ApiException("Amount mismatch");
         }
 
-
-        if(!"SAR".equals(
-                payment.get("currency").toString()
-        )){
+        if (!"SAR".equals(payment.get("currency").toString())) {
             throw new ApiException("Currency mismatch");
         }
 
+        Object metaObj = payment.get("metadata");
 
+        if (!(metaObj instanceof Map<?, ?> metadata)) {
+            throw new ApiException("Metadata missing");
+        }
 
-        CarServiceRequest request =
-                intent.getServiceRequest();
+        if (!intent.getGivenId().equals(metadata.get("givenId"))) {
+            throw new ApiException("GivenId mismatch");
+        }
 
-
-
-        // تحديث موافقة العميل بعد الدفع
-        RequestApproval approval =
-                approvalRepo.findByRequest_Id(request.getId())
-                        .orElseThrow(() ->
-                                new ApiException("Approval not found"));
-
-
-        approval.setApproved(true);
-        approval.setDecisionAt(LocalDateTime.now());
-
-        approvalRepo.save(approval);
-
-
-
-        // تحديث الطلب
-        request.setFinalPaid(true);
-        request.setPaymentReady(false);
-
-        request.setFinalTransactionId(
-                dto.getPaymentId()
-        );
-
-
-        request.setNextPaymentStatus(
-                PaymentStatus.PAID
-        );
-
-
-        request.setCustomerStatus(
-                CustomerRequestStatus.UNDER_REPAIR
-        );
-
-
-        request.setStaffStatus(
-                StaffRequestStatus.REPAIRING
-        );
-
-
-        request.setStage(
-                WorkflowStage.REPAIRING
-        );
-
-
-        request.setRepairAt(
-                LocalDateTime.now()
-        );
-
-        request.setLastUpdated(
-                LocalDateTime.now()
-        );
-
-
-        requestRepository.save(request);
-        socketService.send(
-                "/topic/current-orders/" + request.getCustomer().getUser().getId(),
-                carServiceRequestService.toCurrentDto(request)
-        );
-
-
-
-        // تحديث عملية الدفع
-        intent.setPaymentStatus(
-                PaymentStatus.PAID
-        );
-
-        intent.setPaymentId(
-                dto.getPaymentId()
-        );
-
-        intent.setPaidAt(
-                LocalDateTime.now()
-        );
-
-
-        paymentIntentRepository.save(intent);
-
-
+        RequestResponseDto request =
+                completePayment(intent, dto.getPaymentId());
 
         return new ConfirmFinalMobilePaymentResponse(
 
@@ -1225,9 +1145,10 @@ public class PaymentIntentService {
 
                 PaymentStatus.PAID.name(),
 
-                request.getCustomerStatus().name()
+                request.getStatus()
         );
     }
+
 // helpar
     private String formatEnglishPlate(String plate) {
 

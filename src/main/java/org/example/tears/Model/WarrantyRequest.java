@@ -53,4 +53,10 @@ public class WarrantyRequest {
             cascade = CascadeType.ALL,
             orphanRemoval = true)
     private List<WarrantyImage> images = new ArrayList<>();
+
+    private LocalDateTime repairStartedAt;
+
+    private LocalDateTime repairCompletedAt;
+
+    private LocalDateTime deliveredAt;
 }
