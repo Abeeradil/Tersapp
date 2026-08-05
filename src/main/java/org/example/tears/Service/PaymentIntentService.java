@@ -178,6 +178,10 @@ public class PaymentIntentService {
         req.setRemainingAmount(0.0);
 
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
+        req.setStaffStatus(StaffRequestStatus.NEW);
+        req.setStage(WorkflowStage.NEW_REQUEST);
+
+        req.setLastUpdated(LocalDateTime.now());
         req.setCreatedAt(LocalDateTime.now());
 
         CarServiceRequest savedRequest = requestRepository.save(req);
