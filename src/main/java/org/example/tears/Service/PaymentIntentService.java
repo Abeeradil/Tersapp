@@ -382,6 +382,18 @@ public class PaymentIntentService {
                 approvalRepo.findByRequest_Id(request.getId())
                         .orElseThrow(() ->
                                 new ApiException("Approval not found"));
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تمت الموافقة مسبقاً");
+        }
+
+        if (request.isFinalPaid()) {
+            throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
+        }
+
+        if (request.getFinalPrice() == null || request.getFinalPrice() <= 0) {
+            throw new ApiException("لا يوجد مبلغ للدفع");
+        }
+
         PaymentIntent intent = new PaymentIntent();
 
         approval.setApproved(true);
@@ -407,17 +419,7 @@ public class PaymentIntentService {
 
         requestRepository.save(request);
 
-        if (Boolean.TRUE.equals(approval.getApproved())) {
-            throw new ApiException("تمت الموافقة مسبقاً");
-        }
 
-        if (request.isFinalPaid()) {
-            throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
-        }
-
-        if (request.getFinalPrice() == null || request.getFinalPrice() <= 0) {
-            throw new ApiException("لا يوجد مبلغ للدفع");
-        }
 
 
         intent.setCustomer(user.getCustomer());
@@ -645,7 +647,7 @@ public class PaymentIntentService {
         intent.setPaymentStatus(PaymentStatus.PAID);
 
         intent.setPaymentId(paymentId);
-
+        intent.setServiceRequest(request);
         intent.setPaidAt(LocalDateTime.now());
 
         paymentIntentRepository.save(intent);
