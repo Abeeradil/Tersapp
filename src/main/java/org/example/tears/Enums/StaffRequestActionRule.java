@@ -20,11 +20,6 @@ public enum StaffRequestActionRule {
             return requiresNote;
         }
 
-    public static StaffRequestActionRule fromStatus(StaffRequestStatus status) {
-        return switch (status) {
-            case RECEIVED -> StaffRequestActionRule.RECEIVED;
-            default -> StaffRequestActionRule.INSPECTION;
-        };
-    }
+
 
 }

@@ -65,14 +65,7 @@ public class RequestWorkflowService {
             );
         }
 
-        if (
-                status.ordinal()
-                        <= req.getStaffStatus().ordinal()
-        ) {
-            throw new ApiException(
-                    "لا يمكن الرجوع لحالة سابقة"
-            );
-        }
+
 
         boolean isWarranty =
                 warrantyRepo.existsByRequestIdAndStatus(
