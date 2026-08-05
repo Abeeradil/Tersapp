@@ -10,7 +10,7 @@ public enum ServiceOption {
 
     FULL_MAINTENANCE("صيانة شاملة", 250),
     BODY_PAINT("سمكرة ودهان", 250),
-    ELECTRONIC_CHECK("فحص إلكتروني", 0);
+    ELECTRONIC_CHECK("فحص إلكتروني", 0);//150
 
     private final String displayName;
     private final int price;
