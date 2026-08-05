@@ -379,9 +379,33 @@ public class PaymentIntentService {
         }
 
         RequestApproval approval =
-                approvalRepo.findByRequest_Id(requestId)
+                approvalRepo.findByRequest_Id(request.getId())
                         .orElseThrow(() ->
-                                new ApiException("لا يوجد تقرير"));
+                                new ApiException("Approval not found"));
+        PaymentIntent intent = new PaymentIntent();
+
+        approval.setApproved(true);
+        approval.setDecisionAt(LocalDateTime.now());
+
+        approvalRepo.save(approval);
+
+        request.setFinalPaid(true);
+
+        request.setNextPaymentMethod(intent.getPaymentMethod());
+
+        request.setNextPaymentStatus(PaymentStatus.PAID);
+
+        request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+
+        request.setStaffStatus(StaffRequestStatus.REPAIRING);
+
+        request.setStage(WorkflowStage.REPAIRING);
+
+        request.setRepairAt(LocalDateTime.now());
+
+        request.setLastUpdated(LocalDateTime.now());
+
+        requestRepository.save(request);
 
         if (Boolean.TRUE.equals(approval.getApproved())) {
             throw new ApiException("تمت الموافقة مسبقاً");
@@ -395,7 +419,6 @@ public class PaymentIntentService {
             throw new ApiException("لا يوجد مبلغ للدفع");
         }
 
-        PaymentIntent intent = new PaymentIntent();
 
         intent.setCustomer(user.getCustomer());
         intent.setServiceRequest(request);
@@ -408,9 +431,11 @@ public class PaymentIntentService {
 
         intent.setPaymentMethod(request.getPaymentMethod());
 
-        intent.setPaymentStatus(PaymentStatus.INITIATED);
+        intent.setPaymentStatus(PaymentStatus.PAID);
 
         intent.setCreatedAt(LocalDateTime.now());
+
+        intent.setPaidAt(LocalDateTime.now());
 
         intent.setExpiresAt(LocalDateTime.now().plusMinutes(5));
 
