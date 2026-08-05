@@ -15,9 +15,6 @@ public enum StaffRequestActionRule {
             this.requiresNote = requiresNote;
         }
 
-        public boolean isRequiresImage() {
-            return requiresImage;
-        }
 
         public boolean isRequiresNote() {
             return requiresNote;

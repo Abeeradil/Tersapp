@@ -65,9 +65,6 @@ public class RequestWorkflowService {
             );
         }
 
-        StaffRequestActionRule rule =
-                StaffRequestActionRule.fromStatus(status);
-
         if (
                 status.ordinal()
                         <= req.getStaffStatus().ordinal()
@@ -75,12 +72,6 @@ public class RequestWorkflowService {
             throw new ApiException(
                     "لا يمكن الرجوع لحالة سابقة"
             );
-        }
-
-        // 📝 ملاحظة
-        if (rule.isRequiresNote() &&
-                (note == null || note.isBlank())) {
-            throw new ApiException("يجب إضافة ملاحظة لهذه الحالة");
         }
 
         boolean isWarranty =
