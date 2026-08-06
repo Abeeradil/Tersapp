@@ -389,18 +389,29 @@ public class TicketService {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
             ticket.setUpdatedAt(LocalDateTime.now());
 
-            // الطلب
+// الطلب
             serviceRequest.setAssignedEmployee(employee);
             serviceRequest.setCurrentEmployee(employee);
             serviceRequest.setLastUpdated(LocalDateTime.now());
 
             requestRepository.save(serviceRequest);
-            ticket.setAssignedEmployee(employee);
+            ticketRepository.save(ticket);
 
-            notificationService.send(
-                    ticket.getCreatedByEmployee().getUser(),
-                    "قام موظف خدمة العملاء باستلام التذكرة ويمكنك بدء المحادثة."
-            );
+// إشعار بدء المحادثة
+            if (ticket.getWarrantyRequest() != null) {
+
+                notificationService.send(
+                        ticket.getCustomer().getUser(),
+                        "قام موظف خدمة العملاء باستلام طلب الضمان ويمكنك الآن بدء المحادثة."
+                );
+
+            } else {
+
+                notificationService.send(
+                        ticket.getCreatedByEmployee().getUser(),
+                        "قام موظف خدمة العملاء باستلام التذكرة ويمكنك الآن بدء المحادثة."
+                );
+            }
             return;
         }
 

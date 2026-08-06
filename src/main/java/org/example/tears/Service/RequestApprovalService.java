@@ -196,7 +196,7 @@ import java.util.stream.Collectors;
                     dto.setOrderNumber(request.getOrderNumber());
 
                     dto.setServiceType(
-                            request.getServiceOption().getDisplayName()
+                            request.getServiceOption().name()
                     );
 
                     dto.setReportStatus(mapStatus(approval));
