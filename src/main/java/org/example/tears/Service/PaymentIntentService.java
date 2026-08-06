@@ -186,6 +186,12 @@ public class PaymentIntentService {
 
         CarServiceRequest savedRequest = requestRepository.save(req);
 
+        savedRequest.setOrderNumber(
+                String.format("ORD-%06d", savedRequest.getId())
+        );
+
+        requestRepository.save(savedRequest);
+
         return carServiceRequestService.toResponseDto(savedRequest);
     }
 
