@@ -10,6 +10,7 @@ import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.InpDTO.PreviewRequestDto;
 import org.example.tears.InpDTO.CreateRequestStepDto;
 import org.example.tears.InpDTO.UpdateRequestDto;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.OutDTO.PreviewResponseDto;
 import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.OutDTO.RequestResponseDto;
@@ -41,7 +42,7 @@ public class CarServiceRequestService {
     private final RequestReviewRepository reviewRepository;
     private final WarrantyRepository warrantyRequestRepository;
     private final SocketService socketService;
-
+    private final RequestMapper requestMapper;
 
 
     // ---------------------------
@@ -319,7 +320,7 @@ public class CarServiceRequestService {
         }
 
         dto.setRequestState(
-                mapRequestState(req)
+                requestMapper.mapRequestState(req)
         );
 
         return dto;
@@ -364,7 +365,7 @@ public class CarServiceRequestService {
         );
 
         dto.setRequestState(
-                mapRequestState(req)
+                requestMapper.mapRequestState(req)
         );
 
         if (req.getCustomerStatus() != null) {
@@ -608,7 +609,7 @@ public class CarServiceRequestService {
 
 
         dto.setRequestState(
-                mapRequestState(req)
+                requestMapper.mapRequestState(req)
         );
 
         dto.setTotalPrice(
@@ -634,31 +635,11 @@ public class CarServiceRequestService {
             );
 
             dto.setRequestState(
-                    mapRequestState(req)
+                    requestMapper.mapRequestState(req)
             );
         }
 
         return dto;
-    }
-
-
-    private String mapRequestState(
-            CarServiceRequest req
-    ) {
-
-        if (req.getCustomerStatus()
-                == CustomerRequestStatus.CANCELED) {
-
-            return RequestState.CANCELLED.name();
-        }
-
-        if (req.getCustomerStatus()
-                == CustomerRequestStatus.DELIVERED) {
-
-            return RequestState.COMPLETED.name();
-        }
-
-        return RequestState.ACTIVE.name();
     }
 
     @Transactional
