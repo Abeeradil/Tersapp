@@ -122,7 +122,7 @@ public class RequestMapper {
         return dto;
     }
 
-    private String mapRequestState(
+    public String mapRequestState(
             CarServiceRequest req
     ) {
 
