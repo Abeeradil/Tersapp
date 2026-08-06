@@ -178,8 +178,8 @@ import java.util.List;
     )
     public ApiResponse createWarranty(
             @PathVariable Integer requestId,
-            @RequestPart WarrantyRequestDto dto,
-            @RequestPart(required = false) List<MultipartFile> images,
+            @RequestPart("dto") WarrantyRequestDto dto,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
             HttpServletRequest request
     ) {
 
