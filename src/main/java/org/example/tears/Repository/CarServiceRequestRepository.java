@@ -17,12 +17,16 @@ import java.util.Optional;
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
     List<CarServiceRequest> findByAssignedPricingEmployee(Employee employee);
-    List<CarServiceRequest> findByAssignedTechnicianOrAssignedPricingEmployee(Employee employee);
-    List<CarServiceRequest> findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(
-            Employee employee,
-            StaffRequestStatus status
+    List<CarServiceRequest> findByAssignedTechnicianOrAssignedPricingEmployee(
+            Employee assignedTechnician,
+            Employee assignedPricingEmployee
     );
 
+    List<CarServiceRequest> findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(
+            Employee assignedTechnician,
+            Employee assignedPricingEmployee,
+            StaffRequestStatus status
+    );
 
 
 

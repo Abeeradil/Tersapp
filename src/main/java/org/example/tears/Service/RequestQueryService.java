@@ -46,7 +46,11 @@ public class RequestQueryService {
 
     public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
 
-        return requestRepo.findByAssignedTechnicianOrAssignedPricingEmployee(employee)
+        return requestRepo
+                .findByAssignedTechnicianOrAssignedPricingEmployee(
+                        employee,
+                        employee
+                )
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
@@ -68,8 +72,17 @@ public class RequestQueryService {
         );
     }
 
-    public List<EmployeeRequestResponseDto> getMyRequestsByStatus(Employee employee, StaffRequestStatus status) {
-        return requestRepo.findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(employee, status)
+    public List<EmployeeRequestResponseDto> getMyRequestsByStatus(
+            Employee employee,
+            StaffRequestStatus status
+    ) {
+
+        return requestRepo
+                .findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(
+                        employee,
+                        employee,
+                        status
+                )
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
