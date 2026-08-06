@@ -78,12 +78,7 @@ public class RequestMapper {
         }
 
         dto.setWarrantyEligible(
-
-                r.getDeliveredAt() != null
-
-                        && LocalDateTime.now()
-                        .isBefore(r.getDeliveredAt().plusDays(30))
-
+                isWarrantyEligible(r)
         );
 
 
@@ -425,6 +420,13 @@ public class RequestMapper {
         return plate;
     }
 
+    public boolean isWarrantyEligible(CarServiceRequest request) {
+
+        return request.getDeliveredAt() != null
+                && LocalDateTime.now().isBefore(
+                request.getDeliveredAt().plusDays(30)
+        );
+    }
 
 //        public CustomerRequestStatus toCustomer(WorkflowStage stage) {
 //

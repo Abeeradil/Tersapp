@@ -4,6 +4,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
+import org.example.tears.Enums.ReportApprovalFilter;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.RequestResponseDto;
 import org.example.tears.Service.*;
@@ -72,6 +73,21 @@ import java.util.List;
         );
     }
 
+    @GetMapping("/reports")
+    public List<CustomerReportCardDto> myReports(
+            @RequestParam(required = false,
+                    defaultValue = "ALL")
+            ReportApprovalFilter status,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        return requestApprovalService.getCustomerReports(
+                user.getCustomer(),
+                status
+        );
+    }
 
 
         @PostMapping("/{requestId}/final-payment")
