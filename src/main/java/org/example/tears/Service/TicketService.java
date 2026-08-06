@@ -14,7 +14,6 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.ChatMessageRepository;
 import org.example.tears.Repository.TicketRepository;
 import org.example.tears.Repository.UserRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -224,16 +223,16 @@ public class TicketService {
             );
         }
 
-        if (ticket.getAssignedEmployee() != null) {
+        if (ticket.getAssignedSupportEmployee() != null) {
 
-            dto.setAssignedEmployeeName(
-                    ticket.getAssignedEmployee()
+            dto.setAssignedSupportEmployeeName(
+                    ticket.getAssignedSupportEmployee()
                             .getUser()
                             .getFullName()
             );
 
-            dto.setAssignedEmployeePhone(
-                    ticket.getAssignedEmployee()
+            dto.setAssignedSupportEmployeePhone(
+                    ticket.getAssignedSupportEmployee()
                             .getUser()
                             .getPhoneNumber()
             );
@@ -247,10 +246,10 @@ public class TicketService {
 
         dto.setSolvedAt(ticket.getSolvedAt());
 
-        if (ticket.getAssignedEmployee() != null) {
+        if (ticket.getAssignedSupportEmployee() != null) {
 
-            dto.setAssignedEmployee(
-                    ticket.getAssignedEmployee()
+            dto.setAssignedSupportEmployee(
+                    ticket.getAssignedSupportEmployee()
                             .getUser()
                             .getFullName()
             );
@@ -358,7 +357,7 @@ public class TicketService {
         if (ticket.getStatus() == TicketStatus.ACTIVE &&
                 newStatus == TicketStatus.IN_PROGRESS) {
 
-            if (ticket.getAssignedEmployee() != null) {
+            if (ticket.getAssignedSupportEmployee() != null) {
                 throw new ApiException("تم استلام التذكرة بواسطة موظف آخر");
             }
 
@@ -383,14 +382,14 @@ public class TicketService {
             );
 
             // التذكرة
-            ticket.setAssignedEmployee(employee);
+            ticket.setAssignedSupportEmployee(employee);
             ticket.setAcceptedByCustomerService(true);
             ticket.setAcceptedAt(LocalDateTime.now());
             ticket.setStatus(TicketStatus.IN_PROGRESS);
             ticket.setUpdatedAt(LocalDateTime.now());
 
 // الطلب
-            serviceRequest.setAssignedEmployee(employee);
+            serviceRequest.setAssignedSupportEmployee(employee);
             serviceRequest.setCurrentEmployee(employee);
             serviceRequest.setLastUpdated(LocalDateTime.now());
 
@@ -422,8 +421,8 @@ public class TicketService {
         if (ticket.getStatus() == TicketStatus.IN_PROGRESS &&
                 newStatus == TicketStatus.SOLVED) {
 
-            if (ticket.getAssignedEmployee() == null ||
-                    !ticket.getAssignedEmployee().getId().equals(employee.getId())) {
+            if (ticket.getAssignedSupportEmployee() == null ||
+                    !ticket.getAssignedSupportEmployee().getId().equals(employee.getId())) {
 
                 throw new ApiException("ليست التذكرة الخاصة بك");
             }
@@ -512,10 +511,10 @@ public class TicketService {
 
         dto.setCreatedAt(ticket.getCreatedAt());
 
-        if(ticket.getAssignedEmployee()!=null){
+        if(ticket.getAssignedSupportEmployee()!=null){
 
-            dto.setAssignedEmployeeName(
-                    ticket.getAssignedEmployee()
+            dto.setAssignedSupportEmployeeName(
+                    ticket.getAssignedSupportEmployee()
                             .getUser()
                             .getFullName()
             );

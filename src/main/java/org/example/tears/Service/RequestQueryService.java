@@ -13,7 +13,6 @@ import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.LocationRepository;
 import org.example.tears.Repository.RequestImageRepository;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +38,7 @@ public class RequestQueryService {
     }
 
     public List<RequestSummaryDto> getUnassigned() {
-        return requestRepo.findByAssignedEmployeeIsNull()
+        return requestRepo.findByAssignedTechnicianAndAssignedPricingEmployeeAndAssignedSupportEmployee()
                 .stream()
                 .map(requestMapper::toSummaryDto)
                 .toList();
@@ -47,7 +46,7 @@ public class RequestQueryService {
 
     public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
 
-        return requestRepo.findByAssignedEmployee(employee)
+        return requestRepo.findByAssignedTechnicianOrAssignedPricingEmployee(employee)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
@@ -63,14 +62,14 @@ public class RequestQueryService {
             );
         }
 
-        return requestRepo.countByAssignedEmployee_IdAndStaffStatus(
+        return requestRepo.countByAssignedTechnician_IdAndStaffStatus(
                 employee.getId(),
                 StaffRequestStatus.NEW
         );
     }
 
     public List<EmployeeRequestResponseDto> getMyRequestsByStatus(Employee employee, StaffRequestStatus status) {
-        return requestRepo.findByAssignedEmployeeAndStaffStatus(employee, status)
+        return requestRepo.findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(employee, status)
                 .stream()
                 .map(requestMapper::toEmployeeCardDto)
                 .toList();
@@ -86,8 +85,8 @@ public class RequestQueryService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        if(request.getAssignedEmployee()==null ||
-                !request.getAssignedEmployee().getId().equals(employee.getId())){
+        if(request.getAssignedTechnician()==null ||
+                !request.getAssignedTechnician().getId().equals(employee.getId())){
 
             throw new ApiException("غير مصرح لك");
         }
@@ -159,7 +158,7 @@ public class RequestQueryService {
 
         } else {
 
-            requests = requestRepo.findByAssignedEmployee(employee);
+            requests = requestRepo.findByAssignedTechnician(employee);
         }
 
         return requests.stream()

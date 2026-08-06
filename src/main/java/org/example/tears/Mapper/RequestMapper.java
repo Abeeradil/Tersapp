@@ -55,9 +55,9 @@ public class RequestMapper {
             );
         }
 
-        if (req.getAssignedEmployee() != null) {
-            dto.setAssignedEmployee(
-                    req.getAssignedEmployee()
+        if (req.getAssignedTechnician() != null) {
+            dto.setAssignedTechnician(
+                    req.getAssignedTechnician()
                             .getUser()
                             .getFullName()
             );

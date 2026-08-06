@@ -51,11 +51,11 @@ public class TicketDetailsDto {
 
     private LocalDateTime solvedAt;
 
-    private String assignedEmployeeName;
+    private String assignedSupportEmployeeName;
 
-    private String assignedEmployeePhone;
+    private String assignedSupportEmployeePhone;
 
+    private String assignedSupportEmployee;
 
-    private String assignedEmployee;
 
 }

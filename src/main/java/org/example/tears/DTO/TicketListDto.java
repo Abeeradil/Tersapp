@@ -30,7 +30,7 @@ public class TicketListDto {
 
     private Boolean acceptedByCustomerService;
 
-    private String assignedEmployeeName;
+    private String assignedSupportEmployeeName;
 
     private LocalDateTime createdAt;
 }

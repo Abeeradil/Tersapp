@@ -41,8 +41,8 @@ public class RequestWorkflowService {
         CarServiceRequest req = requestRepo.findById(requestId)
                 .orElseThrow(() -> new ApiException("الطلب غير موجود"));
 
-        if (req.getAssignedEmployee() == null ||
-                !employeeId.equals(req.getAssignedEmployee().getId())) {
+        if (req.getAssignedTechnician() == null ||
+                !employeeId.equals(req.getAssignedTechnician().getId())) {
             throw new ApiException("غير مصرح لك");
         }
 
@@ -274,8 +274,8 @@ public class RequestWorkflowService {
                 .orElseThrow(() ->
                         new ApiException("الطلب غير موجود"));
 
-        if (req.getAssignedEmployee() == null ||
-                !employeeId.equals(req.getAssignedEmployee().getId())) {
+        if (req.getAssignedTechnician() == null ||
+                !employeeId.equals(req.getAssignedTechnician().getId())) {
 
             throw new ApiException("غير مصرح لك");
         }
@@ -593,16 +593,6 @@ public class RequestWorkflowService {
 
 
 
-
-    private void validateWorkshopEmployee(CarServiceRequest req, Integer employeeId) {
-
-        if (req.getAssignedEmployee() == null ||
-                !req.getAssignedEmployee().getId().equals(employeeId)) {
-            throw new ApiException("غير مصرح لك");
-        }
-    }
-
-
     public Employee getLeastBusyPricingEmployee() {
 
         List<Employee> pricingEmployees =
@@ -677,7 +667,7 @@ public class RequestWorkflowService {
     @Transactional
     public void sendToCustomer(
             Integer requestId,
-            Employee assignedEmployee
+            Employee assignedTechnicialEmployee
     ) {
 
         CarServiceRequest request =
@@ -686,11 +676,10 @@ public class RequestWorkflowService {
                                 new ApiException("الطلب غير موجود"));
 
         if (request.getCurrentEmployee() == null ||
-                !request.getCurrentEmployee().getId().equals(assignedEmployee.getId())) {
+                !request.getCurrentEmployee().getId().equals(assignedTechnicialEmployee.getId())) {
 
             throw new ApiException("الطلب غير مسند لك");
         }
-
         if (request.getPricingStatus() != PricingStatus.PRICED) {
             throw new ApiException("يجب إنهاء التسعير أولاً");
         }

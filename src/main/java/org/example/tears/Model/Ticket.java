@@ -71,8 +71,8 @@ public class Ticket {
 
         // موظف خدمة العملاء الذي استلم التذكرة
         @ManyToOne
-        @JoinColumn(name = "assigned_employee_id")
-        private Employee assignedEmployee;
+        @JoinColumn(name = "assigned_support_id")
+        private Employee assignedSupportEmployee;
 
         @ManyToOne
         @JoinColumn(name = "created_by_employee_id")

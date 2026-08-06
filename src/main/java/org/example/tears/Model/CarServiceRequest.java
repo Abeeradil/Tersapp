@@ -138,10 +138,13 @@ public class CarServiceRequest {
                 // ========================
                 // Assignment
                 // ========================
-                @ManyToOne
-                @JoinColumn(name = "assigned_employee_id")
-                private Employee assignedEmployee;
 
+                @ManyToOne
+                @JoinColumn(name = "assigned_technician_id")
+                private Employee assignedTechnician;
+                @ManyToOne
+                @JoinColumn(name = "assigned_support_id")
+                private Employee assignedSupportEmployee;
                 @ManyToOne
                 @JoinColumn(name = "assigned_pricing_id")
                 private Employee assignedPricingEmployee;

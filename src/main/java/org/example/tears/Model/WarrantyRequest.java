@@ -27,7 +27,9 @@ public class WarrantyRequest {
     private Customer customer;
 
     @ManyToOne
-    private Employee assignedEmployee;
+    @JoinColumn(name = "assigned_technician_id")
+    private Employee assignedTechnician;
+
 
     @Enumerated(EnumType.STRING)
     private WarrantyStatus status;

@@ -23,8 +23,6 @@ import java.time.LocalDate;
         @ManyToOne
         private CarServiceRequest request;
 
-        @ManyToOne
-        private Employee assignedEmployee;
 
         private boolean confirmed = false;
     }

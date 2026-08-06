@@ -137,10 +137,10 @@ public class ChatService {
                     ? null
                     : ticket.getCreatedByEmployee().getId()));
 
-            System.out.println("Ticket AssignedEmployee = "
-                    + (ticket.getAssignedEmployee() == null
+            System.out.println("Ticket AssignedSupportEmployee = "
+                    + (ticket.getAssignedSupportEmployee() == null
                     ? null
-                    : ticket.getAssignedEmployee().getId()));
+                    : ticket.getAssignedSupportEmployee().getId()));
 
             // موظف الصيانة (منشئ التذكرة)
             if (ticket.getCreatedByEmployee() != null &&
@@ -149,8 +149,8 @@ public class ChatService {
             }
 
             // موظف خدمة العملاء
-            if (ticket.getAssignedEmployee() != null &&
-                    ticket.getAssignedEmployee().getId().equals(employeeId)) {
+            if (ticket.getAssignedSupportEmployee() != null &&
+                    ticket.getAssignedSupportEmployee().getId().equals(employeeId)) {
                 return;
             }
         }
@@ -321,7 +321,7 @@ public class ChatService {
 
         if(currentUser.getCustomer()!=null){
 
-            other = ticket.getAssignedEmployee().getUser();
+            other = ticket.getAssignedSupportEmployee().getUser();
 
         }else{
 
@@ -329,7 +329,7 @@ public class ChatService {
                     .getId()
                     .equals(currentUser.getEmployee().getId())){
 
-                other = ticket.getAssignedEmployee().getUser();
+                other = ticket.getAssignedSupportEmployee().getUser();
 
             }else{
 

@@ -178,7 +178,7 @@ public class RequestPricingService {
         clonePartsToReport(request, report);
 
         request.setCurrentEmployee(
-                request.getAssignedEmployee()
+                request.getAssignedTechnician()
         );
 
         request.setStaffStatus(
@@ -209,7 +209,7 @@ public class RequestPricingService {
 
 
         notificationService.send(
-                request.getAssignedEmployee().getUser(),
+                request.getAssignedTechnician().getUser(),
                 "تم الانتهاء من التسعير للطلب #" +
                         request.getOrderNumber()
         );

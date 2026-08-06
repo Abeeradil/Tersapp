@@ -287,7 +287,7 @@ import java.util.stream.Collectors;
         requestRepo.save(request);
 
         notificationService.send(
-                request.getAssignedEmployee().getUser(),
+                request.getAssignedTechnician().getUser(),
                 "رفض العميل تقرير التسعير وحدد موعد استلام السيارة للطلب #"
                         + request.getOrderNumber()
         );
@@ -380,7 +380,7 @@ import java.util.stream.Collectors;
         request.setPricingStatus(PricingStatus.PRICED);
         request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
         request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
-        request.setCurrentEmployee(request.getAssignedEmployee());
+        request.setCurrentEmployee(request.getAssignedTechnician());
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);

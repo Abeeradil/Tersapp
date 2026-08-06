@@ -35,7 +35,7 @@ public class AssignmentService {
         Employee employee = user.getEmployee();
 
         // 🔥 1. ربط الموظف
-        request.setAssignedEmployee(employee);
+        request.setAssignedTechnician(employee);
 
         // 🔥 2. تغيير الحالة (مهم جدًا)
         request.setStaffStatus(StaffRequestStatus.NEW);

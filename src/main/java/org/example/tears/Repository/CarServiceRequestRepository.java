@@ -17,7 +17,8 @@ import java.util.Optional;
 public interface CarServiceRequestRepository extends JpaRepository<CarServiceRequest,Integer> {
     List<CarServiceRequest> findByCustomerIdOrderByIdDesc(Integer customerId);
     List<CarServiceRequest> findByAssignedPricingEmployee(Employee employee);
-    List<CarServiceRequest> findByAssignedEmployeeAndStaffStatus(
+    List<CarServiceRequest> findByAssignedTechnicianOrAssignedPricingEmployee(Employee employee);
+    List<CarServiceRequest> findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(
             Employee employee,
             StaffRequestStatus status
     );
@@ -37,7 +38,7 @@ public interface CarServiceRequestRepository extends JpaRepository<CarServiceReq
 
     Optional<CarServiceRequest> findById(Integer id);
 
-    long countByAssignedEmployee_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
+    long countByAssignedTechnician_IdAndStaffStatus(Integer employeeId, StaffRequestStatus status);
     boolean existsByAppointmentDateAndAppointmentTime(
             LocalDate appointmentDate,
             LocalTime appointmentTime
@@ -62,14 +63,9 @@ AND
 
 
 
-    List<CarServiceRequest> findByAssignedEmployee (Employee emp);
-    List<CarServiceRequest> findByAssignedEmployeeIsNull();
+    List<CarServiceRequest> findByAssignedTechnician (Employee emp);
+    List<CarServiceRequest> findByAssignedTechnicianAndAssignedPricingEmployeeAndAssignedSupportEmployee();
 
-    List<CarServiceRequest>
-    findByCustomerIdAndCustomerStatusInOrderByIdDesc(
-            Integer customerId,
-            List<CustomerRequestStatus> statuses
-    );
 
 
     List<CarServiceRequest>

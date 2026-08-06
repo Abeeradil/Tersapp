@@ -6,14 +6,11 @@ import org.example.tears.Api.ApiResponse;
 import org.example.tears.Config.PasswordGenerator;
 import org.example.tears.Config.TempEmailGenerator;
 import org.example.tears.DTO.EmployeeListDto;
-import org.example.tears.DTO.EmployeeSummaryDto;
-import org.example.tears.DTO.RequestSummaryDto;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
 import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Mapper.RequestMapper;
-import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.Location;
 import org.example.tears.Model.User;
@@ -25,14 +22,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class AdminService {
     private final EmployeeRepository employeeRepository;
-    private final CarServiceRequestRepository reqRepo;
     private final PasswordEncoder passwordEncoder;
     private final PasswordGenerator passGen;
     private final TempEmailGenerator emailGen;

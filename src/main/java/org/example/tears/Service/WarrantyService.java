@@ -272,17 +272,17 @@ public class WarrantyService {
         );
 
         Employee technician =
-                warranty.getRequest().getAssignedEmployee();
+                warranty.getRequest().getAssignedTechnician();
 
-        warranty.setAssignedEmployee(technician);
+        warranty.setAssignedTechnician(technician);
 
         warrantyRepo.save(warranty);
 
-        if (warranty.getRequest().getAssignedEmployee() != null) {
+        if (warranty.getRequest().getAssignedTechnician() != null) {
 
             notificationService.send(
                     warranty.getRequest()
-                            .getAssignedEmployee()
+                            .getAssignedTechnician()
                             .getUser(),
                     "تمت الموافقة على طلب ضمان للطلب #"
                             + warranty.getRequest().getOrderNumber()

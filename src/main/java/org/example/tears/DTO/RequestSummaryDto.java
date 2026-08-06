@@ -17,7 +17,7 @@ public class RequestSummaryDto {
 
         private String customerName;
 
-        private String assignedEmployee;
+        private String AssignedTechnician;
 
         private LocalDateTime createdAt; // 👈 مهم
 

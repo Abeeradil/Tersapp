@@ -102,9 +102,8 @@ public class PricingRequestMapper {
                         .toList()
         );
 
-
         dto.setTechnicianName(
-                request.getAssignedEmployee().getUser().getFullName()
+                request.getAssignedTechnician().getUser().getFullName()
         );
 
         dto.setServiceOption(
@@ -112,7 +111,7 @@ public class PricingRequestMapper {
         );
 
         dto.setTechnicianPhone(
-                request.getAssignedEmployee().getUser().getPhoneNumber()
+                request.getAssignedTechnician().getUser().getPhoneNumber()
         );
         dto.setAddress(
                 request.getLocation().getAddress()
