@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +32,7 @@ import java.util.stream.Collectors;
     private final RequestPricingService requestPricingService;
     private final LocationRepository locationRepository;
     private final SocketService socketService;
-
+    private final RequestMapper requestMapper;
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -152,40 +153,80 @@ import java.util.stream.Collectors;
 
             return dto;
         }
+    @Transactional(readOnly = true)
+    public List<CustomerReportCardDto> getCustomerReports(
+            Customer customer,
+            ReportApprovalFilter status
+    ){
+        List<RequestApproval> approvals;
 
+        switch (status) {
 
+            case APPROVED ->
+                    approvals = approvalRepo.findByRequest_CustomerAndApproved(
+                            customer,
+                            true
+                    );
 
+            case REJECTED ->
+                    approvals = approvalRepo.findByRequest_CustomerAndApproved(
+                            customer,
+                            false
+                    );
 
+            case PENDING ->
+                    approvals = approvalRepo.findByRequest_CustomerAndApprovedIsNull(
+                            customer
+                    );
 
+            default ->
+                    approvals = approvalRepo.findByRequest_Customer(customer);
 
-    public void oldreject(Integer requestId) {
+        }
 
-        RequestApproval approval =
-                approvalRepo.findByRequest_Id(requestId)
-                        .orElseThrow(() ->
-                                new RuntimeException("Approval not found"));
+        return approvals.stream()
+                .map(approval -> {
 
-        approval.setApproved(false);
-        approval.setDecisionAt(LocalDateTime.now());
+                    CarServiceRequest request = approval.getRequest();
 
-        approvalRepo.save(approval);
+                    CustomerReportCardDto dto = new CustomerReportCardDto();
 
-        CarServiceRequest request = approval.getRequest();
+                    dto.setRequestId(request.getId());
 
-        request.setCustomerStatus(CustomerRequestStatus.READY_FOR_DELIVERY);
+                    dto.setOrderNumber(request.getOrderNumber());
 
-        request.setStaffStatus(StaffRequestStatus.DELIVERY_IN_PROGRESS);
+                    dto.setServiceType(
+                            request.getServiceOption().getDisplayName()
+                    );
 
-        request.setLastUpdated(LocalDateTime.now());
+                    dto.setReportStatus(mapStatus(approval));
 
-        requestRepo.save(request);
+                    dto.setRequestState(RequestState.valueOf(requestMapper.mapRequestState(request)));
 
-        notificationService.send(
-                request.getAssignedEmployee().getUser(),
-                "رفض العميل تقرير التسعير للطلب #" +
-                        request.getOrderNumber() +
-                        "، يرجى تجهيز السيارة للتسليم."
-        );
+                    RequestReport report =
+                            reportRepo.findByRequest_IdAndLatestTrue(
+                                    request.getId()
+                            ).orElse(null);
+
+                    if (report != null) {
+                        dto.setReportDate(report.getCreatedAt());
+                    }
+
+                    return dto;
+
+                })
+                .toList();
+    }
+
+    private CustomerReportStatus mapStatus(RequestApproval approval) {
+
+        if (approval == null || approval.getApproved() == null) {
+            return CustomerReportStatus.PENDING;
+        }
+
+        return approval.getApproved()
+                ? CustomerReportStatus.APPROVED
+                : CustomerReportStatus.REJECTED;
     }
 
     @Transactional
