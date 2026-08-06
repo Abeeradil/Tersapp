@@ -38,7 +38,7 @@ public class RequestQueryService {
     }
 
     public List<RequestSummaryDto> getUnassigned() {
-        return requestRepo.findByAssignedTechnicianAndAssignedPricingEmployeeAndAssignedSupportEmployee()
+        return requestRepo.findByAssignedTechnicianIsNullAndAssignedPricingEmployeeIsNullAndAssignedSupportEmployeeIsNull()
                 .stream()
                 .map(requestMapper::toSummaryDto)
                 .toList();

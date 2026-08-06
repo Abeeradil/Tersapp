@@ -64,7 +64,7 @@ AND
 
 
     List<CarServiceRequest> findByAssignedTechnician (Employee emp);
-    List<CarServiceRequest> findByAssignedTechnicianAndAssignedPricingEmployeeAndAssignedSupportEmployee();
+    List<CarServiceRequest> findByAssignedTechnicianIsNullAndAssignedPricingEmployeeIsNullAndAssignedSupportEmployeeIsNull();
 
 
 
