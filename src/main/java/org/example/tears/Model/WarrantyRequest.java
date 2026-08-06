@@ -58,5 +58,8 @@ public class WarrantyRequest {
 
     private LocalDateTime repairCompletedAt;
 
+    @OneToOne
+    private Ticket ticket;
+
     private LocalDateTime deliveredAt;
 }

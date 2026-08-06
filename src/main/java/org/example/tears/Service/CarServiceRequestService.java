@@ -371,25 +371,25 @@ public class CarServiceRequestService {
         if (req.getCustomerStatus() != null) {
             dto.setCustomerStatus(req.getCustomerStatus().name());
         }
-        if (req.getCustomerStatus() == CustomerRequestStatus.DELIVERED
-                && req.getDeliveredAt() != null) {
+        if (req.getDeliveredAt() != null) {
 
-            LocalDate deliveryDate = req.getDeliveredAt().toLocalDate();
-            LocalDate expiryDate = deliveryDate.plusDays(30);
+            LocalDate expiryDate =
+                    req.getDeliveredAt()
+                            .toLocalDate()
+                            .plusDays(30);
 
             dto.setWarrantyExpiryDate(expiryDate);
 
-            boolean underWarranty = !LocalDate.now().isAfter(expiryDate);
+            boolean eligible = requestMapper.isWarrantyEligible(req);
 
-            dto.setUnderWarranty(underWarranty);
+            dto.setUnderWarranty(eligible);
 
-            if (underWarranty) {
-                dto.setWarrantyRemainingDays(
-                        ChronoUnit.DAYS.between(LocalDate.now(), expiryDate)
-                );
-            } else {
-                dto.setWarrantyRemainingDays(0L);
-            }
+            dto.setWarrantyRemainingDays(
+                    eligible
+                            ? ChronoUnit.DAYS.between(LocalDate.now(), expiryDate)
+                            : 0L
+            );
+
         }
 
         return dto;

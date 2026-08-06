@@ -29,7 +29,6 @@ public class TicketService {
     private final CarServiceRequestRepository requestRepository;
     private final NotificationService notificationService;
     private final ChatMessageRepository chatMessageRepository;
-    private final SimpMessagingTemplate messagingTemplate;
 
     private final UserRepository userRepo;
 
@@ -397,8 +396,6 @@ public class TicketService {
 
             requestRepository.save(serviceRequest);
             ticket.setAssignedEmployee(employee);
-
-            chatService.createRoomIfNotExists(ticket);
 
             notificationService.send(
                     ticket.getCreatedByEmployee().getUser(),

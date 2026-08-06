@@ -28,7 +28,8 @@ public class ChatRoom {
     @Enumerated(EnumType.STRING)
     private ReadStatus readStatus = ReadStatus.SENT;
 
-    @ManyToOne
+    @OneToOne
+    @JoinColumn(name = "ticket_id", unique = true)
     private Ticket ticket;
 
     @CreationTimestamp

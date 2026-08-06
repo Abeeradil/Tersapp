@@ -24,5 +24,7 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
             List<TicketStatus> statuses
     );
 
+    Optional<Ticket> findByWarrantyRequest_Id(Integer warrantyId);
+
     List<Ticket> findByRequest_OrderNumberContainingIgnoreCase(String orderNumber);
 }

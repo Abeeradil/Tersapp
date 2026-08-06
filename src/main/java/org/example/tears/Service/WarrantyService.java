@@ -6,6 +6,7 @@ import org.example.tears.DTO.WarrantyDetailsDto;
 import org.example.tears.DTO.WarrantyRequestDto;
 import org.example.tears.DTO.WarrantyResponseDto;
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
@@ -26,9 +27,10 @@ public class WarrantyService {
     private final WarrantyImageRepository warrantyImageRepo;
     private final WarrantyStatusHistoryRepository historyRepo;
     private final NotificationService notificationService;
+    private final TicketRepository ticketRepository;
     private final EmployeeRepository employeeRepo;
     private final UserRepository userRepo;
-
+    private final RequestMapper requestMapper;
 
     @Transactional
     public void createWarrantyRequest(
@@ -47,12 +49,11 @@ public class WarrantyService {
             throw new ApiException("غير مصرح لك");
         }
 
-        if(request.getDeliveredAt()==null
-                || LocalDateTime.now().isAfter(request.getDeliveredAt().plusDays(30))){
+        if (!requestMapper.isWarrantyEligible(request)) {
             throw new ApiException("انتهت فترة الضمان");
         }
 
-        if(request.getCustomerStatus()!= CustomerRequestStatus.DELIVERED){
+        if (request.getCustomerStatus() != CustomerRequestStatus.DELIVERED) {
             throw new ApiException("لا يمكن إنشاء طلب ضمان");
         }
 
@@ -64,43 +65,84 @@ public class WarrantyService {
 
         warranty.setRequest(request);
         warranty.setCustomer(customer);
-
         warranty.setProblemType(dto.getProblemType());
-
         warranty.setDescription(dto.getDescription());
 
         warranty.setStatus(WarrantyStatus.PENDING_REVIEW);
-
         warranty.setCreatedAt(LocalDateTime.now());
         warranty.setUpdatedAt(LocalDateTime.now());
 
         warrantyRepo.save(warranty);
-
-        String message =
-                "يوجد طلب ضمان جديد للطلب #"
-                        + request.getOrderNumber();
-
-        notifyEmployees(
-                EmployeeRole.SUPPORT,
-                message
-        );
-
-        List<User> admins =
-                userRepo.findByRole(UserRole.ADMIN);
-
-        for (User admin : admins) {
-
-            notificationService.send(
-                    admin,
-                    message
-            );
-        }
 
         saveImages(warranty, images);
 
         saveHistory(
                 warranty,
                 WarrantyStatus.PENDING_REVIEW
+        );
+
+        // ============================
+        // إنشاء التذكرة تلقائياً
+        // ============================
+
+        Ticket ticket = new Ticket();
+
+        ticket.setWarrantyRequest(warranty);
+
+        ticket.setRequest(request);
+
+        ticket.setCustomer(customer);
+
+        ticket.setProblemType(TicketProblemType.OTHER);
+
+        ticket.setPriority(TicketPriority.IMPORTANT);
+
+        ticket.setStatus(TicketStatus.ACTIVE);
+
+        ticket.setDescription(dto.getDescription());
+
+        ticket.setCreatedAt(LocalDateTime.now());
+
+        ticket.setUpdatedAt(LocalDateTime.now());
+
+        ticket.setLocation(request.getLocation());
+
+        ticket.setServiceOption(request.getServiceOption());
+
+        ticket = ticketRepository.save(ticket);
+
+        ticket.setTicketNumber(
+                String.format("TK-%06d", ticket.getId())
+        );
+
+        ticketRepository.save(ticket);
+
+
+        // ============================
+        // إشعارات
+        // ============================
+
+        String notify =
+                "يوجد طلب ضمان جديد #" + ticket.getTicketNumber();
+
+        notifyEmployees(
+                EmployeeRole.SUPPORT,
+                notify
+        );
+
+        List<User> admins =
+                userRepo.findByRole(UserRole.ADMIN);
+
+        for (User admin : admins) {
+            notificationService.send(
+                    admin,
+                    notify
+            );
+        }
+
+        notificationService.send(
+                customer.getUser(),
+                "تم استلام طلب الضمان بنجاح، وسيتم التواصل معك عبر المحادثة."
         );
     }
 
@@ -218,7 +260,6 @@ public class WarrantyService {
             throw new ApiException("تمت معالجة الطلب مسبقاً");
         }
 
-
         warranty.setStatus(WarrantyStatus.APPROVED);
 
         warranty.setApprovedBy(employee);
@@ -247,6 +288,16 @@ public class WarrantyService {
                             + warranty.getRequest().getOrderNumber()
             );
         }
+
+        Ticket ticket =
+                ticketRepository.findByWarrantyRequest_Id(warrantyId)
+                        .orElseThrow(() ->
+                                new ApiException("التذكرة غير موجودة"));
+        ticket.setStatus(TicketStatus.SOLVED);
+        ticket.setSolvedAt(LocalDateTime.now());
+        ticket.setUpdatedAt(LocalDateTime.now());
+
+        ticketRepository.save(ticket);
 
         notificationService.send(
                 warranty.getRequest()
@@ -292,6 +343,17 @@ public class WarrantyService {
         );
         warranty.setUpdatedAt(LocalDateTime.now());
         warrantyRepo.save(warranty);
+
+        Ticket ticket =
+                ticketRepository.findByWarrantyRequest_Id(warrantyId)
+                        .orElseThrow(() ->
+                                new ApiException("التذكرة غير موجودة"));
+
+        ticket.setStatus(TicketStatus.SOLVED);
+        ticket.setSolvedAt(LocalDateTime.now());
+        ticket.setUpdatedAt(LocalDateTime.now());
+
+        ticketRepository.save(ticket);
 
         notificationService.send(
                 warranty.getRequest()
