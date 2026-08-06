@@ -13,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 
@@ -171,7 +172,10 @@ import java.util.List;
         );
     }
 
-    @PostMapping("/{requestId}/warranty")
+    @PostMapping(
+            value = "/{requestId}/warranty",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ApiResponse createWarranty(
             @PathVariable Integer requestId,
             @RequestPart WarrantyRequestDto dto,
