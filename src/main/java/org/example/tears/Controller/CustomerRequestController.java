@@ -1,5 +1,6 @@
 package org.example.tears.Controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
@@ -178,10 +179,13 @@ import java.util.List;
     )
     public ApiResponse createWarranty(
             @PathVariable Integer requestId,
-            @RequestPart("dto") WarrantyRequestDto dto,
-            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            @RequestPart("dto") String dtoJson,
+            @RequestPart(required = false) List<MultipartFile> images,
             HttpServletRequest request
-    ) {
+    ) throws Exception {
+
+        WarrantyRequestDto dto =
+                new ObjectMapper().readValue(dtoJson, WarrantyRequestDto.class);
 
         User user = authService.getAuthenticatedUser(request);
 
