@@ -25,6 +25,7 @@ public class RequestWorkflowService {
     private final RequestNoteRepository noteRepo;
     private final RequestReportRepository reportRepo;
     private final RequestStatusHistoryRepository historyRepo;
+    private final WarrantyStatusHistoryRepository warrantyHistoryRepos;
     private final NotificationService notificationService;
     private final RequestImageRepository imageRepo;
     private final FileStorageService fileStorageService;
@@ -39,56 +40,28 @@ public class RequestWorkflowService {
             String note) {
 
         CarServiceRequest req = requestRepo.findById(requestId)
-                .orElseThrow(() -> new ApiException("الطلب غير موجود"));
+                .orElseThrow(() ->
+                        new ApiException("الطلب غير موجود"));
 
         if (req.getAssignedTechnician() == null ||
                 !employeeId.equals(req.getAssignedTechnician().getId())) {
+
             throw new ApiException("غير مصرح لك");
         }
 
-        req.setCustomerStatus(
-                mapCustomerStatus(status)
-        );
-
-        if (
-                status == StaffRequestStatus.PRICING ) {
-            throw new ApiException(
-                    "هذه الحالة لها إجراء خاص"
-            );
+        if (status == StaffRequestStatus.PRICING) {
+            throw new ApiException("هذه الحالة لها إجراء خاص");
         }
 
         if (req.getStaffStatus() == StaffRequestStatus.RECEIVED ||
-                req.getStaffStatus() == StaffRequestStatus.REPORT_WRITING
-        ) {
-            throw new ApiException(
-                    "هذه الحالة لها إجراء خاص"
-            );
-        }
+                req.getStaffStatus() == StaffRequestStatus.REPORT_WRITING) {
 
-
-
-        boolean isWarranty =
-                warrantyRepo.existsByRequestIdAndStatus(
-                        req.getId(),
-                        WarrantyStatus.APPROVED
-                );
-
-        boolean hasOpenWarranty = warrantyRepo
-                .findByRequestId(requestId)
-                .stream()
-                .anyMatch(w ->
-                        w.getStatus() != WarrantyStatus.REJECTED &&
-                                w.getStatus() != WarrantyStatus.DELIVERED
-                );
-
-        if (hasOpenWarranty) {
-            throw new ApiException("يوجد طلب ضمان قائم لهذا الطلب");
+            throw new ApiException("هذه الحالة لها إجراء خاص");
         }
 
         validateStatusTransition(
                 req.getStaffStatus(),
-                status,
-                isWarranty
+                status
         );
 
         if (status == StaffRequestStatus.DELIVERED &&
@@ -99,24 +72,29 @@ public class RequestWorkflowService {
             );
         }
 
-        // 📸 صور
-
-
-        // 🔄 الحالة
         req.setStaffStatus(status);
+
         switch (status) {
 
             case DELIVERY_IN_PROGRESS ->
-                req.setCustomerStatus(CustomerRequestStatus.READY_FOR_DELIVERY);
+                    req.setCustomerStatus(
+                            CustomerRequestStatus.READY_FOR_DELIVERY
+                    );
 
             case DELIVERED -> {
-                req.setCustomerStatus(CustomerRequestStatus.DELIVERED);
-                req.setStage(WorkflowStage.DELIVERED);
+                req.setCustomerStatus(
+                        CustomerRequestStatus.DELIVERED
+                );
+
+                req.setStage(
+                        WorkflowStage.DELIVERED
+                );
             }
 
             default ->
-                req.setCustomerStatus(mapCustomerStatus(status));
-
+                    req.setCustomerStatus(
+                            mapCustomerStatus(status)
+                    );
         }
 
         if (status == StaffRequestStatus.DELIVERY_IN_PROGRESS) {
@@ -137,26 +115,12 @@ public class RequestWorkflowService {
 
         req.setLastUpdated(LocalDateTime.now());
 
-        if (status == StaffRequestStatus.PRICING) {
-
-            Employee pricingEmployee =
-                    getLeastBusyPricingEmployee();
-
-            req.setAssignedPricingEmployee(pricingEmployee);
-            req.setCurrentEmployee(pricingEmployee);
-
-            req.setPricingStatus(PricingStatus.PRICING);
-
-            notificationService.send(
-                    pricingEmployee.getUser(),
-                    "تم إسناد طلب جديد للتسعير رقم #" + req.getId()
-            );
-        }
-
         updateStaffTimestamps(req, status);
 
-        Employee employee = employeeRepo.findById(employeeId)
-                .orElseThrow(() -> new ApiException("الموظف غير موجود"));
+        Employee employee =
+                employeeRepo.findById(employeeId)
+                        .orElseThrow(() ->
+                                new ApiException("الموظف غير موجود"));
 
         saveNote(req, employee, note);
 
@@ -173,69 +137,37 @@ public class RequestWorkflowService {
 
     private void validateStatusTransition(
             StaffRequestStatus current,
-            StaffRequestStatus next,
-            boolean warranty
-    ) {
-
-        if (warranty) {
-
-            switch (current) {
-
-                case NEW -> {
-                    if (next != StaffRequestStatus.RECEIVED)
-                        throw new ApiException("انتقال غير صحيح");
-                }
-
-                case RECEIVED -> {
-                    if (next != StaffRequestStatus.INSPECTION_IN_PROGRESS)
-                        throw new ApiException("انتقال غير صحيح");
-                }
-
-                case INSPECTION_IN_PROGRESS -> {
-                    if (next != StaffRequestStatus.TESTING)
-                        throw new ApiException("انتقال غير صحيح");
-                }
-
-                case TESTING -> {
-                    if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS)
-                        throw new ApiException("انتقال غير صحيح");
-                }
-
-                case DELIVERY_IN_PROGRESS -> {
-                    if (next != StaffRequestStatus.DELIVERED)
-                        throw new ApiException("انتقال غير صحيح");
-                }
-
-                default ->
-                        throw new ApiException("لا يمكن تحديث هذه الحالة");
-            }
-
-            return;
-        }
+            StaffRequestStatus next) {
 
         switch (current) {
 
             case NEW -> {
-                if (next != StaffRequestStatus.RECEIVED)
+                if (next != StaffRequestStatus.RECEIVED) {
                     throw new ApiException("انتقال غير صحيح");
+                }
             }
 
             case RECEIVED ->
-                    throw new ApiException("استخدم زر استلام السيارة");
+                    throw new ApiException(
+                            "استخدم زر استلام السيارة"
+                    );
 
             case INSPECTION_IN_PROGRESS -> {
-                if (next != StaffRequestStatus.PARTS_REGISTERING)
+                if (next != StaffRequestStatus.PARTS_REGISTERING) {
                     throw new ApiException("انتقال غير صحيح");
+                }
             }
 
             case PARTS_REGISTERING -> {
-                if (next != StaffRequestStatus.PRICING)
+                if (next != StaffRequestStatus.PRICING) {
                     throw new ApiException("انتقال غير صحيح");
+                }
             }
 
             case REPORT_WRITING -> {
-                if (next != StaffRequestStatus.REPAIRING)
+                if (next != StaffRequestStatus.REPAIRING) {
                     throw new ApiException("انتقال غير صحيح");
+                }
             }
 
             case REPAIRING -> {
@@ -247,17 +179,21 @@ public class RequestWorkflowService {
             }
 
             case TESTING -> {
-                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS)
+                if (next != StaffRequestStatus.DELIVERY_IN_PROGRESS) {
                     throw new ApiException("انتقال غير صحيح");
+                }
             }
 
             case DELIVERY_IN_PROGRESS -> {
-                if (next != StaffRequestStatus.DELIVERED)
+                if (next != StaffRequestStatus.DELIVERED) {
                     throw new ApiException("انتقال غير صحيح");
+                }
             }
 
             default ->
-                    throw new ApiException("لا يمكن تحديث هذه الحالة");
+                    throw new ApiException(
+                            "لا يمكن تحديث هذه الحالة"
+                    );
         }
     }
 
@@ -705,6 +641,204 @@ public class RequestWorkflowService {
                 request.getCustomer().getUser(),
                 "تم إرسال تقرير التسعير، بانتظار موافقتك."
         );
+    }
+
+    @Transactional
+    public void updateWarrantyStatus(
+            Integer warrantyId,
+            WarrantyStatus newStatus,
+            Integer employeeId
+    ) {
+
+        WarrantyRequest warranty =
+                warrantyRepo.findById(warrantyId)
+                        .orElseThrow(() ->
+                                new ApiException("طلب الضمان غير موجود"));
+
+        Employee employee =
+                employeeRepo.findById(employeeId)
+                        .orElseThrow(() ->
+                                new ApiException("الموظف غير موجود"));
+
+        if (warranty.getAssignedTechnician() == null ||
+                !warranty.getAssignedTechnician()
+                        .getId()
+                        .equals(employeeId)) {
+
+            throw new ApiException(
+                    "طلب الضمان غير مسند إليك"
+            );
+        }
+
+        WarrantyStatus current =
+                warranty.getStatus();
+
+        validateWarrantyTransition(
+                current,
+                newStatus
+        );
+
+        LocalDateTime now = LocalDateTime.now();
+
+        warranty.setStatus(newStatus);
+        warranty.setUpdatedAt(now);
+
+        switch (newStatus) {
+
+            case CAR_RECEIVED ->
+                    warranty.setUpdatedAt(now);
+
+            case REPAIRING ->
+                    warranty.setRepairStartedAt(now);
+
+            case DELIVERED ->
+                    warranty.setDeliveredAt(now);
+
+            default -> {
+            }
+        }
+
+        warrantyRepo.save(warranty);
+
+        saveWarrantyHistory(
+                warranty,
+                newStatus,
+                employee
+        );
+
+        notificationService.send(
+                warranty.getCustomer().getUser(),
+                "تم تحديث حالة طلب الضمان رقم #"
+                        + warranty.getId()
+        );
+    }
+
+    private void validateWarrantyTransition(
+            WarrantyStatus current,
+            WarrantyStatus next
+    ) {
+
+        switch (current) {
+
+            case APPROVED -> {
+
+                if (next != WarrantyStatus.WAITING_RECEIVE) {
+                    throw new ApiException(
+                            "بعد الموافقة يجب انتظار استلام السيارة"
+                    );
+                }
+            }
+
+            case WAITING_RECEIVE -> {
+
+                if (next != WarrantyStatus.CAR_RECEIVED) {
+                    throw new ApiException(
+                            "يجب استلام السيارة أولاً"
+                    );
+                }
+            }
+
+            case CAR_RECEIVED -> {
+
+                if (next != WarrantyStatus.INSPECTION) {
+                    throw new ApiException(
+                            "يجب فحص السيارة أولاً"
+                    );
+                }
+            }
+
+            case INSPECTION -> {
+
+                if (next != WarrantyStatus.REPAIRING) {
+                    throw new ApiException(
+                            "يجب بدء إصلاح السيارة"
+                    );
+                }
+            }
+
+            case REPAIRING -> {
+
+                if (next != WarrantyStatus.TESTING) {
+                    throw new ApiException(
+                            "بعد الإصلاح يجب تجربة السيارة"
+                    );
+                }
+            }
+
+            case TESTING -> {
+
+                if (next != WarrantyStatus.DELIVERY_IN_PROGRESS) {
+                    throw new ApiException(
+                            "بعد التجربة يجب تجهيز السيارة للتسليم"
+                    );
+                }
+            }
+
+            case DELIVERY_IN_PROGRESS -> {
+
+                if (next != WarrantyStatus.DELIVERED) {
+                    throw new ApiException(
+                            "يجب تسليم السيارة أولاً"
+                    );
+                }
+            }
+
+            default ->
+                    throw new ApiException(
+                            "لا يمكن تحديث حالة الضمان الحالية"
+                    );
+        }
+    }
+
+
+    private void saveWarrantyHistory(
+            WarrantyRequest warranty,
+            WarrantyStatus status,
+            Employee employee
+    ) {
+
+        WarrantyStatusHistory history =
+                new WarrantyStatusHistory();
+
+        history.setWarrantyRequest(warranty);
+        history.setStatus(status);
+        history.setChangedBy(employee);
+        history.setChangedAt(LocalDateTime.now());
+
+        warrantyHistoryRepos.save(history);
+    }
+
+    public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
+            Integer warrantyId
+    ) {
+
+        return warrantyHistoryRepos
+                .findByWarrantyRequest_IdOrderByChangedAtAsc(warrantyId)
+                .stream()
+                .map(history -> {
+
+                    WarrantyStatusHistoryDto dto =
+                            new WarrantyStatusHistoryDto();
+
+                    dto.setStatus(history.getStatus());
+                    dto.setChangedAt(history.getChangedAt());
+
+                    if (history.getChangedBy() != null) {
+
+                        dto.setEmployeeId(
+                                history.getChangedBy().getId()
+                        );
+
+                        dto.setEmployeeName(
+                                history.getChangedBy()
+                                        .getUser()
+                                        .getFullName()
+                        );
+                    }
+
+                    return dto;
+                })
+                .toList();
     }
 
 

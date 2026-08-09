@@ -283,12 +283,11 @@ public class WarrantyService {
         // ============================
 
         Employee technician =
-                request.getAssignedTechnician();
+                warranty.getRequest().getAssignedTechnician();
 
         if (technician == null) {
-
             throw new ApiException(
-                    "لا يوجد فني سابق مرتبط بهذا الطلب"
+                    "لا يوجد فني سابق مسند لهذا الطلب"
             );
         }
 

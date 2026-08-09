@@ -26,7 +26,9 @@ public class WarrantyStatusHistory {
     @Enumerated(EnumType.STRING)
     private WarrantyStatus status;
 
-    private Integer changedBy;
+    @ManyToOne
+    @JoinColumn(name = "changed_by_employee_id")
+    private Employee changedBy;
 
     private LocalDateTime changedAt;
 }

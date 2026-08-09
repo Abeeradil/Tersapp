@@ -11,6 +11,5 @@ public interface WarrantyStatusHistoryRepository
         extends JpaRepository<WarrantyStatusHistory, Integer> {
 
     List<WarrantyStatusHistory>
-    findByWarrantyRequest_IdOrderByChangedAtDesc(Integer warrantyRequestId);
-
+    findByWarrantyRequest_IdOrderByChangedAtAsc(Integer warrantyId);
 }
