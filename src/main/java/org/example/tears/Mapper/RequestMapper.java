@@ -10,6 +10,7 @@ import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
+import org.example.tears.Repository.WarrantyRepository;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Component
 @AllArgsConstructor
@@ -24,6 +26,8 @@ public class RequestMapper {
 
     private final RequestReportRepository reportRepo;
     private final RequestApprovalRepository approvalRepo;
+    private final WarrantyRepository warrantyRepo;
+
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -79,6 +83,19 @@ public class RequestMapper {
 
         dto.setWarrantyEligible(
                 isWarrantyEligible(r)
+        );
+
+        Optional<WarrantyRequest> warranty =
+                warrantyRepo.findByRequestId(r.getId());
+
+        dto.setWarrantyRequest(warranty.isPresent());
+
+        dto.setWarrantyStatus(
+                warranty.map(w -> w.getStatus().name()).orElse(null)
+        );
+
+        dto.setWarrantyDescription(
+                warranty.map(WarrantyRequest::getDescription).orElse(null)
         );
 
 
