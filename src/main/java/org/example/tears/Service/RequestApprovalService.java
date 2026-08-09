@@ -439,17 +439,49 @@ import java.util.stream.Collectors;
             throw new ApiException("غير مصرح لك");
         }
 
-        if (request.getStaffStatus() != StaffRequestStatus.DELIVERY_IN_PROGRESS) {
-            throw new ApiException("لا يمكن اختيار موعد التسليم حالياً");
+        // ===========================
+        // Warranty
+        // ===========================
+
+        WarrantyRequest warranty =
+                warrantyRepo.findByRequestId(requestId)
+                        .orElse(null);
+
+        boolean isWarrantyDelivery =
+                warranty != null &&
+                        warranty.getStatus() == WarrantyStatus.DELIVERY_IN_PROGRESS;
+
+        // ===========================
+        // Check Delivery Stage
+        // ===========================
+
+        if (!isWarrantyDelivery &&
+                request.getStaffStatus() != StaffRequestStatus.DELIVERY_IN_PROGRESS) {
+
+            throw new ApiException(
+                    "لا يمكن اختيار موعد التسليم حالياً"
+            );
         }
 
+        // ===========================
+        // Date Validation
+        // ===========================
+
         if (dto.getDeliveryDate().getDayOfWeek() == DayOfWeek.FRIDAY) {
-            throw new ApiException("لا يمكن اختيار يوم الجمعة");
+            throw new ApiException(
+                    "لا يمكن اختيار يوم الجمعة"
+            );
         }
 
         if (dto.getDeliveryDate().isBefore(LocalDate.now())) {
-            throw new ApiException("لا يمكن اختيار تاريخ سابق");
+            throw new ApiException(
+                    "لا يمكن اختيار تاريخ سابق"
+            );
         }
+
+        // ===========================
+        // Location
+        // ===========================
 
         Location location =
                 locationRepository.findById(dto.getLocationId())
@@ -460,12 +492,7 @@ import java.util.stream.Collectors;
         // Warranty Delivery
         // ===========================
 
-        WarrantyRequest warranty =
-                warrantyRepo.findByRequestId(requestId)
-                        .orElse(null);
-
-        if (warranty != null &&
-                warranty.getStatus() == WarrantyStatus.DELIVERY_IN_PROGRESS) {
+        if (isWarrantyDelivery) {
 
             if (warranty.getDeliveryLocation() != null) {
                 throw new ApiException(
@@ -479,11 +506,13 @@ import java.util.stream.Collectors;
 
             warrantyRepo.save(warranty);
 
-        } else {
+        }
 
-            // ===========================
-            // Normal Request Delivery
-            // ===========================
+        // ===========================
+        // Normal Request Delivery
+        // ===========================
+
+        else {
 
             if (Boolean.TRUE.equals(
                     request.getCustomerSelectedDelivery()
@@ -503,11 +532,21 @@ import java.util.stream.Collectors;
             requestRepo.save(request);
         }
 
-        notificationService.send(
-                request.getCurrentEmployee().getUser(),
-                "قام العميل بحجز موعد تسليم السيارة للطلب #"
-                        + request.getOrderNumber()
-        );
+        // ===========================
+        // Notification
+        // ===========================
+
+        if (request.getCurrentEmployee() != null) {
+
+            notificationService.send(
+                    request.getCurrentEmployee().getUser(),
+                    isWarrantyDelivery
+                            ? "قام العميل بحجز موعد وموقع تسليم سيارة الضمان للطلب #"
+                            + request.getOrderNumber()
+                            : "قام العميل بحجز موعد تسليم السيارة للطلب #"
+                            + request.getOrderNumber()
+            );
+        }
     }
 
 
