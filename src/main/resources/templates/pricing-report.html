@@ -1,69 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
 
+<head>
     <meta charset="UTF-8"/>
 
     <style>
 
-        @font-face{
-            font-family:'Cairo';
-            src:url("fonts/Cairo-Regular.ttf");
+        @font-face {
+            font-family: 'Cairo';
+            src: url("fonts/Cairo-Regular.ttf");
+            font-weight: normal;
+            font-style: normal;
         }
 
-        body{
-            font-family:Cairo;
-            direction:ltr;
-            font-size:14px;
-            margin:30px;
+        body {
+            font-family: 'Cairo', sans-serif;
+            direction: rtl;
+            unicode-bidi: embed;
         }
 
-        h1{
-            text-align:center;
-            margin-bottom:25px;
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
         }
 
-        .info{
-            margin-bottom:20px;
-            line-height:1.8;
+        .info {
+            margin-bottom: 20px;
+            line-height: 1.8;
         }
 
-        .info p{
-            margin:4px 0;
+        .info p {
+            margin: 4px 0;
         }
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-            margin-top:20px;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
 
-        th{
-            background:#f2f2f2;
+        th {
+            background: #f2f2f2;
         }
 
-        td,th{
-            border:1px solid #000;
-            padding:8px;
-            text-align:center;
+        td, th {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: center;
         }
 
-        .summary{
-            width:40%;
-            margin-left:auto;
-            margin-top:25px;
+        .summary {
+            width: 40%;
+            margin-left: auto;
+            margin-top: 25px;
         }
 
-        .summary td{
-            text-align:left;
+        .summary td {
+            text-align: left;
         }
 
-        .footer{
-            margin-top:35px;
+        .grand-total {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 35px;
         }
 
     </style>
-
 </head>
 
 <body>
@@ -72,21 +77,43 @@
 
 <div class="info">
 
-    <p><b>Report Number:</b> ${reportNumber}</p>
+    <p>
+        <b>Report Number:</b>
+        ${reportNumber}
+    </p>
 
-    <p><b>Order Number:</b> ${orderNumber}</p>
+    <p>
+        <b>Order Number:</b>
+        ${orderNumber}
+    </p>
 
-    <p><b>Customer Name:</b> ${customerName}</p>
+    <p>
+        <b>Customer Name:</b>
+        ${customerName}
+    </p>
 
-    <p><b>Phone:</b> ${phone}</p>
+    <p>
+        <b>Phone:</b>
+        ${phone}
+    </p>
 
-    <p><b>Vehicle:</b> ${carModel}</p>
+    <p>
+        <b>Vehicle:</b>
+        ${carModel}
+    </p>
 
-    <p><b>Service:</b> ${serviceOption}</p>
+    <p>
+        <b>Service:</b>
+        ${serviceOption}
+    </p>
 
-    <p><b>Problem Description:</b></p>
+    <p>
+        <b>Problem Description:</b>
+    </p>
 
-    <p>${problem}</p>
+    <p>
+        ${problem}
+    </p>
 
 </div>
 
@@ -119,8 +146,8 @@
     </tr>
 
     <tr>
-        <td><b>VAT</b></td>
-        <td>${vat} SAR</td>
+        <td><b>Subtotal</b></td>
+        <td>${subtotal} SAR</td>
     </tr>
 
     <tr>
@@ -129,6 +156,16 @@
     </tr>
 
     <tr>
+        <td><b>Amount After Discount</b></td>
+        <td>${afterDiscount} SAR</td>
+    </tr>
+
+    <tr>
+        <td><b>VAT (15%)</b></td>
+        <td>${vat} SAR</td>
+    </tr>
+
+    <tr class="grand-total">
         <td><b>Grand Total</b></td>
         <td><b>${grandTotal} SAR</b></td>
     </tr>
@@ -139,9 +176,12 @@
 
     <b>Technician Notes</b>
 
-    <p>${technicianNotes}</p>
+    <p>
+        ${technicianNotes}
+    </p>
 
 </div>
 
 </body>
+
 </html>

@@ -242,108 +242,232 @@ public class RequestPricingService {
 
         StringBuilder rows = new StringBuilder();
 
-        int grandTotal = 0;
         int totalPartsPrice = 0;
         int totalLabor = 0;
 
-
+        // ==========================================
+        // Parts
+        // ==========================================
 
         for (RequestPart part : parts) {
 
-            int partPrice = part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+            int partPrice =
+                    part.getFinalPrice() == null
+                            ? 0
+                            : part.getFinalPrice();
+
+            int quantity =
+                    part.getQuantity() == null
+                            ? 0
+                            : part.getQuantity();
+
             int partsCost =
-                    partPrice * part.getQuantity();
+                    partPrice * quantity;
 
             int labor =
-                    part.getLaborCost()== null ? 0 : part.getLaborCost();
+                    part.getLaborCost() == null
+                            ? 0
+                            : part.getLaborCost();
 
             int total =
                     partsCost + labor;
 
             totalPartsPrice += partsCost;
             totalLabor += labor;
-            grandTotal += total;
-
 
             rows.append("""
-                            <tr>
-                            <td>%s</td>
-                            <td>%s</td>
-                            <td>%d</td>
-                            <td>%s</td>
-                            <td>%d SAR</td>
-                            <td>%d SAR</td>
-                            <td>%d SAR</td>
-                            </tr>
-                            """.formatted(
-                    part.getName(),
-                    part.getType() == null ? "-" : part.getType(),
-                    part.getQuantity(),
-                    part.getProblemDescription() == null ? "-" : part.getProblemDescription(),
+                <tr>
+                    <td>%s</td>
+                    <td>%s</td>
+                    <td>%d</td>
+                    <td>%s</td>
+                    <td>%d SAR</td>
+                    <td>%d SAR</td>
+                    <td>%d SAR</td>
+                </tr>
+                """.formatted(
+                    escapeHtml(part.getName()),
+                    escapeHtml(
+                            part.getType() == null
+                                    ? "-"
+                                    : part.getType()
+                    ),
+                    quantity,
+                    escapeHtml(
+                            part.getProblemDescription() == null
+                                    ? "-"
+                                    : part.getProblemDescription()
+                    ),
                     partPrice,
                     labor,
                     total
             ));
         }
 
+        // ==========================================
+        // Financial Calculation
+        // ==========================================
+
+        double subtotal =
+                totalPartsPrice + totalLabor;
+
+        // نفس الخصم المحفوظ على الطلب
+        double discount =
+                request.getDiscount() == null
+                        ? 0
+                        : request.getDiscount();
+
+        // منع الخصم من النزول تحت الصفر
+        double afterDiscount =
+                Math.max(
+                        subtotal - discount,
+                        0
+                );
+
+        // VAT = 15% بعد الخصم
+        double vat =
+                afterDiscount * 0.15;
+
+        // المبلغ النهائي
+        double grandTotal =
+                afterDiscount + vat;
+
+        // ==========================================
+        // Technician Notes
+        // ==========================================
+
         String technicianNotes =
                 notes.isEmpty()
                         ? "-"
                         : notes.get(0).getNote();
+
         String reportNumber =
                 report.getReportNumber();
 
+        // ==========================================
+        // Load HTML Template
+        // ==========================================
 
         ClassPathResource resource =
-                new ClassPathResource("templates/pricing-report.html");
+                new ClassPathResource(
+                        "templates/pricing-report.html"
+                );
 
-        String html = new String(
-                resource.getInputStream().readAllBytes(),
-                StandardCharsets.UTF_8
+        String html =
+                new String(
+                        resource.getInputStream().readAllBytes(),
+                        StandardCharsets.UTF_8
+                );
+
+        // ==========================================
+        // Replace Data
+        // ==========================================
+
+        html = html.replace(
+                "${customerName}",
+                escapeHtml(
+                        request.getCustomer()
+                                .getUser()
+                                .getFullName()
+                )
         );
 
-        html = html.replace("${customerName}",
-                request.getCustomer().getUser().getFullName());
+        html = html.replace(
+                "${orderNumber}",
+                escapeHtml(
+                        request.getOrderNumber()
+                )
+        );
 
-        html = html.replace("${orderNumber}",
-                request.getOrderNumber());
         html = html.replace(
                 "${reportNumber}",
-                reportNumber
+                escapeHtml(reportNumber)
         );
 
-        html = html.replace("${carModel}",
-                request.getCar().getModel().getName());
+        html = html.replace(
+                "${carModel}",
+                escapeHtml(
+                        request.getCar()
+                                .getModel()
+                                .getName()
+                )
+        );
 
-        html = html.replace("${serviceOption}",
-                request.getServiceOption().name());
+        html = html.replace(
+                "${serviceOption}",
+                escapeHtml(
+                        request.getServiceOption().name()
+                )
+        );
 
-        html = html.replace("${phone}",
-                request.getCustomer().getUser().getPhoneNumber());
+        html = html.replace(
+                "${phone}",
+                escapeHtml(
+                        request.getCustomer()
+                                .getUser()
+                                .getPhoneNumber()
+                )
+        );
 
-        html = html.replace("${problem}",
-                request.getProblemDescription());
+        html = html.replace(
+                "${problem}",
+                escapeHtml(
+                        request.getProblemDescription()
+                )
+        );
 
-        html = html.replace("${technicianNotes}",
-                technicianNotes);
+        html = html.replace(
+                "${technicianNotes}",
+                escapeHtml(technicianNotes)
+        );
 
-        html = html.replace("${rows}",
-                rows.toString());
+        html = html.replace(
+                "${rows}",
+                rows.toString()
+        );
 
-        html = html.replace("${partsTotal}",
-                String.valueOf(totalPartsPrice));
+        // ==========================================
+        // Financial Values
+        // ==========================================
 
-        html = html.replace("${laborTotal}",
-                String.valueOf(totalLabor));
+        html = html.replace(
+                "${partsTotal}",
+                formatMoney(totalPartsPrice)
+        );
 
-        html = html.replace("${vat}",
-                String.valueOf(request.getVatAmount()));
+        html = html.replace(
+                "${laborTotal}",
+                formatMoney(totalLabor)
+        );
 
-        html = html.replace("${discount}",
-                String.valueOf(request.getDiscount()));
+        html = html.replace(
+                "${subtotal}",
+                formatMoney(subtotal)
+        );
 
-        html = html.replace("${grandTotal}",
-                String.valueOf(grandTotal));
+        html = html.replace(
+                "${discount}",
+                formatMoney(discount)
+        );
+
+        html = html.replace(
+                "${afterDiscount}",
+                formatMoney(afterDiscount)
+        );
+
+        html = html.replace(
+                "${vat}",
+                formatMoney(vat)
+        );
+
+        html = html.replace(
+                "${grandTotal}",
+                formatMoney(grandTotal)
+        );
+
+        // ==========================================
+        // Generate PDF
+        // ==========================================
 
         ByteArrayOutputStream output =
                 new ByteArrayOutputStream();
@@ -351,10 +475,20 @@ public class RequestPricingService {
         PdfRendererBuilder builder =
                 new PdfRendererBuilder();
 
-        String baseUrl = new ClassPathResource("").getURL().toExternalForm();
+        // Base URL للـ CSS والـ fonts
+        String baseUrl =
+                new ClassPathResource("")
+                        .getURL()
+                        .toExternalForm();
+
+        // ==========================================
+        // Arabic Font
+        // ==========================================
 
         ClassPathResource font =
-                new ClassPathResource("fonts/Cairo-Regular.ttf");
+                new ClassPathResource(
+                        "fonts/Cairo-Regular.ttf"
+                );
 
         builder.useFont(
                 () -> {
@@ -370,20 +504,58 @@ public class RequestPricingService {
                 true
         );
 
-        builder.withHtmlContent(html, baseUrl);
+        // ==========================================
+        // HTML
+        // ==========================================
+
+        builder.withHtmlContent(
+                html,
+                baseUrl
+        );
 
         builder.toStream(output);
 
         builder.run();
 
+        // ==========================================
+        // Response
+        // ==========================================
+
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=pricing-report-"+report.getReportNumber()+".pdf"
+                        "attachment; filename=pricing-report-"
+                                + report.getReportNumber()
+                                + ".pdf"
                 )
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(output.toByteArray());
+                .contentType(
+                        MediaType.APPLICATION_PDF
+                )
+                .body(
+                        output.toByteArray()
+                );
+    }
 
+    private String formatMoney(double value) {
+
+        return String.format(
+                "%.2f",
+                value
+        );
+    }
+
+    private String escapeHtml(String value) {
+
+        if (value == null) {
+            return "-";
+        }
+
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 
 
