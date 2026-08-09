@@ -245,68 +245,146 @@ public class WarrantyService {
     public void approveWarranty(
             Integer warrantyId,
             Employee employee
-    ){
+    ) {
+
         WarrantyRequest warranty =
                 warrantyRepo.findById(warrantyId)
                         .orElseThrow(() ->
                                 new ApiException("طلب الضمان غير موجود"));
 
+        // ============================
+        // صلاحية الموظف
+        // ============================
+
         if (employee.getEmployeeRole() != EmployeeRole.SUPPORT
                 && employee.getUser().getRole() != UserRole.ADMIN) {
-            throw new ApiException("غير مصرح لك بمعالجة طلبات الضمان");
+
+            throw new ApiException(
+                    "غير مصرح لك بمعالجة طلبات الضمان"
+            );
         }
 
-        if(warranty.getStatus()!=WarrantyStatus.PENDING_REVIEW){
-            throw new ApiException("تمت معالجة الطلب مسبقاً");
+        // ============================
+        // التأكد أن الطلب لم تتم معالجته
+        // ============================
+
+        if (warranty.getStatus() != WarrantyStatus.PENDING_REVIEW) {
+
+            throw new ApiException(
+                    "تمت معالجة الطلب مسبقاً"
+            );
         }
+
+        CarServiceRequest request =
+                warranty.getRequest();
+
+        // ============================
+        // الفني الذي أصلح السيارة سابقاً
+        // ============================
+
+        Employee technician =
+                request.getAssignedTechnician();
+
+        if (technician == null) {
+
+            throw new ApiException(
+                    "لا يوجد فني سابق مرتبط بهذا الطلب"
+            );
+        }
+
+        // ============================
+        // الموافقة على الضمان
+        // ============================
 
         warranty.setStatus(WarrantyStatus.APPROVED);
 
         warranty.setApprovedBy(employee);
-        warranty.setApprovedAt(LocalDateTime.now());
-        warranty.setUpdatedAt(LocalDateTime.now());
+
+        warranty.setApprovedAt(
+                LocalDateTime.now()
+        );
+
+        warranty.setUpdatedAt(
+                LocalDateTime.now()
+        );
+
+        // نخلي الضمان مرتبط بنفس الفني
+        warranty.setAssignedTechnician(
+                technician
+        );
 
         saveHistory(
                 warranty,
                 WarrantyStatus.APPROVED
         );
 
-        Employee technician =
-                warranty.getRequest().getAssignedTechnician();
+        // ============================
+        // إعادة إسناد الطلب للفني القديم
+        // ============================
 
-        warranty.setAssignedTechnician(technician);
+        request.setAssignedTechnician(
+                technician
+        );
+
+        request.setCurrentEmployee(
+                technician
+        );
+
+        request.setLastUpdated(
+                LocalDateTime.now()
+        );
+
+        requestRepo.save(request);
 
         warrantyRepo.save(warranty);
 
-        if (warranty.getRequest().getAssignedTechnician() != null) {
-
-            notificationService.send(
-                    warranty.getRequest()
-                            .getAssignedTechnician()
-                            .getUser(),
-                    "تمت الموافقة على طلب ضمان للطلب #"
-                            + warranty.getRequest().getOrderNumber()
-            );
-        }
+        // ============================
+        // إغلاق تذكرة خدمة العملاء
+        // ============================
 
         Ticket ticket =
-                ticketRepository.findByWarrantyRequest_Id(warrantyId)
+                ticketRepository
+                        .findByWarrantyRequest_Id(warrantyId)
                         .orElseThrow(() ->
-                                new ApiException("التذكرة غير موجودة"));
-        ticket.setStatus(TicketStatus.SOLVED);
-        ticket.setSolvedAt(LocalDateTime.now());
-        ticket.setUpdatedAt(LocalDateTime.now());
+                                new ApiException(
+                                        "التذكرة غير موجودة"
+                                )
+                        );
+
+        ticket.setStatus(
+                TicketStatus.SOLVED
+        );
+
+        ticket.setSolvedAt(
+                LocalDateTime.now()
+        );
+
+        ticket.setUpdatedAt(
+                LocalDateTime.now()
+        );
 
         ticketRepository.save(ticket);
 
+        // ============================
+        // إشعار الفني
+        // ============================
+
         notificationService.send(
-                warranty.getRequest()
-                        .getCustomer()
-                        .getUser(),
+                technician.getUser(),
                 "تمت الموافقة على طلب الضمان للطلب #"
-                        + warranty.getRequest().getOrderNumber()
+                        + request.getOrderNumber()
+                        + " وتم إسناد الطلب لك لإكمال إجراء الضمان."
         );
 
+        // ============================
+        // إشعار العميل
+        // ============================
+
+        notificationService.send(
+                request.getCustomer().getUser(),
+                "تمت الموافقة على طلب الضمان للطلب #"
+                        + request.getOrderNumber()
+        );
     }
 
     @Transactional
