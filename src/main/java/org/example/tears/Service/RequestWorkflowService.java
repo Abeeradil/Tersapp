@@ -30,6 +30,7 @@ public class RequestWorkflowService {
     private final RequestImageRepository imageRepo;
     private final FileStorageService fileStorageService;
     private final WarrantyRepository warrantyRepo;
+    private final WarrantyService warrantyService;
 
 
     @Transactional
@@ -487,46 +488,6 @@ public class RequestWorkflowService {
             case DELIVERED -> CustomerRequestStatus.DELIVERED;
         };
     }
-            
-
-
-    public String mapStaffStatus(StaffRequestStatus status) {
-        return switch (status) {
-            case NEW -> "جديدة";
-            case RECEIVED -> "تم الاستلام";
-            case INSPECTION_IN_PROGRESS -> "جاري الفحص";
-            case TESTING -> "قيد التجربة";
-            case REPORT_WRITING -> "إرفاق التقرير";
-            case PARTS_REGISTERING -> "تسجيل القطع";
-            case PRICING -> "جاري تسعير القطع";
-            case REPAIRING -> "جاري الإصلاح";
-            case DELIVERY_IN_PROGRESS -> "جاهز للتسليم";
-            case DELIVERED -> "تم التسليم";
-        };
-    }
-
-    private String mapStageToArabic(WorkflowStage stage) {
-
-            if (stage == null) return "غير محدد";
-
-            return switch (stage) {
-
-                case NEW_REQUEST -> "طلب جديد";
-                case ASSIGNED -> "تم الإسناد";
-                case RECEIVED -> "تم الاستلام";
-                case INSPECTION_IN_PROGRESS -> "قيد الفحص";
-                case TESTING -> "تجربة";
-                case REPORT_WRITING -> "كتابة التقرير";
-                case PARTS_REGISTERING -> "تسجيل القطع";
-                case PRICING -> "قيد التسعير";
-                case WAITING_APPROVAL -> "بانتظار الموافقة";
-                case REPAIRING -> "قيد الإصلاح";
-                case READY -> "جاهز";
-                case DELIVERED -> "تم التسليم";
-                case CANCELLED -> "ملغي";
-            };
-        }
-
 
 
     public Employee getLeastBusyPricingEmployee() {
@@ -665,18 +626,41 @@ public class RequestWorkflowService {
                         .getId()
                         .equals(employeeId)) {
 
+            throw new ApiException("طلب الضمان غير مسند إليك");
+        }
+
+        WarrantyStatus current = warranty.getStatus();
+
+        // RECEIVED لها إجراء خاص مثل الطلب العادي
+        if (current == WarrantyStatus.APPROVED &&
+                newStatus == WarrantyStatus.RECEIVED) {
+
+            warranty.setStatus(WarrantyStatus.RECEIVED);
+            warranty.setUpdatedAt(LocalDateTime.now());
+
+            warrantyRepo.save(warranty);
+
+            saveWarrantyHistory(
+                    warranty,
+                    WarrantyStatus.RECEIVED,
+                    employee
+            );
+
+            notificationService.send(
+                    warranty.getCustomer().getUser(),
+                    "تم استلام طلب الضمان وجاري استلام السيارة."
+            );
+
+            return;
+        }
+
+        if (current == WarrantyStatus.RECEIVED) {
             throw new ApiException(
-                    "طلب الضمان غير مسند إليك"
+                    "هذه الحالة لها إجراء خاص، استخدم زر استلام السيارة"
             );
         }
 
-        WarrantyStatus current =
-                warranty.getStatus();
-
-        validateWarrantyTransition(
-                current,
-                newStatus
-        );
+        validateWarrantyTransition(current, newStatus);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -684,9 +668,6 @@ public class RequestWorkflowService {
         warranty.setUpdatedAt(now);
 
         switch (newStatus) {
-
-            case CAR_RECEIVED ->
-                    warranty.setUpdatedAt(now);
 
             case REPAIRING ->
                     warranty.setRepairStartedAt(now);
@@ -713,6 +694,7 @@ public class RequestWorkflowService {
         );
     }
 
+
     private void validateWarrantyTransition(
             WarrantyStatus current,
             WarrantyStatus next
@@ -720,48 +702,17 @@ public class RequestWorkflowService {
 
         switch (current) {
 
-            case APPROVED -> {
-
-                if (next != WarrantyStatus.WAITING_RECEIVE) {
-                    throw new ApiException(
-                            "بعد الموافقة يجب انتظار استلام السيارة"
-                    );
-                }
-            }
-
-            case WAITING_RECEIVE -> {
-
-                if (next != WarrantyStatus.CAR_RECEIVED) {
-                    throw new ApiException(
-                            "يجب استلام السيارة أولاً"
-                    );
-                }
-            }
-
-            case CAR_RECEIVED -> {
-
-                if (next != WarrantyStatus.INSPECTION) {
-                    throw new ApiException(
-                            "يجب فحص السيارة أولاً"
-                    );
-                }
-            }
-
             case INSPECTION -> {
 
                 if (next != WarrantyStatus.REPAIRING) {
-                    throw new ApiException(
-                            "يجب بدء إصلاح السيارة"
-                    );
+                    throw new ApiException("بعد الفحص يجب بدء الإصلاح");
                 }
             }
 
             case REPAIRING -> {
 
                 if (next != WarrantyStatus.TESTING) {
-                    throw new ApiException(
-                            "بعد الإصلاح يجب تجربة السيارة"
-                    );
+                    throw new ApiException("بعد الإصلاح يجب الانتقال للتجربة");
                 }
             }
 
@@ -777,9 +728,7 @@ public class RequestWorkflowService {
             case DELIVERY_IN_PROGRESS -> {
 
                 if (next != WarrantyStatus.DELIVERED) {
-                    throw new ApiException(
-                            "يجب تسليم السيارة أولاً"
-                    );
+                    throw new ApiException("يجب تسليم السيارة");
                 }
             }
 
@@ -789,6 +738,7 @@ public class RequestWorkflowService {
                     );
         }
     }
+
 
 
     private void saveWarrantyHistory(
@@ -823,11 +773,8 @@ public class RequestWorkflowService {
                     dto.setStatus(history.getStatus());
                     dto.setChangedAt(history.getChangedAt());
 
-                    if (history.getChangedBy() != null) {
-
-                        dto.setEmployeeId(
-                                history.getChangedBy().getId()
-                        );
+                    if (history.getChangedBy() != null &&
+                            history.getChangedBy().getUser() != null) {
 
                         dto.setEmployeeName(
                                 history.getChangedBy()
@@ -841,8 +788,67 @@ public class RequestWorkflowService {
                 .toList();
     }
 
+    @Transactional
+    public void receiveWarrantyCar(
+            Integer warrantyId,
+            Integer employeeId,
+            List<MultipartFile> images
+    ) {
 
+        WarrantyRequest warranty =
+                warrantyRepo.findById(warrantyId)
+                        .orElseThrow(() ->
+                                new ApiException("طلب الضمان غير موجود"));
 
+        Employee employee =
+                employeeRepo.findById(employeeId)
+                        .orElseThrow(() ->
+                                new ApiException("الموظف غير موجود"));
+
+        if (warranty.getAssignedTechnician() == null ||
+                !employeeId.equals(
+                        warranty.getAssignedTechnician().getId()
+                )) {
+
+            throw new ApiException("غير مصرح لك");
+        }
+
+        if (warranty.getStatus() != WarrantyStatus.RECEIVED) {
+            throw new ApiException(
+                    "طلب الضمان ليس في حالة استلام السيارة"
+            );
+        }
+
+        if (images == null || images.isEmpty()) {
+            throw new ApiException(
+                    "يجب إرفاق صورة واحدة على الأقل عند استلام السيارة"
+            );
+        }
+
+        warrantyService.saveImages(
+                warranty,
+                images,
+                WarrantyImageType.CAR_RECEIVED
+        );
+
+        LocalDateTime now = LocalDateTime.now();
+
+        warranty.setStatus(WarrantyStatus.INSPECTION);
+        warranty.setUpdatedAt(now);
+
+        warrantyRepo.save(warranty);
+
+        saveWarrantyHistory(
+                warranty,
+                WarrantyStatus.INSPECTION,
+                employee
+        );
+
+        notificationService.send(
+                warranty.getCustomer().getUser(),
+                "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص."
+        );
+    }
 
 
 }

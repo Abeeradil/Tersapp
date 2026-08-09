@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.example.tears.Enums.WarrantyImageType;
 
 @Entity
 @Getter
@@ -21,4 +22,7 @@ public class WarrantyImage {
     private WarrantyRequest warrantyRequest;
 
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    private WarrantyImageType type;
 }

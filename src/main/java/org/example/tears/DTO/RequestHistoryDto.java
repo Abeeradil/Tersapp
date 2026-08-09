@@ -11,7 +11,6 @@ public class RequestHistoryDto {
     private Integer id;
 
     private String orderNumber;
-
     private String serviceName;
 
     private LocalDate appointmentDate;
@@ -23,8 +22,6 @@ public class RequestHistoryDto {
     private Boolean canReview;
     private Boolean reviewed;
 
-    private String status;
-
     private Boolean warrantyRequest;
     private String warrantyStatus;
     private LocalDate warrantyExpiryDate;
@@ -33,7 +30,6 @@ public class RequestHistoryDto {
 
 
     private String customerStatus;
-
     private String requestState;
 
 

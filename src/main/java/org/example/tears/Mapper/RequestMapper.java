@@ -1,16 +1,14 @@
 package org.example.tears.Mapper;
 
 import lombok.AllArgsConstructor;
-import org.example.tears.DTO.EmployeeListDto;
-import org.example.tears.DTO.EmployeeRequestResponseDto;
-import org.example.tears.DTO.RequestSummaryDto;
-import org.example.tears.DTO.TimelineItemDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.example.tears.Repository.WarrantyRepository;
+import org.example.tears.Service.RequestWorkflowService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -27,7 +25,7 @@ public class RequestMapper {
     private final RequestReportRepository reportRepo;
     private final RequestApprovalRepository approvalRepo;
     private final WarrantyRepository warrantyRepo;
-
+    private final RequestWorkflowService requestWorkflowService;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -77,6 +75,9 @@ public class RequestMapper {
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
+        if (r.getStaffStatus() != null){
+            dto.setStatus(r.getStaffStatus().name());
+        }
 
 
         dto.setWarrantyEligible(
@@ -153,12 +154,53 @@ public class RequestMapper {
         return RequestState.ACTIVE.name();
     }
 
+    public EmployeeRequestDetailsDto toEmployeeDetailsDto(
+            CarServiceRequest r
+    ) {
 
+        EmployeeRequestDetailsDto dto =
+                new EmployeeRequestDetailsDto();
 
-    public  EmployeeRequestDetailsDto toEmployeeDetailsDto(CarServiceRequest r){
+        WarrantyRequest warranty =
+                warrantyRepo.findByRequestId(r.getId())
+                        .orElse(null);
 
-        EmployeeRequestDetailsDto dto = new EmployeeRequestDetailsDto();
+        if (warranty != null) {
 
+            dto.setWarrantyRequest(true);
+            dto.setWarrantyStatus(warranty.getStatus());
+
+            dto.setWarrantyTimeline(
+                    requestWorkflowService.getWarrantyTimeline(
+                            warranty.getId()
+                    )
+            );
+
+            dto.setWarrantyImages(
+                    warranty.getImages()
+                            .stream()
+                            .map(img -> {
+
+                                WarrantyImageResponseDto imageDto =
+                                        new WarrantyImageResponseDto();
+
+                                imageDto.setId(img.getId());
+                                imageDto.setImageUrl(img.getImageUrl());
+
+                                if (img.getType() != null) {
+                                    imageDto.setType(
+                                            img.getType().name()
+                                    );
+                                }
+
+                                return imageDto;
+                            })
+                            .toList()
+            );
+
+        } else {
+            dto.setWarrantyRequest(false);
+        }
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 

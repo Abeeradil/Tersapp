@@ -2,9 +2,11 @@ package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Enums.WarrantyStatus;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Service.*;
@@ -190,7 +192,7 @@ import java.util.List;
     }
 
         // معاينة التقرير
-        @GetMapping("/requests/{requestId}/report")
+        @GetMapping("/{requestId}/report")
         public ApiResponse previewReport(
                 @PathVariable Integer requestId,
                 HttpServletRequest request
@@ -210,7 +212,7 @@ import java.util.List;
 
 
         // إرسال التقرير للعميل
-    @PutMapping("/requests/{requestId}/send-to-customer")
+    @PutMapping("/{requestId}/send-to-customer")
     public ApiResponse sendToCustomer(
             @PathVariable Integer requestId,
             @AuthenticationPrincipal User user
@@ -222,6 +224,66 @@ import java.util.List;
         );
 
         return new ApiResponse(true,"تم إرسال التقرير للعميل");
+    }
+
+    @PatchMapping("/warrantyId/{warrantyId}/status")
+    public ApiResponse updateWarrantyStatus(
+            @PathVariable Integer warrantyId,
+            @RequestParam WarrantyStatus status,
+            @AuthenticationPrincipal User user
+    ) {
+
+        if (user.getEmployee() == null) {
+            throw new ApiException("غير مصرح");
+        }
+
+        workflowService.updateWarrantyStatus(
+                warrantyId,
+                status,
+                user.getEmployee().getId()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم تحديث حالة طلب الضمان"
+        );
+    }
+
+    @PostMapping(
+            value = "/warranty/{warrantyId}/receive",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ApiResponse receiveWarrantyCar(
+            @PathVariable Integer warrantyId,
+            @RequestPart("images") List<MultipartFile> images,
+            @AuthenticationPrincipal User user
+    ) {
+
+        if (user.getEmployee() == null) {
+            throw new ApiException("غير مصرح");
+        }
+
+        workflowService.receiveWarrantyCar(
+                warrantyId,
+                user.getEmployee().getId(),
+                images
+        );
+
+        return new ApiResponse(
+                true,
+                "تم استلام السيارة لطلب الضمان"
+        );
+    }
+    @GetMapping("/warranty/{warrantyId}/timeline")
+    public ApiResponse getWarrantyTimeline(
+            @PathVariable Integer warrantyId
+    ) {
+
+        return new ApiResponse(
+                true,
+                "تم جلب سجل حالات الضمان",
+                workflowService.getWarrantyTimeline(warrantyId)
+        );
     }
 
 }

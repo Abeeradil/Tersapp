@@ -2,6 +2,7 @@ package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.ServiceOption;
@@ -27,8 +28,10 @@ public class CarServiceRequestController {
         private final CarServiceRequestService requestService;
         private final AppointmentService appointmentService;
         private final LocationService locationService;
+    private final WarrantyService warrantyService;
 
-        private final AuthService authService;
+
+    private final AuthService authService;
 
         @PostMapping("/preview")
         public ResponseEntity<?> preview(@RequestBody PreviewRequestDto dto) {
@@ -93,6 +96,25 @@ public class CarServiceRequestController {
                 true,
                 "تم جلب الصورة",
                 requestService.getRequestImages(id, user.getCustomer().getId())
+        );
+    }
+    @GetMapping("/warranty/{warrantyId}/images")
+    public ApiResponse getWarrantyImages(
+            @PathVariable Integer warrantyId,
+            @AuthenticationPrincipal User user
+    ) {
+
+        if (user.getCustomer() == null) {
+            throw new ApiException("غير مصرح");
+        }
+
+        return new ApiResponse(
+                true,
+                "تم جلب صور الضمان",
+                warrantyService.getWarrantyImages(
+                        warrantyId,
+                        user.getCustomer().getId()
+                )
         );
     }
 

@@ -3,6 +3,7 @@ package org.example.tears.Service;
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.WarrantyDetailsDto;
+import org.example.tears.DTO.WarrantyImageResponseDto;
 import org.example.tears.DTO.WarrantyRequestDto;
 import org.example.tears.DTO.WarrantyResponseDto;
 import org.example.tears.Enums.*;
@@ -24,7 +25,6 @@ public class WarrantyService {
     private final CarServiceRequestRepository requestRepo;
     private final WarrantyRepository warrantyRepo;
     private final FileStorageService fileStorageService;
-    private final WarrantyImageRepository warrantyImageRepo;
     private final WarrantyStatusHistoryRepository historyRepo;
     private final NotificationService notificationService;
     private final TicketRepository ticketRepository;
@@ -74,7 +74,11 @@ public class WarrantyService {
 
         warrantyRepo.save(warranty);
 
-        saveImages(warranty, images);
+        saveImages(
+                warranty,
+                images,
+                WarrantyImageType.CUSTOMER_PROBLEM
+        );
 
         saveHistory(
                 warranty,
@@ -146,26 +150,52 @@ public class WarrantyService {
         );
     }
 
-    private void saveImages(
+    public void saveImages(
             WarrantyRequest warranty,
-            List<MultipartFile> images
+            List<MultipartFile> images,
+            WarrantyImageType type
     ) {
 
-        if (images == null || images.isEmpty()) {
+        if (images == null) {
             return;
         }
 
-        for (MultipartFile image : images) {
+        for (MultipartFile file : images) {
 
-            String url = fileStorageService.saveFile(image,"receipts");
+            if (file.isEmpty()) {
+                throw new ApiException("يوجد ملف فارغ");
+            }
 
-            WarrantyImage warrantyImage =
+            if (file.getSize() > 10 * 1024 * 1024) {
+                throw new ApiException(
+                        "حجم الملف لا يجب أن يتجاوز 10MB"
+                );
+            }
+
+            String contentType = file.getContentType();
+
+            if (contentType == null ||
+                    !contentType.startsWith("image/")) {
+
+                throw new ApiException(
+                        "يسمح فقط برفع الصور"
+                );
+            }
+
+            String fileUrl =
+                    fileStorageService.saveFile(
+                            file,
+                            "warranty"
+                    );
+
+            WarrantyImage image =
                     new WarrantyImage();
 
-            warrantyImage.setWarrantyRequest(warranty);
-            warrantyImage.setImageUrl(url);
+            image.setWarrantyRequest(warranty);
+            image.setImageUrl(fileUrl);
+            image.setType(type);
 
-            warrantyImageRepo.save(warrantyImage);
+            warranty.getImages().add(image);
         }
     }
 
@@ -454,6 +484,39 @@ public class WarrantyService {
                     message
             );
         }
+    }
+
+    public List<WarrantyImageResponseDto> getWarrantyImages(
+            Integer warrantyId,
+            Integer customerId
+    ) {
+
+        WarrantyRequest warranty =
+                warrantyRepo.findById(warrantyId)
+                        .orElseThrow(() ->
+                                new ApiException("طلب الضمان غير موجود"));
+
+        if (!warranty.getCustomer().getId().equals(customerId)) {
+            throw new ApiException("غير مصرح");
+        }
+
+        return warranty.getImages()
+                .stream()
+                .map(image -> {
+
+                    WarrantyImageResponseDto dto =
+                            new WarrantyImageResponseDto();
+
+                    dto.setId(image.getId());
+                    dto.setImageUrl(image.getImageUrl());
+
+                    if (image.getType() != null) {
+                        dto.setType(image.getType().name());
+                    }
+
+                    return dto;
+                })
+                .toList();
     }
 
 

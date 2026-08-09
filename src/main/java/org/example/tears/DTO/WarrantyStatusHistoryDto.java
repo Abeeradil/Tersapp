@@ -1,7 +1,10 @@
 package org.example.tears.DTO;
 
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.Data;
 import org.example.tears.Enums.WarrantyStatus;
+import org.example.tears.Model.Employee;
 
 import java.time.LocalDateTime;
 
@@ -12,7 +15,9 @@ public class WarrantyStatusHistoryDto {
 
     private LocalDateTime changedAt;
 
-    private Integer employeeId;
+    @ManyToOne
+    @JoinColumn(name = "changed_by_employee_id")
+    private Employee changedBy;
 
     private String employeeName;
 }

@@ -3,6 +3,9 @@ package org.example.tears.OutDTO;
 import lombok.Data;
 import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.DTO.TimelineItemDto;
+import org.example.tears.DTO.WarrantyImageResponseDto;
+import org.example.tears.DTO.WarrantyStatusHistoryDto;
+import org.example.tears.Enums.WarrantyStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,11 +43,8 @@ public class EmployeeRequestDetailsDto {
     private Boolean customerSelectedDelivery;
 
     private LocalDate deliveryDate;
-
     private LocalTime deliveryTime;
-
     private String deliveryDay;
-
     private String deliveryLocation;
 
     private Boolean customerApproved;
@@ -52,4 +52,8 @@ public class EmployeeRequestDetailsDto {
     private String pricingEmployeeName;
     private String pricingEmployeePhone;
 
+    private Boolean warrantyRequest;
+    private WarrantyStatus warrantyStatus;
+    private List<WarrantyStatusHistoryDto> warrantyTimeline;
+    private List<WarrantyImageResponseDto> warrantyImages;
 }

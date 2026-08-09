@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
         private String serviceOption;    // نوع الخدمة
         private String ProblemDescription;
 
+        private String status;
+
         private String carModelName;
         private String carModelNameAr; // كامري
 
