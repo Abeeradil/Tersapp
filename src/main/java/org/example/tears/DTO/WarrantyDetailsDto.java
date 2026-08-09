@@ -26,9 +26,12 @@ public class WarrantyDetailsDto {
 
     private String customerName;
 
-    private String carModel;
+    private String carModelName;
+    private String carModelNameAr;
 
-    private String plateNumber;
+    private String plateNumberArabic;
+    private String plateNumberEnglish;
+
 
     private String warrantyDescription;
     private List<WarrantyImageResponseDto> images;

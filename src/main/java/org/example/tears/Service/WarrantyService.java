@@ -263,7 +263,8 @@ public class WarrantyService {
         dto.setId(warranty.getId());
 
         dto.setOrderNumber(
-                warranty.getRequest().getOrderNumber()
+                warranty.getRequest()
+                        .getOrderNumber()
         );
 
         dto.setProblemType(
@@ -286,23 +287,63 @@ public class WarrantyService {
                 warranty.getCreatedAt()
         );
 
-        dto.setCustomerName(
-                warranty.getCustomer()
-                        .getUser()
-                        .getFullName()
-        );
+        // ===========================
+        // Customer
+        // ===========================
 
-        dto.setCarModel(
-                warranty.getRequest()
-                        .getCar()
-                        .getModel()
-                        .getName()
-        );
+        if (warranty.getCustomer() != null &&
+                warranty.getCustomer().getUser() != null) {
 
-        dto.setPlateNumber(
-                warranty.getRequest()
-                        .getCar()
-                        .getPlateNumberEnglish()
+            dto.setCustomerName(
+                    warranty.getCustomer()
+                            .getUser()
+                            .getFullName()
+            );
+        }
+
+        // ===========================
+        // Car
+        // ===========================
+
+        CarServiceRequest request =
+                warranty.getRequest();
+
+        if (request != null &&
+                request.getCar() != null) {
+
+            dto.setCarModelName(
+                    request.getCar()
+                            .getModel()
+                            .getName()
+            );
+
+            dto.setCarModelNameAr(
+                    request.getCar()
+                            .getModel()
+                            .getNameAr()
+            );
+
+            dto.setPlateNumberArabic(
+                    requestMapper.formatArabicPlate(
+                            request.getCar()
+                                    .getPlateNumberArabic()
+                    )
+            );
+
+            dto.setPlateNumberEnglish(
+                    requestMapper.formatEnglishPlate(
+                            request.getCar()
+                                    .getPlateNumberEnglish()
+                    )
+            );
+        }
+
+        // ===========================
+        // Warranty Description
+        // ===========================
+
+        dto.setWarrantyDescription(
+                warranty.getDescription()
         );
 
         // ===========================
@@ -317,10 +358,16 @@ public class WarrantyService {
                             WarrantyImageResponseDto imageDto =
                                     new WarrantyImageResponseDto();
 
-                            imageDto.setId(img.getId());
-                            imageDto.setImageUrl(img.getImageUrl());
+                            imageDto.setId(
+                                    img.getId()
+                            );
+
+                            imageDto.setImageUrl(
+                                    img.getImageUrl()
+                            );
 
                             if (img.getType() != null) {
+
                                 imageDto.setType(
                                         img.getType().name()
                                 );
@@ -336,11 +383,14 @@ public class WarrantyService {
         // ===========================
 
         dto.setTimeline(
-                getWarrantyTimeline(warranty.getId())
+                getWarrantyTimeline(
+                        warranty.getId()
+                )
         );
 
         return dto;
     }
+
 
     public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
             Integer warrantyId

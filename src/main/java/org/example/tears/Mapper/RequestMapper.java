@@ -66,17 +66,25 @@ public class RequestMapper {
         return dto;
     }
 
-    public EmployeeRequestResponseDto toEmployeeCardDto(CarServiceRequest r) {
+    public EmployeeRequestResponseDto toEmployeeCardDto(
+            CarServiceRequest r
+    ) {
 
-        EmployeeRequestResponseDto dto = new EmployeeRequestResponseDto();
+        EmployeeRequestResponseDto dto =
+                new EmployeeRequestResponseDto();
 
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
-        if (r.getStaffStatus() != null){
-            dto.setStatus(r.getStaffStatus().name());
+        if (r.getStaffStatus() != null) {
+            dto.setStatus(
+                    r.getStaffStatus().name()
+            );
         }
 
+        // ===========================
+        // Warranty
+        // ===========================
 
         dto.setWarrantyEligible(
                 isWarrantyEligible(r)
@@ -85,51 +93,99 @@ public class RequestMapper {
         Optional<WarrantyRequest> warranty =
                 warrantyRepo.findByRequestId(r.getId());
 
-        dto.setWarrantyRequest(warranty.isPresent());
-
-
-
-        dto.setWarrantyDescription(
-                warranty.map(WarrantyRequest::getDescription).orElse(null)
+        dto.setWarrantyRequest(
+                warranty.isPresent()
         );
 
+        dto.setWarrantyDescription(
+                warranty.map(
+                        WarrantyRequest::getDescription
+                ).orElse(null)
+        );
 
-        dto.setProblemDescription(r.getProblemDescription());
+        dto.setWarrantyStatus(
+                String.valueOf(warranty.map(
+                        WarrantyRequest::getStatus
+                ).orElse(null))
+        );
 
-        if (r.getCar() != null && r.getCar().getModel() != null) {
+        // ===========================
+        // Problem
+        // ===========================
+
+        dto.setProblemDescription(
+                r.getProblemDescription()
+        );
+
+        // ===========================
+        // Car
+        // ===========================
+
+        if (r.getCar() != null &&
+                r.getCar().getModel() != null) {
 
             dto.setCarModelName(
-                    r.getCar().getModel().getName()
+                    r.getCar()
+                            .getModel()
+                            .getName()
             );
 
             dto.setCarModelNameAr(
-                    r.getCar().getModel().getNameAr()
+                    r.getCar()
+                            .getModel()
+                            .getNameAr()
             );
 
             dto.setPlateNumberArabic(
-                    formatArabicPlate(r.getCar().getPlateNumberArabic())
+                    formatArabicPlate(
+                            r.getCar()
+                                    .getPlateNumberArabic()
+                    )
             );
 
             dto.setPlateNumberEnglish(
-                    formatEnglishPlate(r.getCar().getPlateNumberEnglish())
+                    formatEnglishPlate(
+                            r.getCar()
+                                    .getPlateNumberEnglish()
+                    )
             );
         }
 
+        // ===========================
+        // Address
+        // ===========================
+
         if (r.getLocation() != null) {
-            dto.setAddress(r.getLocation().getAddress());
+
+            dto.setAddress(
+                    r.getLocation()
+                            .getAddress()
+            );
         }
 
+        // ===========================
+        // Service
+        // ===========================
+
         if (r.getServiceOption() != null) {
-            dto.setServiceOption(r.getServiceOption().name());
+
+            dto.setServiceOption(
+                    r.getServiceOption()
+                            .name()
+            );
         }
+
+        // ===========================
+        // Request State
+        // ===========================
 
         dto.setRequestState(
                 mapRequestState(r)
         );
 
-
-
-        dto.setCreatedAt(r.getCreatedAt());
+        dto.setCreatedAt(
+                r.getCreatedAt()
+        );
 
         return dto;
     }
@@ -472,7 +528,7 @@ public class RequestMapper {
         return dto;
     }
 
-    private String formatEnglishPlate(String plate) {
+    public String formatEnglishPlate(String plate) {
 
         if (plate == null || plate.length() < 4) {
             return plate;
@@ -484,7 +540,7 @@ public class RequestMapper {
         return letters + "-" + numbers;
     }
 
-    private String formatArabicPlate(String plate) {
+    public String formatArabicPlate(String plate) {
 
         if (plate == null || plate.isBlank()) {
             return plate;
