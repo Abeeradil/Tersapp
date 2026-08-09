@@ -77,9 +77,7 @@ public class RequestMapper {
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
-        if (r.getStaffStatus() != null) {
-            dto.setStatus(r.getStaffStatus().name());
-        }
+
 
         dto.setWarrantyEligible(
                 isWarrantyEligible(r)
@@ -90,9 +88,6 @@ public class RequestMapper {
 
         dto.setWarrantyRequest(warranty.isPresent());
 
-        dto.setWarrantyStatus(
-                warranty.map(w -> w.getStatus().name()).orElse(null)
-        );
 
         dto.setWarrantyDescription(
                 warranty.map(WarrantyRequest::getDescription).orElse(null)
