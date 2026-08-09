@@ -8,7 +8,6 @@ import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.example.tears.Repository.WarrantyRepository;
-import org.example.tears.Service.RequestWorkflowService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -25,7 +24,6 @@ public class RequestMapper {
     private final RequestReportRepository reportRepo;
     private final RequestApprovalRepository approvalRepo;
     private final WarrantyRepository warrantyRepo;
-    private final RequestWorkflowService requestWorkflowService;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -161,6 +159,10 @@ public class RequestMapper {
         EmployeeRequestDetailsDto dto =
                 new EmployeeRequestDetailsDto();
 
+        // ===========================
+        // Warranty
+        // ===========================
+
         WarrantyRequest warranty =
                 warrantyRepo.findByRequestId(r.getId())
                         .orElse(null);
@@ -168,12 +170,9 @@ public class RequestMapper {
         if (warranty != null) {
 
             dto.setWarrantyRequest(true);
-            dto.setWarrantyStatus(warranty.getStatus());
 
-            dto.setWarrantyTimeline(
-                    requestWorkflowService.getWarrantyTimeline(
-                            warranty.getId()
-                    )
+            dto.setWarrantyStatus(
+                    warranty.getStatus()
             );
 
             dto.setWarrantyImages(
@@ -185,7 +184,9 @@ public class RequestMapper {
                                         new WarrantyImageResponseDto();
 
                                 imageDto.setId(img.getId());
-                                imageDto.setImageUrl(img.getImageUrl());
+                                imageDto.setImageUrl(
+                                        img.getImageUrl()
+                                );
 
                                 if (img.getType() != null) {
                                     imageDto.setType(
@@ -199,8 +200,14 @@ public class RequestMapper {
             );
 
         } else {
+
             dto.setWarrantyRequest(false);
         }
+
+        // ===========================
+        // Basic Data
+        // ===========================
+
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
@@ -229,16 +236,33 @@ public class RequestMapper {
         }
 
         if (r.getDeliveryLocation() != null) {
-                dto.setDeliveryLocation(r.getDeliveryLocation().getAddress());
-            }
 
-        if (r.getStaffStatus() != null){
-            dto.setStatus(r.getStaffStatus().name());
+            dto.setDeliveryLocation(
+                    r.getDeliveryLocation().getAddress()
+            );
         }
 
-        if (r.getServiceOption() != null){
-            dto.setServiceOption(r.getServiceOption().name());
+        // ===========================
+        // Status
+        // ===========================
+
+        if (r.getStaffStatus() != null) {
+
+            dto.setStatus(
+                    r.getStaffStatus().name()
+            );
         }
+
+        if (r.getServiceOption() != null) {
+
+            dto.setServiceOption(
+                    r.getServiceOption().name()
+            );
+        }
+
+        // ===========================
+        // Timeline
+        // ===========================
 
         RequestReport report =
                 reportRepo.findByRequest_IdAndLatestTrue(r.getId())
@@ -248,46 +272,87 @@ public class RequestMapper {
                 buildTimeline(r, report)
         );
 
-        dto.setProblemDescription(r.getProblemDescription());
+        // ===========================
+        // Problem
+        // ===========================
+
+        dto.setProblemDescription(
+                r.getProblemDescription()
+        );
+
+        // ===========================
+        // Approval
+        // ===========================
 
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(r.getId())
                         .orElse(null);
 
         dto.setCustomerApproved(
-                approval == null ? null : approval.getApproved()
+                approval == null
+                        ? null
+                        : approval.getApproved()
         );
 
+        // ===========================
+        // Customer
+        // ===========================
 
-        if(r.getCustomer()!=null){
+        if (r.getCustomer() != null) {
 
             dto.setCustomerName(
-                    r.getCustomer().getUser().getFullName()
+                    r.getCustomer()
+                            .getUser()
+                            .getFullName()
             );
-            dto.setCustomerPhone(r.getCustomer().getUser().getPhoneNumber());
+
+            dto.setCustomerPhone(
+                    r.getCustomer()
+                            .getUser()
+                            .getPhoneNumber()
+            );
         }
 
-        if(r.getCar()!=null){
+        // ===========================
+        // Car
+        // ===========================
+
+        if (r.getCar() != null) {
 
             dto.setCarModelName(
-                    r.getCar().getModel().getName()
+                    r.getCar()
+                            .getModel()
+                            .getName()
             );
 
             dto.setCarModelNameAr(
-                    r.getCar().getModel().getNameAr()
+                    r.getCar()
+                            .getModel()
+                            .getNameAr()
             );
 
             dto.setPlateNumberArabic(
-                    formatArabicPlate(r.getCar().getPlateNumberArabic())
+                    formatArabicPlate(
+                            r.getCar().getPlateNumberArabic()
+                    )
             );
 
             dto.setPlateNumberEnglish(
-                    formatEnglishPlate(r.getCar().getPlateNumberEnglish())
+                    formatEnglishPlate(
+                            r.getCar().getPlateNumberEnglish()
+                    )
             );
 
             if (r.getLocation() != null) {
-                dto.setAddress(r.getLocation().getAddress());
+
+                dto.setAddress(
+                        r.getLocation().getAddress()
+                );
             }
+
+            // ===========================
+            // Pricing Employee
+            // ===========================
 
             if (r.getAssignedPricingEmployee() != null) {
 
@@ -304,7 +369,11 @@ public class RequestMapper {
                 );
             }
         }
-        dto.setCreatedAt(r.getCreatedAt());
+
+        dto.setCreatedAt(
+                r.getCreatedAt()
+        );
+
         return dto;
     }
 

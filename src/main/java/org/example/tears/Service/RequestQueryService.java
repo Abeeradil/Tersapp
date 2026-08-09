@@ -5,15 +5,19 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.EmployeeRequestResponseDto;
 import org.example.tears.DTO.RequestImageDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.DTO.WarrantyStatusHistoryDto;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
+import org.example.tears.Model.WarrantyRequest;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.RequestImageRepository;
+import org.example.tears.Repository.WarrantyRepository;
+import org.example.tears.Repository.WarrantyStatusHistoryRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,6 +29,9 @@ public class RequestQueryService {
     private final CarServiceRequestRepository requestRepo;
     private final RequestImageRepository imageRepo;
     private final RequestMapper requestMapper;
+    private final WarrantyRepository warrantyRepo;
+    private final WarrantyStatusHistoryRepository warrantyHistoryRepos;
+
 
     public List<RequestSummaryDto> getAllRequests() {
         return requestRepo.findAllByOrderByIdDesc()
@@ -91,15 +98,17 @@ public class RequestQueryService {
     public EmployeeRequestDetailsDto getRequestDetails(
             Integer requestId,
             Employee employee
-    ){
+    ) {
 
         CarServiceRequest request =
                 requestRepo.findById(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        if(request.getAssignedTechnician()==null ||
-                !request.getAssignedTechnician().getId().equals(employee.getId())){
+        if (request.getAssignedTechnician() == null ||
+                !request.getAssignedTechnician()
+                        .getId()
+                        .equals(employee.getId())) {
 
             throw new ApiException("غير مصرح لك");
         }
@@ -107,11 +116,38 @@ public class RequestQueryService {
         EmployeeRequestDetailsDto dto =
                 requestMapper.toEmployeeDetailsDto(request);
 
+        // ===========================
+        // Warranty
+        // ===========================
+
+        WarrantyRequest warranty =
+                warrantyRepo.findByRequestId(requestId)
+                        .orElse(null);
+
+        if (warranty != null) {
+
+            dto.setWarrantyRequest(true);
+
+            dto.setWarrantyStatus(
+                    warranty.getStatus()
+            );
+
+            dto.setWarrantyTimeline(
+                    getWarrantyTimeline(warranty.getId())
+            );
+        }
+
+        // ===========================
+        // Request Images
+        // ===========================
+
         dto.setImages(
                 imageRepo.findByRequest_Id(requestId)
                         .stream()
                         .map(img -> {
-                            RequestImageDto imageDto = new RequestImageDto();
+
+                            RequestImageDto imageDto =
+                                    new RequestImageDto();
 
                             imageDto.setId(img.getId());
                             imageDto.setImageUrl(img.getImageUrl());
@@ -131,14 +167,38 @@ public class RequestQueryService {
                         .toList()
         );
 
-
         return dto;
     }
 
+    public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
+            Integer warrantyId
+    ) {
 
+        return warrantyHistoryRepos
+                .findByWarrantyRequest_IdOrderByChangedAtAsc(warrantyId)
+                .stream()
+                .map(history -> {
 
+                    WarrantyStatusHistoryDto dto =
+                            new WarrantyStatusHistoryDto();
 
+                    dto.setStatus(history.getStatus());
+                    dto.setChangedAt(history.getChangedAt());
 
+                    if (history.getChangedBy() != null &&
+                            history.getChangedBy().getUser() != null) {
+
+                        dto.setEmployeeName(
+                                history.getChangedBy()
+                                        .getUser()
+                                        .getFullName()
+                        );
+                    }
+
+                    return dto;
+                })
+                .toList();
+    }
 
     public List<RequestSummaryDto> search(
             String orderNumber,
