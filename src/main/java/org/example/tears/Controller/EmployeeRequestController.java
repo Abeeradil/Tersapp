@@ -226,7 +226,7 @@ import java.util.List;
         return new ApiResponse(true,"تم إرسال التقرير للعميل");
     }
 
-    @PatchMapping("/warrantyId/{warrantyId}/status")
+    @PatchMapping("/warranty/{warrantyId}/status")
     public ApiResponse updateWarrantyStatus(
             @PathVariable Integer warrantyId,
             @RequestParam WarrantyStatus status,

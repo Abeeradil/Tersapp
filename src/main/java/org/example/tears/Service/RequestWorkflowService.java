@@ -668,6 +668,18 @@ public class RequestWorkflowService {
 
         validateWarrantyTransition(current, newStatus);
 
+        if (newStatus == WarrantyStatus.DELIVERED) {
+
+            if (warranty.getDeliveryLocation() == null ||
+                    warranty.getDeliveryDate() == null ||
+                    warranty.getDeliveryTime() == null) {
+
+                throw new ApiException(
+                        "لا يمكن تسليم السيارة، العميل لم يحدد موقع وموعد التسليم"
+                );
+            }
+        }
+
         LocalDateTime now = LocalDateTime.now();
 
         warranty.setStatus(newStatus);
@@ -779,14 +791,19 @@ public class RequestWorkflowService {
                     dto.setStatus(history.getStatus());
                     dto.setChangedAt(history.getChangedAt());
 
-                    if (history.getChangedBy() != null &&
-                            history.getChangedBy().getUser() != null) {
+                    if (history.getChangedBy() != null) {
 
-                        dto.setEmployeeName(
+                        dto.setChangedBy(
                                 history.getChangedBy()
-                                        .getUser()
-                                        .getFullName()
                         );
+
+                        if (history.getChangedBy().getUser() != null) {
+                            dto.setEmployeeName(
+                                    history.getChangedBy()
+                                            .getUser()
+                                            .getFullName()
+                            );
+                        }
                     }
 
                     return dto;

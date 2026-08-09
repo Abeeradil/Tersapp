@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
     private final LocationRepository locationRepository;
     private final SocketService socketService;
     private final RequestMapper requestMapper;
+    private final WarrantyRepository warrantyRepo;
+
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -449,27 +451,57 @@ import java.util.stream.Collectors;
             throw new ApiException("لا يمكن اختيار تاريخ سابق");
         }
 
-        /**
-        if (!AVAILABLE_TIMES.contains(dto.getDeliveryTime())) {
-            throw new ApiException("وقت التسليم غير متاح");
-        }
-         **/
-
-
         Location location =
                 locationRepository.findById(dto.getLocationId())
                         .orElseThrow(() ->
                                 new ApiException("الموقع غير موجود"));
 
-        request.setDeliveryLocation(location);
-        request.setDeliveryDate(dto.getDeliveryDate());
-        request.setDeliveryTime(dto.getDeliveryTime());
+        // ===========================
+        // Warranty Delivery
+        // ===========================
 
-        request.setCustomerSelectedDelivery(true);
+        WarrantyRequest warranty =
+                warrantyRepo.findByRequestId(requestId)
+                        .orElse(null);
 
-        request.setLastUpdated(LocalDateTime.now());
+        if (warranty != null &&
+                warranty.getStatus() == WarrantyStatus.DELIVERY_IN_PROGRESS) {
 
-        requestRepo.save(request);
+            if (warranty.getDeliveryLocation() != null) {
+                throw new ApiException(
+                        "تم اختيار موقع تسليم الضمان مسبقاً"
+                );
+            }
+
+            warranty.setDeliveryLocation(location);
+            warranty.setDeliveryDate(dto.getDeliveryDate());
+            warranty.setDeliveryTime(dto.getDeliveryTime());
+
+            warrantyRepo.save(warranty);
+
+        } else {
+
+            // ===========================
+            // Normal Request Delivery
+            // ===========================
+
+            if (Boolean.TRUE.equals(
+                    request.getCustomerSelectedDelivery()
+            )) {
+                throw new ApiException(
+                        "تم اختيار موعد التسليم مسبقاً"
+                );
+            }
+
+            request.setDeliveryLocation(location);
+            request.setDeliveryDate(dto.getDeliveryDate());
+            request.setDeliveryTime(dto.getDeliveryTime());
+
+            request.setCustomerSelectedDelivery(true);
+            request.setLastUpdated(LocalDateTime.now());
+
+            requestRepo.save(request);
+        }
 
         notificationService.send(
                 request.getCurrentEmployee().getUser(),
