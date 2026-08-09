@@ -629,8 +629,14 @@ public class RequestWorkflowService {
             throw new ApiException("طلب الضمان غير مسند إليك");
         }
 
+
         WarrantyStatus current = warranty.getStatus();
 
+        if (current == newStatus) {
+            throw new ApiException(
+                    "طلب الضمان بالفعل في هذه الحالة"
+            );
+        }
         // RECEIVED لها إجراء خاص مثل الطلب العادي
         if (current == WarrantyStatus.APPROVED &&
                 newStatus == WarrantyStatus.RECEIVED) {

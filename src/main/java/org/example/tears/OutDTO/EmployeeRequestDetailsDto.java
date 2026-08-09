@@ -54,6 +54,9 @@ public class EmployeeRequestDetailsDto {
 
     private Boolean warrantyRequest;
     private WarrantyStatus warrantyStatus;
-    private List<WarrantyStatusHistoryDto> warrantyTimeline;
+
+    private String warrantyDescription;
     private List<WarrantyImageResponseDto> warrantyImages;
+    private List<WarrantyStatusHistoryDto> warrantyTimeline;
+
 }

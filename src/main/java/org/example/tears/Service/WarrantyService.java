@@ -286,6 +286,25 @@ public class WarrantyService {
                 warranty.getCreatedAt()
         );
 
+        dto.setCustomerName(
+                warranty.getCustomer()
+                        .getUser()
+                        .getFullName()
+        );
+
+        dto.setCarModel(
+                warranty.getRequest()
+                        .getCar()
+                        .getModel()
+                        .getName()
+        );
+
+        dto.setPlateNumber(
+                warranty.getRequest()
+                        .getCar()
+                        .getPlateNumberEnglish()
+        );
+
         // ===========================
         // Images
         // ===========================
