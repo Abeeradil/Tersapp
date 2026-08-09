@@ -88,6 +88,7 @@ public class RequestMapper {
         dto.setWarrantyRequest(warranty.isPresent());
 
 
+
         dto.setWarrantyDescription(
                 warranty.map(WarrantyRequest::getDescription).orElse(null)
         );
@@ -158,51 +159,6 @@ public class RequestMapper {
 
         EmployeeRequestDetailsDto dto =
                 new EmployeeRequestDetailsDto();
-
-        // ===========================
-        // Warranty
-        // ===========================
-
-        WarrantyRequest warranty =
-                warrantyRepo.findByRequestId(r.getId())
-                        .orElse(null);
-
-        if (warranty != null) {
-
-            dto.setWarrantyRequest(true);
-
-            dto.setWarrantyStatus(
-                    warranty.getStatus()
-            );
-
-            dto.setWarrantyImages(
-                    warranty.getImages()
-                            .stream()
-                            .map(img -> {
-
-                                WarrantyImageResponseDto imageDto =
-                                        new WarrantyImageResponseDto();
-
-                                imageDto.setId(img.getId());
-                                imageDto.setImageUrl(
-                                        img.getImageUrl()
-                                );
-
-                                if (img.getType() != null) {
-                                    imageDto.setType(
-                                            img.getType().name()
-                                    );
-                                }
-
-                                return imageDto;
-                            })
-                            .toList()
-            );
-
-        } else {
-
-            dto.setWarrantyRequest(false);
-        }
 
         // ===========================
         // Basic Data

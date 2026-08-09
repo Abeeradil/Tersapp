@@ -30,5 +30,6 @@ public class WarrantyDetailsDto {
 
     private String plateNumber;
 
-    private List<String> images;
+    private List<WarrantyImageResponseDto> images;
+    private List<WarrantyStatusHistoryDto> timeline;
 }

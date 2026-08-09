@@ -215,7 +215,7 @@ import java.util.List;
         );
     }
 
-    @GetMapping("/warranty/{id}")
+    @GetMapping("/warranty/{id}/details")
     public WarrantyDetailsDto details(
             @PathVariable Integer id,
             HttpServletRequest request

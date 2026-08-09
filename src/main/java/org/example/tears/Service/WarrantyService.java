@@ -2,10 +2,7 @@ package org.example.tears.Service;
 
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.WarrantyDetailsDto;
-import org.example.tears.DTO.WarrantyImageResponseDto;
-import org.example.tears.DTO.WarrantyRequestDto;
-import org.example.tears.DTO.WarrantyResponseDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.*;
@@ -25,12 +22,13 @@ public class WarrantyService {
     private final CarServiceRequestRepository requestRepo;
     private final WarrantyRepository warrantyRepo;
     private final FileStorageService fileStorageService;
-    private final WarrantyStatusHistoryRepository historyRepo;
     private final NotificationService notificationService;
     private final TicketRepository ticketRepository;
     private final EmployeeRepository employeeRepo;
     private final UserRepository userRepo;
     private final RequestMapper requestMapper;
+    private final WarrantyStatusHistoryRepository warrantyHistoryRepos;
+
 
     @Transactional
     public void createWarrantyRequest(
@@ -213,7 +211,7 @@ public class WarrantyService {
 
         history.setChangedAt(LocalDateTime.now());
 
-        historyRepo.save(history);
+        warrantyHistoryRepos.save(history);
     }
 
 
@@ -243,6 +241,7 @@ public class WarrantyService {
 
         return list;
     }
+
     @Transactional(readOnly = true)
     public WarrantyDetailsDto details(
             Integer warrantyId,
@@ -258,17 +257,105 @@ public class WarrantyService {
             throw new ApiException("غير مصرح لك");
         }
 
-        WarrantyDetailsDto dto = new WarrantyDetailsDto();
+        WarrantyDetailsDto dto =
+                new WarrantyDetailsDto();
 
         dto.setId(warranty.getId());
-        dto.setOrderNumber(warranty.getRequest().getOrderNumber());
-        dto.setProblemType(warranty.getProblemType());
-        dto.setDescription(warranty.getDescription());
-        dto.setStatus(warranty.getStatus());
-        dto.setRejectReason(warranty.getRejectReason());
-        dto.setCreatedAt(warranty.getCreatedAt());
+
+        dto.setOrderNumber(
+                warranty.getRequest().getOrderNumber()
+        );
+
+        dto.setProblemType(
+                warranty.getProblemType()
+        );
+
+        dto.setDescription(
+                warranty.getDescription()
+        );
+
+        dto.setStatus(
+                warranty.getStatus()
+        );
+
+        dto.setRejectReason(
+                warranty.getRejectReason()
+        );
+
+        dto.setCreatedAt(
+                warranty.getCreatedAt()
+        );
+
+        // ===========================
+        // Images
+        // ===========================
+
+        dto.setImages(
+                warranty.getImages()
+                        .stream()
+                        .map(img -> {
+
+                            WarrantyImageResponseDto imageDto =
+                                    new WarrantyImageResponseDto();
+
+                            imageDto.setId(img.getId());
+                            imageDto.setImageUrl(img.getImageUrl());
+
+                            if (img.getType() != null) {
+                                imageDto.setType(
+                                        img.getType().name()
+                                );
+                            }
+
+                            return imageDto;
+                        })
+                        .toList()
+        );
+
+        // ===========================
+        // Timeline
+        // ===========================
+
+        dto.setTimeline(
+                getWarrantyTimeline(warranty.getId())
+        );
 
         return dto;
+    }
+
+    public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
+            Integer warrantyId
+    ) {
+
+        return warrantyHistoryRepos
+                .findByWarrantyRequest_IdOrderByChangedAtAsc(warrantyId)
+                .stream()
+                .map(history -> {
+
+                    WarrantyStatusHistoryDto dto =
+                            new WarrantyStatusHistoryDto();
+
+                    dto.setStatus(
+                            history.getStatus()
+                    );
+
+                    dto.setChangedAt(
+                            history.getChangedAt()
+                    );
+
+                    if (history.getChangedBy() != null &&
+                            history.getChangedBy().getUser() != null) {
+
+                        dto.setEmployeeName(
+                                history.getChangedBy()
+                                        .getUser()
+                                        .getFullName()
+                        );
+                    }
+
+                    return dto;
+                })
+                .toList();
     }
 
     @Transactional
