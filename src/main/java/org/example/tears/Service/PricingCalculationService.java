@@ -80,11 +80,11 @@ public class PricingCalculationService {
                         serviceOption.toUpperCase()
                 );
 
-        // 2️⃣ حساب السعر شامل الضريبة
+        // 2️⃣ السعر الأساسي شامل الضريبة
         double originalPriceWithVat =
                 subtotal + (subtotal * VAT_PERCENTAGE);
 
-        // 3️⃣ حساب الخصم
+        // 3️⃣ حساب الخصم على السعر شامل الضريبة
         double discount = 0;
         boolean couponValid = true;
         String message = "Success";
@@ -104,7 +104,7 @@ public class PricingCalculationService {
                 discount =
                         calculateDiscount(
                                 coupon,
-                                subtotal
+                                originalPriceWithVat
                         );
 
             } catch (Exception e) {
@@ -121,9 +121,11 @@ public class PricingCalculationService {
                         0
                 );
 
-        // 5️⃣ قيمة الضريبة الموجودة داخل السعر النهائي
+        // 5️⃣ استخراج الضريبة الموجودة داخل السعر النهائي
         double vatAmount =
-                finalPrice * VAT_PERCENTAGE / (1 + VAT_PERCENTAGE);
+                finalPrice *
+                        VAT_PERCENTAGE /
+                        (1 + VAT_PERCENTAGE);
 
         PricingResponse response =
                 new PricingResponse();

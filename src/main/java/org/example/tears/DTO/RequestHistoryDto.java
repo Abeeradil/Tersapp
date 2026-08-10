@@ -19,6 +19,9 @@ public class RequestHistoryDto {
 
     private Double totalPrice;
 
+    private String plateNumberArabic;
+    private String plateNumberEnglish;
+
     private Boolean canReview;
     private Boolean reviewed;
 

@@ -391,6 +391,20 @@ public class CarServiceRequestService {
                             : 0L
             );
 
+            // 🚗 هنا أهم جزء: نجيب السيارة
+            Car car = carRepository.findById(req.getCar().getId())
+                    .orElse(null);
+
+            if (car != null) {
+                dto.setPlateNumberArabic(
+                        formatArabicPlate(req.getCar().getPlateNumberArabic())
+                );
+
+                dto.setPlateNumberEnglish(
+                        formatEnglishPlate(req.getCar().getPlateNumberEnglish())
+                );
+            }
+
         }
 
         return dto;
