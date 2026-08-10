@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
     private final WarrantyRepository warrantyRepo;
     private final CarServiceRequestService carServiceRequestService;
     private final WarrantyService warrantyService;
+    private final AppointmentService appointmentService;
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -327,6 +328,7 @@ import java.util.stream.Collectors;
                                 .getId(),
                 carServiceRequestService.toCurrentDto(request)
         );
+
 
         socketService.send(
                 "/topic/report/" + requestId,
@@ -765,6 +767,10 @@ import java.util.stream.Collectors;
                                     .getUser()
                                     .getId(),
                     carServiceRequestService.toCurrentDto(request)
+            );
+            socketService.send(
+                    "/topic/availability",
+                    appointmentService.getAllAvailability()
             );
 
             socketService.send(

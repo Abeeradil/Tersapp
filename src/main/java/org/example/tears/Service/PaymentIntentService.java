@@ -200,6 +200,7 @@ public class PaymentIntentService {
                 "/topic/availability",
                 appointmentService.getAllAvailability()
         );
+
         return carServiceRequestService.toResponseDto(savedRequest);
     }
 

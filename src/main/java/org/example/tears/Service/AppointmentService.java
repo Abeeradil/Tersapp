@@ -15,6 +15,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
@@ -147,13 +149,48 @@ public class AppointmentService {
         );
     }
 
+//    public List<Map<String, Object>> getAllAvailability() {
+//
+//        List<Map<String, Object>> result = new ArrayList<>();
+//        LocalDate start = LocalDate.now();
+//
+//        for (int i = 0; i < 15; i++) {
+//            result.add(getAvailability(start.plusDays(i)));
+//        }
+//
+//        return result;
+//    }
+
     public List<Map<String, Object>> getAllAvailability() {
 
         List<Map<String, Object>> result = new ArrayList<>();
+
         LocalDate start = LocalDate.now();
 
-        for (int i = 0; i < 15; i++) {
-            result.add(getAvailability(start.plusDays(i)));
+        for (int i = 0; i < 10; i++) {
+
+            LocalDate date = start.plusDays(i);
+
+            List<LocalTime> bookedTimes =
+                    requestRepository
+                            .findByAppointmentDate(date)
+                            .stream()
+                            .map(CarServiceRequest::getAppointmentTime)
+                            .filter(Objects::nonNull)
+                            .distinct()
+                            .sorted()
+                            .toList();
+
+            boolean fullBooked =
+                    bookedTimes.size() == AVAILABLE_TIMES.size();
+
+            result.add(
+                    Map.of(
+                            "date", date,
+                            "fullBooked", fullBooked,
+                            "bookedTimes", bookedTimes
+                    )
+            );
         }
 
         return result;

@@ -8,8 +8,8 @@ import lombok.Getter;
 public enum ServiceOption {
 
 
-    FULL_MAINTENANCE("صيانة شاملة", 250),
-    BODY_PAINT("سمكرة ودهان", 250),
+    FULL_MAINTENANCE("صيانة شاملة", 287),
+    BODY_PAINT("سمكرة ودهان", 287),
     ELECTRONIC_CHECK("فحص إلكتروني", 1);//150
 
     private final String displayName;
