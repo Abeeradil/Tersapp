@@ -192,7 +192,14 @@ public class PaymentIntentService {
         );
 
         requestRepository.save(savedRequest);
-
+        socketService.send(
+                "/topic/current-orders/" + req.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(req)
+        );
+        socketService.send(
+                "/topic/availability",
+                appointmentService.getAllAvailability()
+        );
         return carServiceRequestService.toResponseDto(savedRequest);
     }
 
