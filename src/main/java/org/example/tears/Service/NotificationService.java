@@ -15,8 +15,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class NotificationService {
 
-        private final NotificationRepository repo;
+    private final NotificationRepository repo;
     private final SocketService socketService;
+    private final FirebaseService firebaseService;
 
     public void send(User user, String message) {
 
@@ -27,9 +28,9 @@ public class NotificationService {
         n.setReadStatus(false);
         n.setCreatedAt(LocalDateTime.now());
 
-        Notification saved =
-                repo.save(n);
+        Notification saved = repo.save(n);
 
+        // WebSocket
         if (user.getNotificationsEnabled() != null &&
                 user.getNotificationsEnabled()) {
 
