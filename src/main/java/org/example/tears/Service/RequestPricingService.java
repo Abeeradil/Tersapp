@@ -796,9 +796,7 @@ public class RequestPricingService {
                 );
 
         List<RequestPart> parts =
-                partRepo.findByReport_Id(
-                        report.getId()
-                );
+                partRepo.findByRequestIdAndReportIsNull(requestId);
 
         ReportPreviewDto dto =
                 new ReportPreviewDto();
