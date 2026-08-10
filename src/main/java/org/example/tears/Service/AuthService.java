@@ -413,13 +413,21 @@ public class AuthService {
         try {
             User user = getAuthenticatedUser(request);
 
+            Integer employeeId = user.getEmployee() != null
+                    ? user.getEmployee().getId()
+                    : null;
+
+            Integer customerId = user.getCustomer() != null
+                    ? user.getCustomer().getId()
+                    : null;
+
             return new ApiResponse(
                     true,
                     new AuthStatusDto(
                             true,
                             user.getId(),
-                            user.getEmployee().getId(),
-                            user.getCustomer().getId(),
+                            employeeId,
+                            customerId,
                             user.getFullName(),
                             user.getRole().name()
                     )
@@ -439,5 +447,5 @@ public class AuthService {
                     )
             );
         }
-    }
+}
 }
