@@ -44,6 +44,7 @@ public class PaymentIntentService {
 
 
     private final RestTemplate restTemplate = new RestTemplate();
+    private final AppointmentService appointmentService;
 
     @Value("${MOYASAR_SECRET_KEY}")
     private String secretKey;
@@ -260,6 +261,10 @@ public class PaymentIntentService {
         socketService.send(
                 "/topic/current-orders/" + request.getCustomer().getUser().getId(),
                 carServiceRequestService.toCurrentDto(request)
+        );
+        socketService.send(
+                "/topic/availability",
+                appointmentService.getAllAvailability()
         );
 
         if (request.getCurrentEmployee() != null) {
@@ -560,6 +565,11 @@ public class PaymentIntentService {
                 carServiceRequestService.toCurrentDto(request)
         );
 
+        socketService.send(
+                "/topic/availability",
+                appointmentService.getAllAvailability()
+        );
+
         // تحديث عملية الدفع
         intent.setPaymentStatus(PaymentStatus.PAID);
         intent.setPaidAt(LocalDateTime.now());
@@ -633,6 +643,10 @@ public class PaymentIntentService {
                     "/topic/current-orders/" +
                             request.getCustomer().getUser().getId(),
                     carServiceRequestService.toCurrentDto(request)
+            );
+            socketService.send(
+                    "/topic/availability",
+                    appointmentService.getAllAvailability()
             );
 
             if (request.getCurrentEmployee() != null) {
