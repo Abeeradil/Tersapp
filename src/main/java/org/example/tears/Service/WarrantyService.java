@@ -26,8 +26,10 @@ public class WarrantyService {
     private final TicketRepository ticketRepository;
     private final EmployeeRepository employeeRepo;
     private final UserRepository userRepo;
+    private final SocketService socketService;
     private final RequestMapper requestMapper;
     private final WarrantyStatusHistoryRepository warrantyHistoryRepos;
+    private final CarServiceRequestService carServiceRequestService;
 
 
     @Transactional
@@ -119,10 +121,31 @@ public class WarrantyService {
 
         ticketRepository.save(ticket);
 
+// ============================
+// WebSocket
+// ============================
 
-        // ============================
-        // إشعارات
-        // ============================
+        socketService.send(
+                "/topic/warranty/" +
+                        customer.getUser().getId(),
+                toResponseDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/warranty-details/" +
+                        warranty.getId(),
+                toDetailsDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        customer.getUser().getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
+
+// ============================
+// Notifications
+// ============================
 
         String notify =
                 "يوجد طلب ضمان جديد #" + ticket.getTicketNumber();
@@ -550,6 +573,28 @@ public class WarrantyService {
 
         ticketRepository.save(ticket);
 
+        socketService.send(
+                "/topic/warranty/" +
+                        request.getCustomer()
+                                .getUser()
+                                .getId(),
+                toResponseDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/warranty-details/" +
+                        warranty.getId(),
+                toDetailsDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        request.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
+
         // ============================
         // إشعار الفني
         // ============================
@@ -617,6 +662,33 @@ public class WarrantyService {
         ticket.setUpdatedAt(LocalDateTime.now());
 
         ticketRepository.save(ticket);
+        // ============================
+        // WebSocket
+        // ============================
+
+        socketService.send(
+                "/topic/warranty/" +
+                        warranty.getCustomer()
+                                .getUser()
+                                .getId(),
+                toResponseDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/warranty-details/" +
+                        warranty.getId(),
+                toDetailsDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        warranty.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(
+                        warranty.getRequest()
+                )
+        );
 
         notificationService.send(
                 warranty.getRequest()
@@ -675,6 +747,147 @@ public class WarrantyService {
                 .toList();
     }
 
+    public WarrantyDetailsDto toDetailsDto(
+            WarrantyRequest warranty
+    ) {
+
+        WarrantyDetailsDto dto =
+                new WarrantyDetailsDto();
+
+        dto.setId(warranty.getId());
+
+        dto.setOrderNumber(
+                warranty.getRequest().getOrderNumber()
+        );
+
+        dto.setProblemType(
+                warranty.getProblemType()
+        );
+
+        dto.setDescription(
+                warranty.getDescription()
+        );
+
+        dto.setStatus(
+                warranty.getStatus()
+        );
+
+        dto.setRejectReason(
+                warranty.getRejectReason()
+        );
+
+        dto.setCreatedAt(
+                warranty.getCreatedAt()
+        );
+
+        if (warranty.getCustomer() != null &&
+                warranty.getCustomer().getUser() != null) {
+
+            dto.setCustomerName(
+                    warranty.getCustomer()
+                            .getUser()
+                            .getFullName()
+            );
+        }
+
+        CarServiceRequest request =
+                warranty.getRequest();
+
+        if (request != null &&
+                request.getCar() != null) {
+
+            dto.setCarModelName(
+                    request.getCar()
+                            .getModel()
+                            .getName()
+            );
+
+            dto.setCarModelNameAr(
+                    request.getCar()
+                            .getModel()
+                            .getNameAr()
+            );
+
+            dto.setPlateNumberArabic(
+                    requestMapper.formatArabicPlate(
+                            request.getCar()
+                                    .getPlateNumberArabic()
+                    )
+            );
+
+            dto.setPlateNumberEnglish(
+                    requestMapper.formatEnglishPlate(
+                            request.getCar()
+                                    .getPlateNumberEnglish()
+                    )
+            );
+        }
+
+        dto.setWarrantyDescription(
+                warranty.getDescription()
+        );
+
+        dto.setImages(
+                warranty.getImages()
+                        .stream()
+                        .map(img -> {
+
+                            WarrantyImageResponseDto imageDto =
+                                    new WarrantyImageResponseDto();
+
+                            imageDto.setId(img.getId());
+
+                            imageDto.setImageUrl(
+                                    img.getImageUrl()
+                            );
+
+                            if (img.getType() != null) {
+                                imageDto.setType(
+                                        img.getType().name()
+                                );
+                            }
+
+                            return imageDto;
+                        })
+                        .toList()
+        );
+
+        dto.setTimeline(
+                getWarrantyTimeline(
+                        warranty.getId()
+                )
+        );
+
+        return dto;
+    }
+
+    public WarrantyResponseDto toResponseDto(
+            WarrantyRequest warranty
+    ) {
+
+        WarrantyResponseDto dto =
+                new WarrantyResponseDto();
+
+        dto.setId(warranty.getId());
+
+        dto.setOrderNumber(
+                warranty.getRequest().getOrderNumber()
+        );
+
+        dto.setProblemType(
+                warranty.getProblemType()
+        );
+
+        dto.setStatus(
+                warranty.getStatus()
+        );
+
+        dto.setCreatedAt(
+                warranty.getCreatedAt()
+        );
+
+        return dto;
+    }
 
 
 

@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.DTO.NotificationDto;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Notification;
 import org.example.tears.Model.User;
@@ -15,14 +16,9 @@ import java.util.List;
 public class NotificationService {
 
         private final NotificationRepository repo;
+    private final SocketService socketService;
 
-
-    public void send(User user, String message){
-        // تحقق من أن المستخدم فعّل الإشعارات
-        if (user.getNotificationsEnabled() == null || !user.getNotificationsEnabled()) {
-            // المستخدم لم يفعل الإشعارات، لا نفعل شيء
-            return;
-        }
+    public void send(User user, String message) {
 
         Notification n = new Notification();
 
@@ -31,7 +27,29 @@ public class NotificationService {
         n.setReadStatus(false);
         n.setCreatedAt(LocalDateTime.now());
 
-        repo.save(n);
+        Notification saved =
+                repo.save(n);
+
+        if (user.getNotificationsEnabled() != null &&
+                user.getNotificationsEnabled()) {
+
+            socketService.send(
+                    "/topic/notifications/" + user.getId(),
+                    toDto(saved)
+            );
+        }
+    }
+
+    private NotificationDto toDto(Notification notification) {
+
+        NotificationDto dto = new NotificationDto();
+
+        dto.setId(notification.getId());
+        dto.setMessage(notification.getMessage());
+        dto.setReadStatus(notification.isReadStatus());
+        dto.setCreatedAt(notification.getCreatedAt());
+
+        return dto;
     }
 
         // -----------------------------

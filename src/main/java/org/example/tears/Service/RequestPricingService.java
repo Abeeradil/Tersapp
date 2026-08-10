@@ -36,6 +36,8 @@ public class RequestPricingService {
     private final RequestReportRepository reportRepo;
     private final RequestNoteRepository noteRepo;
     private final RequestApprovalRepository approvalRepo;
+    private final SocketService socketService;
+    private final CarServiceRequestService carServiceRequestService;
 
     @Transactional
     public void startPricing(Integer requestId, Employee employee){
@@ -377,6 +379,14 @@ public class RequestPricingService {
         );
 
         requestRepo.save(request);
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        request.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
 
         /*
          * ==========================================

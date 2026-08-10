@@ -80,7 +80,18 @@ public class CarService {
 
         carRepository.save(car);
 
-        return carMapper.toResponse(car, user.getFullName());
+        Map<String, Object> response =
+                carMapper.toResponse(
+                        car,
+                        user.getFullName()
+                );
+
+        socketService.send(
+                "/topic/cars/" + user.getId(),
+                response
+        );
+
+        return response;
     }
 
     // ================= GET =================
@@ -111,7 +122,18 @@ public class CarService {
 
         carRepository.save(car);
 
-        return carMapper.toResponse(car, user.getFullName());
+        Map<String, Object> response =
+                carMapper.toResponse(
+                        car,
+                        user.getFullName()
+                );
+
+        socketService.send(
+                "/topic/cars/" + user.getId(),
+                response
+        );
+
+        return response;
     }
 
     // ================= DELETE =================
@@ -137,6 +159,7 @@ public class CarService {
                 user,
                 carRepository
         );
+
 
         return carMapper.toCarDetailsDto(
                 car,

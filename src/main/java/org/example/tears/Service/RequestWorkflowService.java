@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
@@ -28,9 +29,13 @@ public class RequestWorkflowService {
     private final WarrantyStatusHistoryRepository warrantyHistoryRepos;
     private final NotificationService notificationService;
     private final RequestImageRepository imageRepo;
+    private final SocketService socketService;
     private final FileStorageService fileStorageService;
     private final WarrantyRepository warrantyRepo;
     private final WarrantyService warrantyService;
+    private final RequestApprovalService requestApprovalService;
+    private final CarServiceRequestService carServiceRequestService;
+    private final RequestMapper requestMapper;
 
 
     @Transactional
@@ -128,6 +133,17 @@ public class RequestWorkflowService {
         saveHistory(req, employeeId);
 
         requestRepo.save(req);
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        req.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(req)
+        );
+
+        socketService.send(
+                "/topic/request/" + req.getId(),
+                carServiceRequestService.toResponseDto(req)
+        );
 
         notificationService.send(
                 req.getCustomer().getUser(),
@@ -299,6 +315,17 @@ public class RequestWorkflowService {
         saveHistory(req, employeeId);
 
         requestRepo.save(req);
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        req.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(req)
+        );
+
+        socketService.send(
+                "/topic/request/" + req.getId(),
+                carServiceRequestService.toResponseDto(req)
+        );
 
         // ===========================
         // Notification
@@ -573,16 +600,23 @@ public class RequestWorkflowService {
                                 new ApiException("الطلب غير موجود"));
 
         if (request.getCurrentEmployee() == null ||
-                !request.getCurrentEmployee().getId().equals(assignedTechnicialEmployee.getId())) {
+                !request.getCurrentEmployee()
+                        .getId()
+                        .equals(assignedTechnicialEmployee.getId())) {
 
             throw new ApiException("الطلب غير مسند لك");
         }
+
         if (request.getPricingStatus() != PricingStatus.PRICED) {
             throw new ApiException("يجب إنهاء التسعير أولاً");
         }
 
-        if (request.getFinalPrice() == null || request.getFinalPrice() <= 0) {
-            throw new ApiException("لا يمكن إرسال تقرير بدون سعر نهائي");
+        if (request.getFinalPrice() == null ||
+                request.getFinalPrice() <= 0) {
+
+            throw new ApiException(
+                    "لا يمكن إرسال تقرير بدون سعر نهائي"
+            );
         }
 
         RequestReport report =
@@ -590,13 +624,54 @@ public class RequestWorkflowService {
                         .orElseThrow(() ->
                                 new ApiException("لا يوجد تقرير"));
 
-        report.setSent(true);
-        request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
+        if (Boolean.TRUE.equals(report.isSent())) {
+            throw new ApiException("تم إرسال التقرير مسبقاً");
+        }
 
-        request.setLastUpdated(LocalDateTime.now());
+        report.setSent(true);
+
+        request.setCustomerStatus(
+                CustomerRequestStatus.WAITING_APPROVAL
+        );
+
+        request.setReportSentAt(
+                LocalDateTime.now()
+        );
+
+        request.setLastUpdated(
+                LocalDateTime.now()
+        );
 
         reportRepo.save(report);
         requestRepo.save(request);
+
+        // ==========================================
+        // تحديث التقرير لحظياً
+        // ==========================================
+
+        socketService.send(
+                "/topic/report/" + requestId,
+                requestApprovalService.getReport(
+                        requestId,
+                        request.getCustomer()
+                )
+        );
+
+        // ==========================================
+        // تحديث الطلب لحظياً
+        // ==========================================
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        request.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
+
+        // ==========================================
+        // Notification
+        // ==========================================
 
         notificationService.send(
                 request.getCustomer().getUser(),
@@ -703,6 +778,44 @@ public class RequestWorkflowService {
                 warranty,
                 newStatus,
                 employee
+        );
+
+// ============================
+// WebSocket
+// ============================
+
+        socketService.send(
+                "/topic/warranty/" +
+                        warranty.getCustomer()
+                                .getUser()
+                                .getId(),
+                warrantyService.toResponseDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/warranty-details/" +
+                        warranty.getId(),
+                warrantyService.toDetailsDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        warranty.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(
+                        warranty.getRequest()
+                )
+        );
+
+// ============================
+// Notification
+// ============================
+
+        notificationService.send(
+                warranty.getCustomer().getUser(),
+                "تم تحديث حالة طلب الضمان رقم #"
+                        + warranty.getId()
         );
 
         notificationService.send(
@@ -860,6 +973,29 @@ public class RequestWorkflowService {
         warranty.setUpdatedAt(now);
 
         warrantyRepo.save(warranty);
+        socketService.send(
+                "/topic/warranty/" +
+                        warranty.getCustomer()
+                                .getUser()
+                                .getId(),
+                warrantyService.toResponseDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/warranty-details/" +
+                        warranty.getId(),
+                warrantyService.toDetailsDto(warranty)
+        );
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        warranty.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(
+                        warranty.getRequest()
+                )
+        );
 
         saveWarrantyHistory(
                 warranty,

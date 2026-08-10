@@ -18,6 +18,9 @@ public class AssignmentService {
     private final CarServiceRequestRepository requestRepo;
     private final UserRepository userRepo;
     private final NotificationService notificationService;
+    private final SocketService socketService;
+    private final CarServiceRequestService carServiceRequestService;
+
 
     @Transactional
     public void assign(Integer requestId, Integer employeeId) {
@@ -45,6 +48,12 @@ public class AssignmentService {
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        request.getCustomer().getUser().getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
 
         notificationService.send(user, "تم إسناد طلب جديد لك");
     }

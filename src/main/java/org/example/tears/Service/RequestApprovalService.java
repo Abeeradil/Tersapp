@@ -35,7 +35,8 @@ import java.util.stream.Collectors;
     private final SocketService socketService;
     private final RequestMapper requestMapper;
     private final WarrantyRepository warrantyRepo;
-
+    private final CarServiceRequestService carServiceRequestService;
+    private final WarrantyService warrantyService;
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -318,6 +319,22 @@ import java.util.stream.Collectors;
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
+
+        socketService.send(
+                "/topic/current-orders/" +
+                        request.getCustomer()
+                                .getUser()
+                                .getId(),
+                carServiceRequestService.toCurrentDto(request)
+        );
+
+        socketService.send(
+                "/topic/report/" + requestId,
+                getReport(
+                        requestId,
+                        request.getCustomer()
+                )
+        );
 
         notificationService.send(
                 request.getAssignedTechnician().getUser(),
@@ -701,6 +718,26 @@ import java.util.stream.Collectors;
 
             warrantyRepo.save(warranty);
 
+            warrantyRepo.save(warranty);
+
+            socketService.send(
+                    "/topic/warranty/" +
+                            customer.getUser().getId(),
+                    warrantyService.toResponseDto(warranty)
+            );
+
+            socketService.send(
+                    "/topic/warranty-details/" +
+                            warranty.getId(),
+                    warrantyService.toDetailsDto(warranty)
+            );
+
+            socketService.send(
+                    "/topic/current-orders/" +
+                            customer.getUser().getId(),
+                    carServiceRequestService.toCurrentDto(request)
+            );
+
         }
 
         // ===========================
@@ -725,6 +762,19 @@ import java.util.stream.Collectors;
             request.setLastUpdated(LocalDateTime.now());
 
             requestRepo.save(request);
+            socketService.send(
+                    "/topic/current-orders/" +
+                            request.getCustomer()
+                                    .getUser()
+                                    .getId(),
+                    carServiceRequestService.toCurrentDto(request)
+            );
+
+            socketService.send(
+                    "/topic/request/" +
+                            request.getId(),
+                    carServiceRequestService.toResponseDto(request)
+            );
         }
 
         // ===========================
