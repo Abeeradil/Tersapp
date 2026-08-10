@@ -2,7 +2,6 @@ package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.NotificationDto;
-import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Notification;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.NotificationRepository;
@@ -17,7 +16,6 @@ public class NotificationService {
 
     private final NotificationRepository repo;
     private final SocketService socketService;
-    private final FirebaseService firebaseService;
 
     public void send(User user, String message) {
 

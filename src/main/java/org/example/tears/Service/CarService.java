@@ -6,8 +6,6 @@ import org.example.tears.Model.*;
 import org.example.tears.OutDTO.OutCarDetailsDTO;
 import org.example.tears.OutDTO.OutMyCarDTO;
 import org.example.tears.Repository.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.*;
