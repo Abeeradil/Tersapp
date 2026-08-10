@@ -208,7 +208,7 @@ public class WarrantyService {
 
         // المشكلة التي كتبها العميل في طلب الضمان
         dto.setProblemDescription(
-                warranty.getDescription()
+                warranty.getWarrantyReason().name()
         );
 
         // تاريخ إنشاء الطلب الأصلي
