@@ -33,7 +33,7 @@ public class WarrantyService {
 
 
     @Transactional
-    public void createWarrantyRequest(
+    public WarrantyRequestSummaryDto createWarrantyRequest(
             Integer requestId,
             WarrantyRequestDto dto,
             List<MultipartFile> images,
@@ -169,6 +169,54 @@ public class WarrantyService {
                 customer.getUser(),
                 "تم استلام طلب الضمان بنجاح، وسيتم التواصل معك عبر المحادثة."
         );
+        return toWarrantyRequestSummaryDto(warranty);
+    }
+
+    private WarrantyRequestSummaryDto toWarrantyRequestSummaryDto(
+            WarrantyRequest warranty
+    ) {
+
+        CarServiceRequest request = warranty.getRequest();
+
+        WarrantyRequestSummaryDto dto =
+                new WarrantyRequestSummaryDto();
+
+        dto.setRequestId(
+                request.getId()
+        );
+
+        dto.setOrderNumber(
+                request.getOrderNumber()
+        );
+
+        dto.setPlateNumberArabic(
+                requestMapper.formatArabicPlate(
+                        request.getCar().getPlateNumberArabic()
+                )
+        );
+
+        dto.setPlateNumberEnglish(
+                requestMapper.formatEnglishPlate(
+                        request.getCar().getPlateNumberEnglish()
+                )
+        );
+
+        dto.setServiceType(
+                request.getServiceOption().name()
+        );
+
+        // المشكلة التي كتبها العميل في طلب الضمان
+        dto.setProblemDescription(
+                warranty.getDescription()
+        );
+
+        // تاريخ إنشاء الطلب الأصلي
+        dto.setCreatedAt(
+                warranty.getCreatedAt()
+        );
+
+
+        return dto;
     }
 
     public void saveImages(

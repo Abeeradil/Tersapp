@@ -328,7 +328,10 @@ import java.util.stream.Collectors;
                                 .getId(),
                 carServiceRequestService.toCurrentDto(request)
         );
-
+        socketService.send(
+                "/topic/availability",
+                appointmentService.getAllAvailability()
+        );
 
         socketService.send(
                 "/topic/report/" + requestId,
@@ -678,17 +681,10 @@ import java.util.stream.Collectors;
         // Date Validation
         // ===========================
 
-        if (dto.getDeliveryDate().getDayOfWeek() == DayOfWeek.FRIDAY) {
-            throw new ApiException(
-                    "لا يمكن اختيار يوم الجمعة"
-            );
-        }
-
-        if (dto.getDeliveryDate().isBefore(LocalDate.now())) {
-            throw new ApiException(
-                    "لا يمكن اختيار تاريخ سابق"
-            );
-        }
+        appointmentService.validateAppointment(
+                dto.getDeliveryDate(),
+                dto.getDeliveryTime()
+        );
 
         // ===========================
         // Location
@@ -729,6 +725,10 @@ import java.util.stream.Collectors;
                     "/topic/warranty-details/" +
                             warranty.getId(),
                     warrantyService.toDetailsDto(warranty)
+            );
+            socketService.send(
+                    "/topic/availability",
+                    appointmentService.getAllAvailability()
             );
 
             socketService.send(
@@ -795,6 +795,7 @@ import java.util.stream.Collectors;
                             + request.getOrderNumber()
             );
         }
+
     }
 
 

@@ -899,13 +899,25 @@ public class CarServiceRequestService {
         );
         req.setPaymentMethod(method);
         req.setLocation(location);
-        req.setOrderNumber(
-                String.format("ORD-%06d", req.getId())
-        );
-        req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
-        req.setCreatedAt(LocalDateTime.now());
 
-        return req;
+        req.setCustomerStatus(
+                CustomerRequestStatus.REQUEST_CREATED
+        );
+
+        req.setCreatedAt(
+                LocalDateTime.now()
+        );
+
+        CarServiceRequest saved =
+                requestRepository.save(req);
+
+        saved.setOrderNumber(
+                String.format("ORD-%06d", saved.getId())
+        );
+
+        requestRepository.save(saved);
+
+        return saved;
     }
 
 }

@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.SlotDto;
 import org.example.tears.Enums.AppointmentSlotStatus;
 import org.example.tears.Enums.PaymentStatus;
@@ -9,6 +10,7 @@ import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.PaymentIntentRepository;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -22,20 +24,19 @@ import java.util.Objects;
 public class AppointmentService {
 
     private final CarServiceRequestRepository requestRepository;
-    //private final SocketService socketService;
     private final PaymentIntentRepository paymentIntentRepository;
 
     private static final List<LocalTime> AVAILABLE_TIMES =
             List.of(
-                    LocalTime.of(8,0),
-                    LocalTime.of(9,0),
-                    LocalTime.of(10,0),
-                    LocalTime.of(11,0),
-                    LocalTime.of(12,0),
-                    LocalTime.of(16,0),
-                    LocalTime.of(17,0),
-                    LocalTime.of(18,0),
-                    LocalTime.of(19,0)
+                    LocalTime.of(8, 0),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(10, 0),
+                    LocalTime.of(11, 0),
+                    LocalTime.of(12, 0),
+                    LocalTime.of(16, 0),
+                    LocalTime.of(17, 0),
+                    LocalTime.of(18, 0),
+                    LocalTime.of(19, 0)
             );
 
     public void validateAppointment(
@@ -43,20 +44,28 @@ public class AppointmentService {
             LocalTime time
     ) {
 
+        // التاريخ السابق
         if (date.isBefore(LocalDate.now())) {
-
-            throw new RuntimeException(
+            throw new ApiException(
                     "لا يمكن الحجز بتاريخ سابق"
             );
         }
 
-        if (!AVAILABLE_TIMES.contains(time)) {
+        // الجمعة إجازة
+        if (date.getDayOfWeek() == DayOfWeek.FRIDAY) {
+            throw new ApiException(
+                    "لا يمكن الحجز يوم الجمعة"
+            );
+        }
 
-            throw new RuntimeException(
+        // الوقت خارج أوقات الدوام
+        if (!AVAILABLE_TIMES.contains(time)) {
+            throw new ApiException(
                     "وقت غير متاح"
             );
         }
 
+        // الموعد محجوز فعليًا
         boolean requestExists =
                 requestRepository
                         .existsByAppointmentDateAndAppointmentTime(
@@ -64,6 +73,7 @@ public class AppointmentService {
                                 time
                         );
 
+        // موعد عليه عملية دفع معلقة
         boolean paymentIntentExists =
                 paymentIntentRepository
                         .existsByAppointmentDateAndAppointmentTimeAndPaymentStatusInAndExpiresAtAfter(
@@ -76,10 +86,8 @@ public class AppointmentService {
                                 LocalDateTime.now()
                         );
 
-        if (requestExists ||
-                paymentIntentExists) {
-
-            throw new RuntimeException(
+        if (requestExists || paymentIntentExists) {
+            throw new ApiException(
                     "هذا الموعد محجوز"
             );
         }

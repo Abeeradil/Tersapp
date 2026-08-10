@@ -189,16 +189,19 @@ import java.util.List;
 
         User user = authService.getAuthenticatedUser(request);
 
-        warrantyService.createWarrantyRequest(
-                requestId,
-                dto,
-                images,
-                user.getCustomer()
-        );
+
+        WarrantyRequestSummaryDto response =
+                warrantyService.createWarrantyRequest(
+                        requestId,
+                        dto,
+                        images,
+                        user.getCustomer()
+                );
 
         return new ApiResponse(
                 true,
-                "تم إرسال طلب الضمان"
+                "تم إرسال طلب الضمان",
+                response
         );
     }
 
