@@ -36,6 +36,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final TicketRepository ticketRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final FileStorageService fileStorageService;
 
     private final UserRepository userRepo;
     private final PresenceService presenceService;
@@ -344,33 +345,14 @@ public class ChatService {
 
     public UploadResponse upload(MultipartFile file) {
 
-        try {
+        String fileUrl =
+                fileStorageService.saveFile(file, "chat");
 
-            String name = UUID.randomUUID() + "_" + file.getOriginalFilename();
-
-            Path path = Paths.get("uploads", name);
-
-            Files.createDirectories(path.getParent());
-
-            Files.write(path, file.getBytes());
-
-            System.out.println("Saved to: " + path.toAbsolutePath());
-            System.out.println("Exists: " + Files.exists(path));
-
-            String url =
-                    "https://tersapp-production.up.railway.app/uploads/" + name;
-
-            return new UploadResponse(
-                    url,
-                    file.getOriginalFilename(),
-                    file.getSize()
-            );
-
-        } catch (IOException e) {
-
-            throw new ApiException("فشل رفع الملف");
-
-        }
+        return new UploadResponse(
+                fileUrl,
+                file.getOriginalFilename(),
+                file.getSize()
+        );
     }
 
     @Transactional
