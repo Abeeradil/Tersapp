@@ -25,9 +25,13 @@ public class ReportPreviewDto {
     private Integer totalLabor;
 
     private Double discount;
+    private Double vatAmount;
 
     private String serviceType;
 
     private Double grandTotal;
+
+    private Double subtotal;
+    private Double afterDiscount;
 
 }

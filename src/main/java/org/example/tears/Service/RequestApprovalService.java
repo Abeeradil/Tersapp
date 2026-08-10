@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+
 @Service
     @RequiredArgsConstructor
     public class RequestApprovalService {
@@ -159,59 +160,89 @@ import java.util.stream.Collectors;
     public List<CustomerReportCardDto> getCustomerReports(
             Customer customer,
             ReportApprovalFilter status
-    ){
+    ) {
+
         List<RequestApproval> approvals;
 
         switch (status) {
 
             case APPROVED ->
-                    approvals = approvalRepo.findByRequest_CustomerAndApproved(
-                            customer,
-                            true
-                    );
+                    approvals =
+                            approvalRepo
+                                    .findByRequest_CustomerAndApproved(
+                                            customer,
+                                            true
+                                    );
 
             case REJECTED ->
-                    approvals = approvalRepo.findByRequest_CustomerAndApproved(
-                            customer,
-                            false
-                    );
+                    approvals =
+                            approvalRepo
+                                    .findByRequest_CustomerAndApproved(
+                                            customer,
+                                            false
+                                    );
 
             case PENDING ->
-                    approvals = approvalRepo.findByRequest_CustomerAndApprovedIsNull(
-                            customer
-                    );
+                    approvals =
+                            approvalRepo
+                                    .findByRequest_CustomerAndApprovedIsNull(
+                                            customer
+                                    );
 
             default ->
-                    approvals = approvalRepo.findByRequest_Customer(customer);
-
+                    approvals =
+                            approvalRepo
+                                    .findByRequest_Customer(
+                                            customer
+                                    );
         }
 
         return approvals.stream()
                 .map(approval -> {
 
-                    CarServiceRequest request = approval.getRequest();
+                    CarServiceRequest request =
+                            approval.getRequest();
 
-                    CustomerReportCardDto dto = new CustomerReportCardDto();
+                    CustomerReportCardDto dto =
+                            new CustomerReportCardDto();
 
-                    dto.setRequestId(request.getId());
-
-                    dto.setOrderNumber(request.getOrderNumber());
-
-                    dto.setServiceType(
-                            request.getServiceOption().name()
+                    dto.setRequestId(
+                            request.getId()
                     );
 
-                    dto.setReportStatus(mapStatus(approval));
+                    dto.setOrderNumber(
+                            request.getOrderNumber()
+                    );
 
-                    dto.setRequestState(RequestState.valueOf(requestMapper.mapRequestState(request)));
+                    dto.setServiceType(
+                            request.getServiceOption()
+                                    .name()
+                    );
+
+                    dto.setReportStatus(
+                            mapStatus(approval)
+                    );
+
+                    dto.setRequestState(
+                            RequestState.valueOf(
+                                    requestMapper.mapRequestState(
+                                            request
+                                    )
+                            )
+                    );
 
                     RequestReport report =
-                            reportRepo.findByRequest_IdAndLatestTrue(
-                                    request.getId()
-                            ).orElse(null);
+                            reportRepo
+                                    .findByRequest_IdAndLatestTrue(
+                                            request.getId()
+                                    )
+                                    .orElse(null);
 
                     if (report != null) {
-                        dto.setReportDate(report.getCreatedAt());
+
+                        dto.setReportDate(
+                                report.getCreatedAt()
+                        );
                     }
 
                     return dto;
@@ -320,108 +351,272 @@ import java.util.stream.Collectors;
             throw new ApiException("تم رفض التقرير");
         }
 
-        approval.setApproved(null);
-        approval.setDecisionAt(null);
-        approvalRepo.save(approval);
+        // ==========================================
+        // التقرير الحالي الذي يراه العميل
+        // ==========================================
 
         RequestReport oldReport =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
                         .orElseThrow(() ->
                                 new ApiException("التقرير غير موجود"));
 
+        // ==========================================
+        // إنشاء تقرير جديد
+        // ==========================================
+
+        RequestReport newReport =
+                new RequestReport();
+
+        newReport.setRequest(request);
+
+        newReport.setCreatedBy(
+                request.getAssignedPricingEmployee()
+        );
+
+        newReport.setCreatedAt(
+                LocalDateTime.now()
+        );
+
+        newReport.setVersion(
+                oldReport.getVersion() + 1
+        );
+
+        newReport.setLatest(true);
+
+        newReport.setSent(false);
+
+        reportRepo.save(newReport);
+
+        newReport.setReportNumber(
+                "PR-" +
+                        String.format(
+                                "%06d",
+                                newReport.getId()
+                        )
+        );
+
+        reportRepo.save(newReport);
+
+        // ==========================================
+        // نسخ القطع الحالية من التقرير القديم
+        // ==========================================
+
+        List<RequestPart> oldParts =
+                partRepo.findByReport_Id(
+                        oldReport.getId()
+                );
+
         Map<Integer, CustomerPartDto> selectedParts =
                 dto.getParts()
                         .stream()
                         .collect(Collectors.toMap(
                                 CustomerPartDto::getPartId,
-                                Function.identity()
+                                Function.identity(),
+                                (a, b) -> b
                         ));
-
-        List<RequestPart> requestParts =
-                partRepo.findByRequestId(requestId);
 
         int totalPartsPrice = 0;
         int totalLabor = 0;
 
-        for (RequestPart requestPart : requestParts) {
+        // ==========================================
+        // بناء القطع الجديدة
+        // ==========================================
+
+        for (RequestPart oldPart : oldParts) {
 
             CustomerPartDto selected =
-                    selectedParts.get(requestPart.getId());
+                    selectedParts.get(oldPart.getId());
 
+            // ======================================
             // العميل حذف القطعة
-            if (selected == null || selected.getQuantity() <= 0) {
+            // ======================================
 
-                partRepo.delete(requestPart);
+            if (selected == null ||
+                    selected.getQuantity() == null ||
+                    selected.getQuantity() <= 0) {
+
                 continue;
             }
 
-            int oldQty = requestPart.getQuantity();
+            int quantity =
+                    selected.getQuantity();
 
-            int laborPerPiece =
-                    oldQty == 0
+            int oldQuantity =
+                    oldPart.getQuantity() == null
+                            ? 1
+                            : oldPart.getQuantity();
+
+            int oldLabor =
+                    oldPart.getLaborCost() == null
                             ? 0
-                            : requestPart.getLaborCost() / oldQty;
+                            : oldPart.getLaborCost();
 
-            requestPart.setQuantity(selected.getQuantity());
+            // تكلفة العمالة لكل قطعة
+            int laborPerPiece =
+                    oldQuantity > 0
+                            ? oldLabor / oldQuantity
+                            : 0;
 
-            requestPart.setLaborCost(
-                    laborPerPiece * selected.getQuantity()
+            int newLabor =
+                    laborPerPiece * quantity;
+
+            // ======================================
+            // إنشاء نسخة جديدة من القطعة
+            // ======================================
+
+            RequestPart newPart =
+                    new RequestPart();
+
+            newPart.setRequest(request);
+            newPart.setReport(newReport);
+
+            newPart.setName(
+                    oldPart.getName()
             );
 
-            partRepo.save(requestPart);
+            newPart.setType(
+                    oldPart.getType()
+            );
+
+            newPart.setQuantity(
+                    quantity
+            );
+
+            newPart.setProblemDescription(
+                    oldPart.getProblemDescription()
+            );
+
+            newPart.setFinalPrice(
+                    oldPart.getFinalPrice()
+            );
+
+            newPart.setLaborCost(
+                    newLabor
+            );
+
+            newPart.setPriced(
+                    oldPart.getPriced()
+            );
+
+            partRepo.save(newPart);
+
+            // ======================================
+            // إعادة الحساب
+            // ======================================
+
+            int partPrice =
+                    oldPart.getFinalPrice() == null
+                            ? 0
+                            : oldPart.getFinalPrice();
 
             totalPartsPrice +=
-                    requestPart.getFinalPrice() * requestPart.getQuantity();
+                    partPrice * quantity;
 
             totalLabor +=
-                    requestPart.getLaborCost();
+                    newLabor;
         }
 
-        request.setFinalPrice(totalPartsPrice + totalLabor);
+        // ==========================================
+        // إعادة حساب السعر
+        // ==========================================
 
-        request.setPricingStatus(PricingStatus.PRICED);
-        request.setCustomerStatus(CustomerRequestStatus.WAITING_APPROVAL);
-        request.setStaffStatus(StaffRequestStatus.REPORT_WRITING);
-        request.setCurrentEmployee(request.getAssignedTechnician());
-        request.setLastUpdated(LocalDateTime.now());
+        double subtotal =
+                totalPartsPrice + totalLabor;
+
+        double discount =
+                request.getDiscount() == null
+                        ? 0
+                        : request.getDiscount();
+
+        discount =
+                Math.min(
+                        discount,
+                        subtotal
+                );
+
+        double afterDiscount =
+                Math.max(
+                        subtotal - discount,
+                        0
+                );
+
+        double vat =
+                afterDiscount * 0.15;
+
+        double grandTotal =
+                afterDiscount + vat;
+
+        // ==========================================
+        // تحديث الطلب بالقيم الجديدة
+        // ==========================================
+
+        request.setFinalPrice(
+                (int) Math.round(grandTotal)
+        );
+
+        request.setVatAmount(vat);
+
+        request.setDiscount(discount);
+
+        request.setPricingStatus(
+                PricingStatus.PRICED
+        );
+
+        request.setCustomerStatus(
+                CustomerRequestStatus.WAITING_APPROVAL
+        );
+
+        request.setStaffStatus(
+                StaffRequestStatus.REPORT_WRITING
+        );
+
+        request.setCurrentEmployee(
+                request.getAssignedTechnician()
+        );
+
+        request.setLastUpdated(
+                LocalDateTime.now()
+        );
 
         requestRepo.save(request);
 
+        // ==========================================
+        // تحديث Approval
+        // ==========================================
 
-        RequestReport newReport = new RequestReport();
+        approval.setApproved(null);
 
-        newReport.setRequest(request);
-        newReport.setCreatedBy(request.getAssignedPricingEmployee());
-        newReport.setCreatedAt(LocalDateTime.now());
-        newReport.setVersion(oldReport.getVersion() + 1);
-        newReport.setLatest(false);
+        approval.setDecisionAt(null);
 
-        reportRepo.save(newReport);
+        approval.setCustomerNote(null);
 
-        newReport.setReportNumber(
-                "PR-" + String.format("%06d", newReport.getId())
-        );
+        approvalRepo.save(approval);
 
-        reportRepo.save(newReport);
+        // ==========================================
+        // إشعار العميل
+        // ==========================================
 
-        requestPricingService.clonePartsToReport(
-                request,
-                newReport
-        );
-
-        // إشعار للعميل
         notificationService.send(
                 request.getCustomer().getUser(),
                 "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى."
         );
 
+        // ==========================================
         // تحديث مباشر للواجهة
+        // ==========================================
+
         socketService.send(
                 "/topic/report/" + requestId,
-                getReport(requestId, request.getCustomer())
+                getReport(
+                        requestId,
+                        request.getCustomer()
+                )
         );
     }
 
+    private double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
+    }
 
     @Transactional
     public void chooseDelivery(

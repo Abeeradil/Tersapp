@@ -1,5 +1,6 @@
 package org.example.tears.Service;
 
+import org.example.tears.Enums.ReportVersionType;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
@@ -113,7 +114,9 @@ public class RequestPricingService {
                                 new ApiException("الطلب غير موجود"));
 
         if (request.getAssignedPricingEmployee() == null ||
-                !request.getAssignedPricingEmployee().getId().equals(pricingEmployee.getId())) {
+                !request.getAssignedPricingEmployee()
+                        .getId()
+                        .equals(pricingEmployee.getId())) {
 
             throw new ApiException("الطلب غير مسند لك");
         }
@@ -125,19 +128,168 @@ public class RequestPricingService {
         List<RequestPart> parts =
                 partRepo.findByRequestId(requestId);
 
-        boolean allPriced =
-                parts.stream().allMatch(RequestPart::getPriced);
-
-        if (!allPriced) {
-            throw new ApiException("يجب تسعير جميع القطع أولاً");
+        if (parts.isEmpty()) {
+            throw new ApiException("لا توجد قطع في الطلب");
         }
 
-        request.setPricingStatus(PricingStatus.PRICED);
+        boolean allPriced =
+                parts.stream()
+                        .allMatch(part ->
+                                Boolean.TRUE.equals(part.getPriced())
+                        );
+
+        if (!allPriced) {
+            throw new ApiException(
+                    "يجب تسعير جميع القطع أولاً"
+            );
+        }
+
+        /*
+         * ==========================================
+         * حساب التقرير
+         * ==========================================
+         */
+
+        double totalPartsPrice = 0;
+        double totalLabor = 0;
+
+        for (RequestPart part : parts) {
+
+            int price =
+                    part.getFinalPrice() == null
+                            ? 0
+                            : part.getFinalPrice();
+
+            int quantity =
+                    part.getQuantity() == null
+                            ? 0
+                            : part.getQuantity();
+
+            int labor =
+                    part.getLaborCost() == null
+                            ? 0
+                            : part.getLaborCost();
+
+            totalPartsPrice +=
+                    (double) price * quantity;
+
+            totalLabor += labor;
+        }
+
+        double subtotal =
+                totalPartsPrice + totalLabor;
+
+        /*
+         * ==========================================
+         * الخصم
+         * ==========================================
+         */
+
+        double discount = 0;
+
+        Coupon coupon = request.getCoupon();
+
+        if (coupon != null) {
+
+            if (coupon.getDiscountPercentage() != null) {
+
+                discount =
+                        subtotal *
+                                coupon.getDiscountPercentage()
+                                / 100.0;
+
+                if (coupon.getMaxDiscountAmount() != null) {
+
+                    discount =
+                            Math.min(
+                                    discount,
+                                    coupon.getMaxDiscountAmount()
+                            );
+                }
+            }
+
+            if (coupon.getFixedDiscount() != null) {
+
+                discount +=
+                        coupon.getFixedDiscount();
+            }
+
+            discount =
+                    Math.min(discount, subtotal);
+        }
+
+        /*
+         * ==========================================
+         * بعد الخصم
+         * ==========================================
+         */
+
+        double afterDiscount =
+                Math.max(
+                        subtotal - discount,
+                        0
+                );
+
+        /*
+         * ==========================================
+         * VAT
+         * ==========================================
+         */
+
+        double vatAmount =
+                afterDiscount * 0.15;
+
+        /*
+         * ==========================================
+         * النهائي
+         * ==========================================
+         */
+
+        double grandTotal =
+                afterDiscount + vatAmount;
+
+        /*
+         * حفظ الحسابات في الطلب
+         */
+
+        request.setOriginalPrice(
+                round(subtotal)
+        );
+
+        request.setDiscount(
+                round(discount)
+        );
+
+        request.setVatAmount(
+                round(vatAmount)
+        );
+
+        request.setFinalPrice(
+                (int) Math.round(grandTotal)
+        );
+
+        request.setCouponValid(
+                coupon != null
+        );
+
+        request.setPricingStatus(
+                PricingStatus.PRICED
+        );
+
+        request.setPricingCompletedAt(
+                LocalDateTime.now()
+        );
 
         saveHistory(
                 request,
                 pricingEmployee.getId()
         );
+
+        /*
+         * ==========================================
+         * إغلاق التقرير السابق
+         * ==========================================
+         */
 
         RequestReport oldReport =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
@@ -151,10 +303,18 @@ public class RequestPricingService {
 
             reportRepo.save(oldReport);
 
-            version = oldReport.getVersion() + 1;
+            version =
+                    oldReport.getVersion() + 1;
         }
 
-        RequestReport report = new RequestReport();
+        /*
+         * ==========================================
+         * إنشاء التقرير
+         * ==========================================
+         */
+
+        RequestReport report =
+                new RequestReport();
 
         report.setRequest(request);
         report.setCreatedBy(pricingEmployee);
@@ -163,19 +323,42 @@ public class RequestPricingService {
         report.setLatest(true);
         report.setSent(false);
 
-// أول حفظ للحصول على الـ id
-        reportRepo.save(report);
-
-// الآن الـ id أصبح موجودًا
-        report.setReportNumber(
-                "PR-" + String.format("%06d", report.getId())
+        report.setVersionType(
+                ReportVersionType.PRICING
         );
 
-// تحديث التقرير برقم التقرير
         reportRepo.save(report);
 
-// نسخ القطع بعد اكتمال التقرير
-        clonePartsToReport(request, report);
+        /*
+         * بعد الحفظ نولد رقم التقرير
+         */
+
+        report.setReportNumber(
+                "PR-" +
+                        String.format(
+                                "%06d",
+                                report.getId()
+                        )
+        );
+
+        reportRepo.save(report);
+
+        /*
+         * ==========================================
+         * Snapshot للقطع
+         * ==========================================
+         */
+
+        clonePartsToReport(
+                request,
+                report
+        );
+
+        /*
+         * ==========================================
+         * تحديث حالة الطلب
+         * ==========================================
+         */
 
         request.setCurrentEmployee(
                 request.getAssignedTechnician()
@@ -185,20 +368,32 @@ public class RequestPricingService {
                 StaffRequestStatus.REPORT_WRITING
         );
 
-        request.setReportWrittenAt(LocalDateTime.now());
+        request.setReportWrittenAt(
+                LocalDateTime.now()
+        );
 
-        request.setLastUpdated(LocalDateTime.now());
+        request.setLastUpdated(
+                LocalDateTime.now()
+        );
 
         requestRepo.save(request);
+
+        /*
+         * ==========================================
+         * Approval
+         * ==========================================
+         */
+
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(requestId)
                         .orElse(null);
 
         if (approval == null) {
 
-            approval = new RequestApproval();
-            approval.setRequest(request);
+            approval =
+                    new RequestApproval();
 
+            approval.setRequest(request);
         }
 
         approval.setApproved(null);
@@ -207,12 +402,22 @@ public class RequestPricingService {
 
         approvalRepo.save(approval);
 
+        /*
+         * ==========================================
+         * Notification
+         * ==========================================
+         */
 
         notificationService.send(
-                request.getAssignedTechnician().getUser(),
-                "تم الانتهاء من التسعير للطلب #" +
-                        request.getOrderNumber()
+                request.getCustomer().getUser(),
+                "تم تجهيز تقرير التسعير للطلب #"
+                        + request.getOrderNumber()
+                        + "، يرجى مراجعته."
         );
+    }
+
+    private double round(double value) {
+        return Math.round(value * 100.0) / 100.0;
     }
 
     public ResponseEntity<byte[]> downloadPricingReport(
@@ -570,79 +775,183 @@ public class RequestPricingService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
-        List<RequestPart> parts;
+        // ==========================================
+        // تحديد التقرير حسب الموظف
+        // ==========================================
 
-        if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
+        RequestReport report =
+                getAccessibleReport(
+                        requestId,
+                        employee
+                );
 
-            RequestReport report =
-                    getAccessibleReport(requestId, employee);
+        List<RequestPart> parts =
+                partRepo.findByReport_Id(
+                        report.getId()
+                );
 
-            parts = partRepo.findByReport_Id(report.getId());
+        ReportPreviewDto dto =
+                new ReportPreviewDto();
 
-        } else {
+        dto.setRequestId(
+                request.getId()
+        );
 
-            parts = partRepo.findByRequestId(requestId);
+        dto.setOrderNumber(
+                request.getOrderNumber()
+        );
 
-        }
+        dto.setCustomerName(
+                request.getCustomer()
+                        .getUser()
+                        .getFullName()
+        );
 
-        ReportPreviewDto dto = new ReportPreviewDto();
+        dto.setCarModel(
+                request.getCar()
+                        .getModel()
+                        .getName()
+        );
 
-        dto.setRequestId(request.getId());
-        dto.setOrderNumber(request.getOrderNumber());
-        dto.setCustomerName(request.getCustomer().getUser().getFullName());
-        dto.setCarModel(request.getCar().getModel().getName());
-        dto.setProblemDescription(request.getProblemDescription());
-        dto.setServiceType(request.getServiceOption().name());
+        dto.setProblemDescription(
+                request.getProblemDescription()
+        );
+
+        dto.setServiceType(
+                request.getServiceOption()
+                        .name()
+        );
 
         approvalRepo.findByRequest_Id(requestId)
-                .ifPresent(a -> dto.setCustomerApproved(a.getApproved()));
+                .ifPresent(
+                        a -> dto.setCustomerApproved(
+                                a.getApproved()
+                        )
+                );
 
-        List<CustomerReportPartDto> list = new ArrayList<>();
+        List<CustomerReportPartDto> list =
+                new ArrayList<>();
 
         int totalPartsPrice = 0;
         int totalLabor = 0;
-        double grandTotal = 0;
 
         for (RequestPart part : parts) {
 
-            CustomerReportPartDto p = new CustomerReportPartDto();
+            CustomerReportPartDto p =
+                    new CustomerReportPartDto();
 
-            p.setPartId(part.getId());
-            p.setName(part.getName());
-            p.setQuantity(part.getQuantity());
-            p.setFinalPrice(part.getFinalPrice());
-            p.setLaborCost(part.getLaborCost());
-            p.setType(part.getType());
+            p.setPartId(
+                    part.getId()
+            );
+
+            p.setName(
+                    part.getName()
+            );
+
+            p.setQuantity(
+                    part.getQuantity()
+            );
+
+            p.setFinalPrice(
+                    part.getFinalPrice()
+            );
+
+            p.setLaborCost(
+                    part.getLaborCost()
+            );
+
+            p.setType(
+                    part.getType()
+            );
 
             int partPrice =
-                    part.getFinalPrice() == null ? 0 : part.getFinalPrice();
+                    part.getFinalPrice() == null
+                            ? 0
+                            : part.getFinalPrice();
+
+            int quantity =
+                    part.getQuantity() == null
+                            ? 0
+                            : part.getQuantity();
 
             int labor =
-                    part.getLaborCost() == null ? 0 : part.getLaborCost();
+                    part.getLaborCost() == null
+                            ? 0
+                            : part.getLaborCost();
 
             int partsCost =
-                    partPrice * part.getQuantity();
+                    partPrice * quantity;
 
             int total =
                     partsCost + labor;
 
-            p.setTotal((double) total);
+            p.setTotal(
+                    (double) total
+            );
+
+            totalPartsPrice +=
+                    partsCost;
+
+            totalLabor +=
+                    labor;
 
             list.add(p);
-
-            totalPartsPrice += partsCost;
-            totalLabor += labor;
-
-            grandTotal += total;
         }
 
+        // ==========================================
+        // Financial Calculation
+        // ==========================================
+
+        double subtotal =
+                totalPartsPrice + totalLabor;
+
+        double discount =
+                request.getDiscount() == null
+                        ? 0
+                        : request.getDiscount();
+
+        discount =
+                Math.min(
+                        discount,
+                        subtotal
+                );
+
+        double afterDiscount =
+                Math.max(
+                        subtotal - discount,
+                        0
+                );
+
+        double vat =
+                afterDiscount * 0.15;
+
+        double grandTotal =
+                afterDiscount + vat;
+
+        // ==========================================
+        // DTO
+        // ==========================================
+
         dto.setParts(list);
-        dto.setTotalPartsPrice(totalPartsPrice);
-        dto.setTotalLabor(totalLabor);
-        dto.setGrandTotal(grandTotal);
+
+        dto.setTotalPartsPrice(
+                totalPartsPrice
+        );
+
+        dto.setTotalLabor(
+                totalLabor
+        );
 
         dto.setDiscount(
-                request.getDiscount() == null ? 0 : request.getDiscount()
+                discount
+        );
+
+        dto.setVatAmount(
+                vat
+        );
+
+        dto.setGrandTotal(
+                grandTotal
         );
 
         return dto;
@@ -658,29 +967,44 @@ public class RequestPricingService {
 
         for (RequestPart oldPart : currentParts) {
 
-            RequestPart copy = new RequestPart();
+            RequestPart copy =
+                    new RequestPart();
 
             copy.setRequest(request);
-
             copy.setReport(report);
 
-            copy.setName(oldPart.getName());
+            copy.setName(
+                    oldPart.getName()
+            );
 
-            copy.setType(oldPart.getType());
+            copy.setType(
+                    oldPart.getType()
+            );
 
-            copy.setQuantity(oldPart.getQuantity());
+            copy.setQuantity(
+                    oldPart.getQuantity()
+            );
 
-            copy.setProblemDescription(oldPart.getProblemDescription());
+            copy.setProblemDescription(
+                    oldPart.getProblemDescription()
+            );
 
-            copy.setFinalPrice(oldPart.getFinalPrice());
+            copy.setFinalPrice(
+                    oldPart.getFinalPrice()
+            );
 
-            copy.setLaborCost(oldPart.getLaborCost());
+            copy.setLaborCost(
+                    oldPart.getLaborCost()
+            );
 
-            copy.setPriced(oldPart.getPriced());
+            copy.setPriced(
+                    oldPart.getPriced()
+            );
 
             partRepo.save(copy);
         }
     }
+
 
     private RequestReport getAccessibleReport(
             Integer requestId,
@@ -695,14 +1019,19 @@ public class RequestPricingService {
                             employee.getId()
                     )
                     .orElseThrow(() ->
-                            new ApiException("لا يوجد تقرير لهذا الموظف"));
-
+                            new ApiException(
+                                    "لا يوجد تقرير لهذا الموظف"
+                            )
+                    );
         }
 
         return reportRepo
                 .findByRequest_IdAndLatestTrue(requestId)
                 .orElseThrow(() ->
-                        new ApiException("لا يوجد تقرير"));
+                        new ApiException(
+                                "لا يوجد تقرير"
+                        )
+                );
     }
 
 

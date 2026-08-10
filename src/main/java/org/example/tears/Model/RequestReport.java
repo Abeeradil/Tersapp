@@ -2,15 +2,16 @@ package org.example.tears.Model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.time.LocalDateTime;
+import org.example.tears.Enums.ReportVersionType;
 
+import java.time.LocalDateTime;
 @Entity
 @Data
 public class RequestReport {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        private Integer id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
 
     private Integer version;
 
@@ -22,11 +23,12 @@ public class RequestReport {
 
     private String reportNumber;
 
-
     @ManyToOne
     private Employee createdBy;
 
     @ManyToOne
     private CarServiceRequest request;
 
-    }
+    @Enumerated(EnumType.STRING)
+    private ReportVersionType versionType;
+}
