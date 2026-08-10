@@ -121,8 +121,9 @@ public class PricingCalculationService {
         PricingResponse response =
                 new PricingResponse();
 
-        response.originalPrice =
-                round(subtotal); // قبل الضريبة
+        double priceWithVat = subtotal + (subtotal * VAT_PERCENTAGE);
+
+        response.originalPrice = round(priceWithVat);
 
         response.discount =
                 round(discount);
