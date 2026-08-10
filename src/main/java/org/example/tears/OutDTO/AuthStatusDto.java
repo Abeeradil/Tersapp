@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthStatusDto {
     private boolean authenticated;
-    private Integer id;
+    private Integer userId;
     private Integer empId;
     private Integer custmId;
     private String name;
