@@ -418,6 +418,8 @@ public class AuthService {
                     new AuthStatusDto(
                             true,
                             user.getId(),
+                            user.getEmployee().getId(),
+                            user.getCustomer().getId(),
                             user.getFullName(),
                             user.getRole().name()
                     )
@@ -429,6 +431,8 @@ public class AuthService {
                     false,
                     new AuthStatusDto(
                             false,
+                            null,
+                            null,
                             null,
                             null,
                             "GUEST"

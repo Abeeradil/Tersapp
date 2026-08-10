@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 public class AuthStatusDto {
     private boolean authenticated;
     private Integer id;
+    private Integer empId;
+    private Integer custmId;
     private String name;
     private String role;
 }
