@@ -66,8 +66,8 @@ public class WarrantyService {
         warranty.setRequest(request);
         warranty.setCustomer(customer);
         warranty.setProblemType(dto.getProblemType());
+        warranty.setWarrantyReason(dto.getWarrantyReason());
         warranty.setDescription(dto.getDescription());
-
         warranty.setStatus(WarrantyStatus.PENDING_REVIEW);
         warranty.setCreatedAt(LocalDateTime.now());
         warranty.setUpdatedAt(LocalDateTime.now());
@@ -102,6 +102,7 @@ public class WarrantyService {
         ticket.setPriority(TicketPriority.IMPORTANT);
 
         ticket.setStatus(TicketStatus.ACTIVE);
+
 
         ticket.setDescription(dto.getDescription());
 
