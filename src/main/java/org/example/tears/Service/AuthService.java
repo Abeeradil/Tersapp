@@ -411,15 +411,36 @@ public class AuthService {
     public ApiResponse getMe(HttpServletRequest request) {
 
         try {
+
             User user = getAuthenticatedUser(request);
 
-            Integer employeeId = user.getEmployee() != null
-                    ? user.getEmployee().getId()
-                    : null;
+            System.out.println("USER ID = " + user.getId());
+            System.out.println("USER NAME = " + user.getFullName());
+            System.out.println("USER ROLE = " + user.getRole());
 
-            Integer customerId = user.getCustomer() != null
-                    ? user.getCustomer().getId()
-                    : null;
+            System.out.println(
+                    "EMPLOYEE = " +
+                            (user.getEmployee() != null
+                                    ? user.getEmployee().getId()
+                                    : "NULL")
+            );
+
+            System.out.println(
+                    "CUSTOMER = " +
+                            (user.getCustomer() != null
+                                    ? user.getCustomer().getId()
+                                    : "NULL")
+            );
+
+            Integer employeeId =
+                    user.getEmployee() != null
+                            ? user.getEmployee().getId()
+                            : null;
+
+            Integer customerId =
+                    user.getCustomer() != null
+                            ? user.getCustomer().getId()
+                            : null;
 
             return new ApiResponse(
                     true,
@@ -435,6 +456,8 @@ public class AuthService {
 
         } catch (Exception e) {
 
+            e.printStackTrace();
+
             return new ApiResponse(
                     false,
                     new AuthStatusDto(
@@ -447,5 +470,5 @@ public class AuthService {
                     )
             );
         }
-}
+    }
 }
