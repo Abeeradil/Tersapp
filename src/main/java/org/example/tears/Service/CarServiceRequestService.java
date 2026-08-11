@@ -331,6 +331,10 @@ public class CarServiceRequestService {
 
         RequestHistoryDto dto = new RequestHistoryDto();
 
+        // =========================
+        // Warranty
+        // =========================
+
         Optional<WarrantyRequest> warranty =
                 warrantyRequestRepository.findByRequestId(req.getId());
 
@@ -339,6 +343,11 @@ public class CarServiceRequestService {
         dto.setWarrantyStatus(
                 warranty.map(w -> w.getStatus().name()).orElse(null)
         );
+
+        // =========================
+        // Request Information
+        // =========================
+
         dto.setId(req.getId());
         dto.setOrderNumber(req.getOrderNumber());
 
@@ -355,6 +364,10 @@ public class CarServiceRequestService {
                         : req.getEstimatedPrice()
         );
 
+        // =========================
+        // Review
+        // =========================
+
         boolean reviewed =
                 reviewRepository.existsByRequestId(req.getId());
 
@@ -365,13 +378,24 @@ public class CarServiceRequestService {
                         && !reviewed
         );
 
+        // =========================
+        // Request State
+        // =========================
+
         dto.setRequestState(
                 requestMapper.mapRequestState(req)
         );
 
         if (req.getCustomerStatus() != null) {
-            dto.setCustomerStatus(req.getCustomerStatus().name());
+            dto.setCustomerStatus(
+                    req.getCustomerStatus().name()
+            );
         }
+
+        // =========================
+        // Warranty Information
+        // =========================
+
         if (req.getDeliveredAt() != null) {
 
             LocalDate expiryDate =
@@ -381,30 +405,77 @@ public class CarServiceRequestService {
 
             dto.setWarrantyExpiryDate(expiryDate);
 
-            boolean eligible = requestMapper.isWarrantyEligible(req);
+            boolean eligible =
+                    requestMapper.isWarrantyEligible(req);
 
             dto.setUnderWarranty(eligible);
 
             dto.setWarrantyRemainingDays(
                     eligible
-                            ? ChronoUnit.DAYS.between(LocalDate.now(), expiryDate)
+                            ? ChronoUnit.DAYS.between(
+                            LocalDate.now(),
+                            expiryDate
+                    )
                             : 0L
             );
+        }
 
-            // 🚗 هنا أهم جزء: نجيب السيارة
-            Car car = carRepository.findById(req.getCar().getId())
-                    .orElse(null);
+        // =========================
+        // Car Information
+        // =========================
 
-            if (car != null) {
-                dto.setPlateNumberArabic(
-                        formatArabicPlate(req.getCar().getPlateNumberArabic())
-                );
+        Car car = req.getCar();
 
-                dto.setPlateNumberEnglish(
-                        formatEnglishPlate(req.getCar().getPlateNumberEnglish())
+        if (car != null) {
+
+            dto.setCarId(car.getId());
+
+            // اللوحات بعد التقسيم
+            dto.setPlateNumberArabic(
+                    formatArabicPlate(
+                            car.getPlateNumberArabic()
+                    )
+            );
+
+            dto.setPlateNumberEnglish(
+                    formatEnglishPlate(
+                            car.getPlateNumberEnglish()
+                    )
+            );
+
+            // الماركة
+            if (car.getBrand() != null) {
+                dto.setBrandNameAr(
+                        car.getBrand().getNameAr()
                 );
             }
 
+            // الموديل
+            if (car.getModel() != null) {
+                dto.setModelNameAr(
+                        car.getModel().getNameAr()
+                );
+            }
+
+            // السنة
+            dto.setCarYear(
+                    car.getCarYear()
+            );
+
+            // صورة السيارة
+            if (car.getModel().getImagePath() != null &&
+                    !car.getModel().getImagePath().isBlank()) {
+
+                dto.setCarImage(
+                        car.getModel().getImagePath()
+                );
+
+            } else {
+
+                dto.setCarImage(
+                        "car.png"
+                );
+            }
         }
 
         return dto;

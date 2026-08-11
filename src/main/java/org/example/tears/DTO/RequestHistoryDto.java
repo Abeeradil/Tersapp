@@ -13,14 +13,25 @@ public class RequestHistoryDto {
     private String orderNumber;
     private String serviceName;
 
+    private Integer carId;
+
+    private String plateNumberArabic;
+
+    private String plateNumberEnglish;
+
+    private String brandNameAr;
+
+    private String modelNameAr;
+
+    private Integer carYear;
+
+    private String carImage;
+
     private LocalDate appointmentDate;
 
     private LocalTime appointmentTime;
 
     private Double totalPrice;
-
-    private String plateNumberArabic;
-    private String plateNumberEnglish;
 
     private Boolean canReview;
     private Boolean reviewed;
