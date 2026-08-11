@@ -303,7 +303,7 @@ public class WarrantyService {
 
             dto.setId(w.getId());
             dto.setOrderNumber(w.getRequest().getOrderNumber());
-            dto.setProblemType(w.getProblemType());
+            dto.setWarrantyReason(w.getWarrantyReason());
             dto.setStatus(w.getStatus());
             dto.setCreatedAt(w.getCreatedAt());
 
@@ -338,9 +338,8 @@ public class WarrantyService {
                         .getOrderNumber()
         );
 
-        dto.setProblemType(
-                warranty.getProblemType()
-        );
+        dto.setWarrantyReason(warranty.getWarrantyReason());
+
 
         dto.setDescription(
                 warranty.getDescription()
@@ -808,9 +807,8 @@ public class WarrantyService {
                 warranty.getRequest().getOrderNumber()
         );
 
-        dto.setProblemType(
-                warranty.getProblemType()
-        );
+        dto.setWarrantyReason(warranty.getWarrantyReason());
+
 
         dto.setDescription(
                 warranty.getDescription()
@@ -922,9 +920,7 @@ public class WarrantyService {
                 warranty.getRequest().getOrderNumber()
         );
 
-        dto.setProblemType(
-                warranty.getProblemType()
-        );
+        dto.setWarrantyReason(warranty.getWarrantyReason());
 
         dto.setStatus(
                 warranty.getStatus()

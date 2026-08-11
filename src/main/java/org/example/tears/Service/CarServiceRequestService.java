@@ -21,10 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -239,15 +236,52 @@ public class CarServiceRequestService {
 
     public List<CurrentRequestDto> getCurrentRequests(Integer customerId) {
 
-        return requestRepository
-                .findByCustomerIdAndCustomerStatusNotInOrderByCreatedAtDesc(
-                        customerId,
-                        List.of(
-                                CustomerRequestStatus.DELIVERED,
-                                CustomerRequestStatus.CANCELED
+        // الطلبات الحالية العادية
+        List<CarServiceRequest> currentRequests =
+                requestRepository
+                        .findByCustomerIdAndCustomerStatusNotInOrderByCreatedAtDesc(
+                                customerId,
+                                List.of(
+                                        CustomerRequestStatus.DELIVERED,
+                                        CustomerRequestStatus.CANCELED
+                                )
+                        );
+
+        // طلبات الضمان الخاصة بالعميل
+        List<CarServiceRequest> warrantyRequests =
+                warrantyRequestRepository
+                        .findByCustomer_Id(customerId)
+                        .stream()
+                        .filter(w ->
+                                w.getStatus() != WarrantyStatus.REJECTED &&
+                                        w.getStatus() != WarrantyStatus.DELIVERED
+                        )
+                        .map(WarrantyRequest::getRequest)
+                        .filter(r ->
+                                r.getCustomerStatus() == CustomerRequestStatus.DELIVERED
+                        )
+                        .toList();
+
+        // منع التكرار
+        Map<Integer, CarServiceRequest> requestsMap =
+                new LinkedHashMap<>();
+
+        currentRequests.forEach(r ->
+                requestsMap.put(r.getId(), r)
+        );
+
+        warrantyRequests.forEach(r ->
+                requestsMap.put(r.getId(), r)
+        );
+
+        return requestsMap.values()
+                .stream()
+                .sorted(
+                        Comparator.comparing(
+                                CarServiceRequest::getCreatedAt,
+                                Comparator.reverseOrder()
                         )
                 )
-                .stream()
                 .map(this::toCurrentDto)
                 .toList();
     }
@@ -264,29 +298,63 @@ public class CarServiceRequestService {
                                 )
                         );
 
+        List<WarrantyRequest> warranties =
+                warrantyRequestRepository
+                        .findByCustomer_Id(customerId);
+
+        // ضمانات تم تسليمها أو رفضها → Past
+        warranties.stream()
+                .filter(w ->
+                        w.getStatus() == WarrantyStatus.DELIVERED ||
+                                w.getStatus() == WarrantyStatus.REJECTED
+                )
+                .map(WarrantyRequest::getRequest)
+                .forEach(r -> {
+
+                    boolean exists =
+                            requests.stream()
+                                    .anyMatch(existing ->
+                                            existing.getId().equals(r.getId())
+                                    );
+
+                    if (!exists) {
+                        requests.add(r);
+                    }
+                });
+
         Set<Integer> warrantyIds =
-                warrantyRequestRepository.findByCustomer_Id(customerId)
-                        .stream()
+                warranties.stream()
                         .map(w -> w.getRequest().getId())
                         .collect(Collectors.toSet());
 
         requests.sort(
                 Comparator
-                        .comparing((CarServiceRequest r) -> {
+                        .comparing(
+                                (CarServiceRequest r) -> {
 
-                            if (r.getCustomerStatus() != CustomerRequestStatus.DELIVERED
-                                    || r.getDeliveredAt() == null) {
-                                return 2;
-                            }
+                                    if (r.getCustomerStatus()
+                                            != CustomerRequestStatus.DELIVERED
+                                            || r.getDeliveredAt() == null) {
 
-                            LocalDate expiry =
-                                    r.getDeliveredAt().toLocalDate().plusDays(30);
+                                        return 2;
+                                    }
 
-                            return LocalDate.now().isAfter(expiry) ? 1 : 0;
+                                    LocalDate expiry =
+                                            r.getDeliveredAt()
+                                                    .toLocalDate()
+                                                    .plusDays(30);
 
-                        })
-                        .thenComparing(r -> !warrantyIds.contains(r.getId()))
-                        .thenComparing(CarServiceRequest::getCreatedAt, Comparator.reverseOrder())
+                                    return LocalDate.now()
+                                            .isAfter(expiry) ? 1 : 0;
+                                }
+                        )
+                        .thenComparing(
+                                r -> !warrantyIds.contains(r.getId())
+                        )
+                        .thenComparing(
+                                CarServiceRequest::getCreatedAt,
+                                Comparator.reverseOrder()
+                        )
         );
 
         return requests.stream()

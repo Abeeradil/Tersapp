@@ -2,6 +2,8 @@ package org.example.tears.Enums;
 
 public enum WarrantyStatus {
 
+    REQUEST_SENT,
+
     PENDING_REVIEW,          // طلب الضمان تم إنشاؤه وينتظر مراجعة خدمة العملاء
 
     APPROVED,                // تمت الموافقة على طلب الضمان
