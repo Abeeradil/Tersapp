@@ -304,8 +304,11 @@ public class WarrantyService {
             dto.setId(w.getId());
             dto.setOrderNumber(w.getRequest().getOrderNumber());
             dto.setWarrantyReason(w.getWarrantyReason());
-            dto.setStatus(w.getStatus());
-            dto.setCreatedAt(w.getCreatedAt());
+            dto.setCustomerStatus(
+                    mapCustomerWarrantyStatus(
+                            w.getStatus()
+                    )
+            );            dto.setCreatedAt(w.getCreatedAt());
 
             list.add(dto);
         }
@@ -922,8 +925,10 @@ public class WarrantyService {
 
         dto.setWarrantyReason(warranty.getWarrantyReason());
 
-        dto.setStatus(
-                warranty.getStatus()
+        dto.setCustomerStatus(
+                mapCustomerWarrantyStatus(
+                        warranty.getStatus()
+                )
         );
 
         dto.setCreatedAt(
@@ -931,6 +936,39 @@ public class WarrantyService {
         );
 
         return dto;
+    }
+    private WarrantyCustomerStatus mapCustomerWarrantyStatus(
+            WarrantyStatus status
+    ) {
+
+        return switch (status) {
+
+            case REQUEST_SENT ->
+                    WarrantyCustomerStatus.SUBMITTED;
+
+            case PENDING_REVIEW ->
+                    WarrantyCustomerStatus.UNDER_REVIEW;
+
+            case APPROVED ->
+                    WarrantyCustomerStatus.WARRANTY_APPROVED;
+
+            case RECEIVED ->
+                    WarrantyCustomerStatus.VEHICLE_RECEIVED;
+
+            case INSPECTION,
+                 REPAIRING,
+                 TESTING ->
+                    WarrantyCustomerStatus.VEHICLE_RECEIVED;
+
+            case DELIVERY_IN_PROGRESS ->
+                    WarrantyCustomerStatus.VEHICLE_READY;
+
+            case DELIVERED ->
+                    WarrantyCustomerStatus.DELIVERED;
+
+            case REJECTED ->
+                    WarrantyCustomerStatus.REJECTED;
+        };
     }
 
 
