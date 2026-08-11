@@ -387,9 +387,19 @@ public class CarServiceRequestService {
         if (req.getCustomerStatus() != null) {
             dto.setStatus(req.getCustomerStatus().name());
         }
+        if (req.getCustomerStatus() != null) {
+            dto.setStatus(req.getCustomerStatus().name());
+        }
 
         dto.setRequestState(
                 requestMapper.mapRequestState(req)
+        );
+
+        Optional<WarrantyRequest> warranty =
+                warrantyRequestRepository.findByRequestId(req.getId());
+
+        dto.setWarrantyStatus(
+                warranty.map(w -> w.getStatus().name()).orElse(null)
         );
 
         return dto;
@@ -446,6 +456,8 @@ public class CarServiceRequestService {
                         && !reviewed
         );
 
+
+
         // =========================
         // Request State
         // =========================
@@ -486,7 +498,14 @@ public class CarServiceRequestService {
                     )
                             : 0L
             );
+
+            dto.setWarrantyStatus(
+                    warranty.map(w -> w.getStatus().name()).orElse(null)
+            );
         }
+
+
+
 
         // =========================
         // Car Information

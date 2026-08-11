@@ -13,5 +13,7 @@ public class CurrentRequestDto {
 
     private String status;
 
+    private String warrantyStatus;
+
     private String requestState;
 }
