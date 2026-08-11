@@ -65,7 +65,6 @@ public class WarrantyService {
 
         warranty.setRequest(request);
         warranty.setCustomer(customer);
-        warranty.setProblemType(dto.getProblemType());
         warranty.setWarrantyReason(dto.getWarrantyReason());
         warranty.setDescription(dto.getDescription());
         warranty.setStatus(WarrantyStatus.PENDING_REVIEW);
