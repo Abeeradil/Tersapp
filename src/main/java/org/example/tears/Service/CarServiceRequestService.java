@@ -236,7 +236,6 @@ public class CarServiceRequestService {
 
     public List<CurrentRequestDto> getCurrentRequests(Integer customerId) {
 
-        // الطلبات الحالية العادية
         List<CarServiceRequest> currentRequests =
                 requestRepository
                         .findByCustomerIdAndCustomerStatusNotInOrderByCreatedAtDesc(
@@ -247,7 +246,6 @@ public class CarServiceRequestService {
                                 )
                         );
 
-        // طلبات الضمان الخاصة بالعميل
         List<CarServiceRequest> warrantyRequests =
                 warrantyRequestRepository
                         .findByCustomer_Id(customerId)
@@ -262,7 +260,6 @@ public class CarServiceRequestService {
                         )
                         .toList();
 
-        // منع التكرار
         Map<Integer, CarServiceRequest> requestsMap =
                 new LinkedHashMap<>();
 
@@ -302,59 +299,19 @@ public class CarServiceRequestService {
                 warrantyRequestRepository
                         .findByCustomer_Id(customerId);
 
-        // ضمانات تم تسليمها أو رفضها → Past
-        warranties.stream()
-                .filter(w ->
-                        w.getStatus() == WarrantyStatus.DELIVERED ||
-                                w.getStatus() == WarrantyStatus.REJECTED
-                )
-                .map(WarrantyRequest::getRequest)
-                .forEach(r -> {
-
-                    boolean exists =
-                            requests.stream()
-                                    .anyMatch(existing ->
-                                            existing.getId().equals(r.getId())
-                                    );
-
-                    if (!exists) {
-                        requests.add(r);
-                    }
-                });
-
-        Set<Integer> warrantyIds =
+        Set<Integer> activeWarrantyRequestIds =
                 warranties.stream()
+                        .filter(w ->
+                                w.getStatus() != WarrantyStatus.REJECTED &&
+                                        w.getStatus() != WarrantyStatus.DELIVERED
+                        )
                         .map(w -> w.getRequest().getId())
                         .collect(Collectors.toSet());
 
-        requests.sort(
-                Comparator
-                        .comparing(
-                                (CarServiceRequest r) -> {
-
-                                    if (r.getCustomerStatus()
-                                            != CustomerRequestStatus.DELIVERED
-                                            || r.getDeliveredAt() == null) {
-
-                                        return 2;
-                                    }
-
-                                    LocalDate expiry =
-                                            r.getDeliveredAt()
-                                                    .toLocalDate()
-                                                    .plusDays(30);
-
-                                    return LocalDate.now()
-                                            .isAfter(expiry) ? 1 : 0;
-                                }
-                        )
-                        .thenComparing(
-                                r -> !warrantyIds.contains(r.getId())
-                        )
-                        .thenComparing(
-                                CarServiceRequest::getCreatedAt,
-                                Comparator.reverseOrder()
-                        )
+        // أي طلب انتهى لكن عنده ضمان نشط:
+        // لا يظهر في Past لأنه موجود في Current
+        requests.removeIf(r ->
+                activeWarrantyRequestIds.contains(r.getId())
         );
 
         return requests.stream()
@@ -398,11 +355,26 @@ public class CarServiceRequestService {
         Optional<WarrantyRequest> warranty =
                 warrantyRequestRepository.findByRequestId(req.getId());
 
-        dto.setWarrantyStatus(
-                warranty.map(w -> w.getStatus().name()).orElse(null)
+        dto.setWarrantyRequest(warranty.isPresent());
+
+        dto.setWarrantyId(
+                warranty.map(WarrantyRequest::getId)
+                        .orElse(null)
         );
+
+        dto.setWarrantyReason(
+                warranty.map(WarrantyRequest::getWarrantyReason)
+                        .orElse(null)
+        );
+
+        dto.setWarrantyStatus(
+                warranty.map(WarrantyRequest::getStatus)
+                        .orElse(null)
+        );
+
         dto.setWarrantyEligibility(
-                warranty.map(w -> w.getWarrantyEligibility().name()).orElse(null)
+                warranty.map(WarrantyRequest::getWarrantyEligibility)
+                        .orElse(null)
         );
 
 
@@ -423,12 +395,24 @@ public class CarServiceRequestService {
 
         dto.setWarrantyRequest(warranty.isPresent());
 
+        dto.setWarrantyId(
+                warranty.map(WarrantyRequest::getId)
+                        .orElse(null)
+        );
+
+        dto.setWarrantyReason(
+                warranty.map(WarrantyRequest::getWarrantyReason)
+                        .orElse(null)
+        );
+
         dto.setWarrantyStatus(
-                warranty.map(w -> w.getStatus().name()).orElse(null)
+                warranty.map(WarrantyRequest::getStatus)
+                        .orElse(null)
         );
 
         dto.setWarrantyEligibility(
-                warranty.map(w -> w.getWarrantyEligibility().name()).orElse(null)
+                warranty.map(WarrantyRequest::getWarrantyEligibility)
+                        .orElse(null)
         );
 
         // =========================
@@ -506,10 +490,6 @@ public class CarServiceRequestService {
                             expiryDate
                     )
                             : 0L
-            );
-
-            dto.setWarrantyStatus(
-                    warranty.map(w -> w.getStatus().name()).orElse(null)
             );
         }
 

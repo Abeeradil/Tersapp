@@ -1,6 +1,9 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.Enums.WarrantyEligibilityStatus;
+import org.example.tears.Enums.WarrantyReason;
+import org.example.tears.Enums.WarrantyStatus;
 
 @Data
 public class CurrentRequestDto {
@@ -13,9 +16,11 @@ public class CurrentRequestDto {
 
     private String status;
 
-    private String warrantyEligibility;
-
-    private String warrantyStatus;
+    private Boolean warrantyRequest;
+    private Integer warrantyId;
+    private WarrantyReason warrantyReason;
+    private WarrantyStatus warrantyStatus;
+    private WarrantyEligibilityStatus warrantyEligibility;
 
     private String requestState;
 }
