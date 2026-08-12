@@ -30,7 +30,6 @@ public class WarrantyStatusHistory {
     @Enumerated(EnumType.STRING)
     private WarrantyStatus employeeStatus;
 
-
     @ManyToOne
     @JoinColumn(name = "changed_by_employee_id", nullable = true)
     private Employee changedBy;
