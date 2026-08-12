@@ -76,6 +76,12 @@ public class WarrantyRequest {
 
     private LocalDateTime deliveredAt;
 
+    @ManyToOne
+    @JoinColumn(name = "receiving_location_id")
+    private Location receivingLocation;
+    private LocalDate receivingDate;
+    private LocalTime receivingTime;
+
 
     @ManyToOne
     @JoinColumn(name = "delivery_location_id")

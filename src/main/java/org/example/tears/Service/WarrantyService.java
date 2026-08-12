@@ -961,7 +961,7 @@ public class WarrantyService {
                     WarrantyCustomerStatus.UNDER_REVIEW;
 
             case APPROVED ->
-                    WarrantyCustomerStatus.WARRANTY_APPROVED;
+                    WarrantyCustomerStatus.WAITING_FOR_PICKUP_INFO;
 
             case RECEIVED ->
                     WarrantyCustomerStatus.VEHICLE_RECEIVED;

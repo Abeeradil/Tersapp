@@ -653,65 +653,44 @@ import java.util.stream.Collectors;
             throw new ApiException("غير مصرح لك");
         }
 
-        // ===========================
-        // Warranty
-        // ===========================
-
         WarrantyRequest warranty =
                 warrantyRepo.findByRequestId(requestId)
                         .orElse(null);
+
+        boolean isWarrantyReceiving =
+                warranty != null &&
+                        warranty.getStatus() == WarrantyStatus.APPROVED;
 
         boolean isWarrantyDelivery =
                 warranty != null &&
                         warranty.getStatus() == WarrantyStatus.DELIVERY_IN_PROGRESS;
 
         // ===========================
-        // Check Delivery Stage
+        // Warranty Receiving
         // ===========================
 
-        if (!isWarrantyDelivery &&
-                request.getStaffStatus() != StaffRequestStatus.DELIVERY_IN_PROGRESS) {
+        if (isWarrantyReceiving) {
 
-            throw new ApiException(
-                    "لا يمكن اختيار موعد التسليم حالياً"
+            appointmentService.validateAppointment(
+                    dto.getDeliveryDate(),
+                    dto.getDeliveryTime()
             );
-        }
 
-        // ===========================
-        // Date Validation
-        // ===========================
-
-        appointmentService.validateAppointment(
-                dto.getDeliveryDate(),
-                dto.getDeliveryTime()
-        );
-
-        // ===========================
-        // Location
-        // ===========================
-
-        Location location =
-                locationRepository.findById(dto.getLocationId())
-                        .orElseThrow(() ->
-                                new ApiException("الموقع غير موجود"));
-
-        // ===========================
-        // Warranty Delivery
-        // ===========================
-
-        if (isWarrantyDelivery) {
-
-            if (warranty.getDeliveryLocation() != null) {
+            if (warranty.getReceivingDate() != null) {
                 throw new ApiException(
-                        "تم اختيار موقع تسليم الضمان مسبقاً"
+                        "تم اختيار موعد استلام السيارة مسبقاً"
                 );
             }
 
-            warranty.setDeliveryLocation(location);
-            warranty.setDeliveryDate(dto.getDeliveryDate());
-            warranty.setDeliveryTime(dto.getDeliveryTime());
+            Location location =
+                    locationRepository.findById(dto.getLocationId())
+                            .orElseThrow(() ->
+                                    new ApiException("الموقع غير موجود"));
 
-            warrantyRepo.save(warranty);
+            warranty.setReceivingLocation(location);
+            warranty.setReceivingDate(dto.getDeliveryDate());
+            warranty.setReceivingTime(dto.getDeliveryTime());
+            warranty.setUpdatedAt(LocalDateTime.now());
 
             warrantyRepo.save(warranty);
 
@@ -726,6 +705,55 @@ import java.util.stream.Collectors;
                             warranty.getId(),
                     warrantyService.toDetailsDto(warranty)
             );
+
+            socketService.send(
+                    "/topic/availability",
+                    appointmentService.getAllAvailability()
+            );
+
+        }
+
+        // ===========================
+        // Warranty Delivery
+        // ===========================
+
+        else if (isWarrantyDelivery) {
+
+            appointmentService.validateAppointment(
+                    dto.getDeliveryDate(),
+                    dto.getDeliveryTime()
+            );
+
+            if (warranty.getDeliveryLocation() != null) {
+                throw new ApiException(
+                        "تم اختيار موعد تسليم الضمان مسبقاً"
+                );
+            }
+
+            Location location =
+                    locationRepository.findById(dto.getLocationId())
+                            .orElseThrow(() ->
+                                    new ApiException("الموقع غير موجود"));
+
+            warranty.setDeliveryLocation(location);
+            warranty.setDeliveryDate(dto.getDeliveryDate());
+            warranty.setDeliveryTime(dto.getDeliveryTime());
+            warranty.setUpdatedAt(LocalDateTime.now());
+
+            warrantyRepo.save(warranty);
+
+            socketService.send(
+                    "/topic/warranty/" +
+                            customer.getUser().getId(),
+                    warrantyService.toResponseDto(warranty)
+            );
+
+            socketService.send(
+                    "/topic/warranty-details/" +
+                            warranty.getId(),
+                    warrantyService.toDetailsDto(warranty)
+            );
+
             socketService.send(
                     "/topic/availability",
                     appointmentService.getAllAvailability()
@@ -736,14 +764,32 @@ import java.util.stream.Collectors;
                             customer.getUser().getId(),
                     carServiceRequestService.toCurrentDto(request)
             );
-
         }
 
         // ===========================
         // Normal Request Delivery
         // ===========================
+        else if (warranty != null) {
+
+            throw new ApiException(
+                    "لا يمكن اختيار موعد حالياً لطلب الضمان"
+            );
+        }
 
         else {
+
+            if (request.getStaffStatus() !=
+                    StaffRequestStatus.DELIVERY_IN_PROGRESS) {
+
+                throw new ApiException(
+                        "لا يمكن اختيار موعد التسليم حالياً"
+                );
+            }
+
+            appointmentService.validateAppointment(
+                    dto.getDeliveryDate(),
+                    dto.getDeliveryTime()
+            );
 
             if (Boolean.TRUE.equals(
                     request.getCustomerSelectedDelivery()
@@ -753,21 +799,25 @@ import java.util.stream.Collectors;
                 );
             }
 
+            Location location =
+                    locationRepository.findById(dto.getLocationId())
+                            .orElseThrow(() ->
+                                    new ApiException("الموقع غير موجود"));
+
             request.setDeliveryLocation(location);
             request.setDeliveryDate(dto.getDeliveryDate());
             request.setDeliveryTime(dto.getDeliveryTime());
-
             request.setCustomerSelectedDelivery(true);
             request.setLastUpdated(LocalDateTime.now());
 
             requestRepo.save(request);
+
             socketService.send(
                     "/topic/current-orders/" +
-                            request.getCustomer()
-                                    .getUser()
-                                    .getId(),
+                            customer.getUser().getId(),
                     carServiceRequestService.toCurrentDto(request)
             );
+
             socketService.send(
                     "/topic/availability",
                     appointmentService.getAllAvailability()
@@ -788,14 +838,16 @@ import java.util.stream.Collectors;
 
             notificationService.send(
                     request.getCurrentEmployee().getUser(),
-                    isWarrantyDelivery
-                            ? "قام العميل بحجز موعد وموقع تسليم سيارة الضمان للطلب #"
+                    isWarrantyReceiving
+                            ? "قام العميل بحجز موعد استلام سيارة الضمان للطلب #"
+                            + request.getOrderNumber()
+                            : isWarrantyDelivery
+                            ? "قام العميل بحجز موعد تسليم سيارة الضمان للطلب #"
                             + request.getOrderNumber()
                             : "قام العميل بحجز موعد تسليم السيارة للطلب #"
                             + request.getOrderNumber()
             );
         }
-
     }
 
 

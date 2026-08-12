@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
-import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
@@ -35,8 +34,6 @@ public class RequestWorkflowService {
     private final WarrantyService warrantyService;
     private final RequestApprovalService requestApprovalService;
     private final CarServiceRequestService carServiceRequestService;
-    private final RequestMapper requestMapper;
-
 
     @Transactional
     public void updateStatus(
@@ -712,12 +709,29 @@ public class RequestWorkflowService {
                     "طلب الضمان بالفعل في هذه الحالة"
             );
         }
-        // RECEIVED لها إجراء خاص مثل الطلب العادي
+        // ============================
+        // APPROVED → RECEIVED
+        // ============================
+
         if (current == WarrantyStatus.APPROVED &&
                 newStatus == WarrantyStatus.RECEIVED) {
 
-            warranty.setStatus(WarrantyStatus.RECEIVED);
-            warranty.setUpdatedAt(LocalDateTime.now());
+            if (warranty.getReceivingDate() == null ||
+                    warranty.getReceivingTime() == null ||
+                    warranty.getReceivingLocation() == null) {
+
+                throw new ApiException(
+                        "لم يحدد العميل موعد استلام السيارة"
+                );
+            }
+
+            LocalDateTime now = LocalDateTime.now();
+
+            warranty.setStatus(
+                    WarrantyStatus.RECEIVED
+            );
+
+            warranty.setUpdatedAt(now);
 
             warrantyRepo.save(warranty);
 
@@ -727,9 +741,34 @@ public class RequestWorkflowService {
                     employee
             );
 
+            // WebSocket
+            socketService.send(
+                    "/topic/warranty/" +
+                            warranty.getCustomer()
+                                    .getUser()
+                                    .getId(),
+                    warrantyService.toResponseDto(warranty)
+            );
+
+            socketService.send(
+                    "/topic/warranty-details/" +
+                            warranty.getId(),
+                    warrantyService.toDetailsDto(warranty)
+            );
+
+            socketService.send(
+                    "/topic/current-orders/" +
+                            warranty.getCustomer()
+                                    .getUser()
+                                    .getId(),
+                    carServiceRequestService.toCurrentDto(
+                            warranty.getRequest()
+                    )
+            );
+
             notificationService.send(
                     warranty.getCustomer().getUser(),
-                    "تم استلام طلب الضمان وجاري استلام السيارة."
+                    "تم تأكيد موعد استلام السيارة لطلب الضمان."
             );
 
             return;
@@ -780,6 +819,46 @@ public class RequestWorkflowService {
                 employee
         );
 
+        if (current == WarrantyStatus.APPROVED &&
+                newStatus == WarrantyStatus.RECEIVED) {
+
+            if (warranty.getReceivingDate() == null ||
+                    warranty.getReceivingTime() == null ||
+                    warranty.getReceivingLocation() == null) {
+
+                throw new ApiException(
+                        "لم يحدد العميل موعد استلام السيارة"
+                );
+            }
+
+            warranty.setStatus(WarrantyStatus.RECEIVED);
+            warranty.setUpdatedAt(LocalDateTime.now());
+
+            warrantyRepo.save(warranty);
+
+            saveWarrantyHistory(
+                    warranty,
+                    WarrantyStatus.RECEIVED,
+                    employee
+            );
+
+            socketService.send(
+                    "/topic/warranty/" +
+                            warranty.getCustomer()
+                                    .getUser()
+                                    .getId(),
+                    warrantyService.toResponseDto(warranty)
+            );
+
+            socketService.send(
+                    "/topic/warranty-details/" +
+                            warranty.getId(),
+                    warrantyService.toDetailsDto(warranty)
+            );
+
+            return;
+        }
+
 // ============================
 // WebSocket
 // ============================
@@ -818,11 +897,6 @@ public class RequestWorkflowService {
                         + warranty.getId()
         );
 
-        notificationService.send(
-                warranty.getCustomer().getUser(),
-                "تم تحديث حالة طلب الضمان رقم #"
-                        + warranty.getId()
-        );
     }
 
 
@@ -973,6 +1047,13 @@ public class RequestWorkflowService {
         warranty.setUpdatedAt(now);
 
         warrantyRepo.save(warranty);
+
+        saveWarrantyHistory(
+                warranty,
+                WarrantyStatus.INSPECTION,
+                employee
+        );
+
         socketService.send(
                 "/topic/warranty/" +
                         warranty.getCustomer()
@@ -997,11 +1078,7 @@ public class RequestWorkflowService {
                 )
         );
 
-        saveWarrantyHistory(
-                warranty,
-                WarrantyStatus.INSPECTION,
-                employee
-        );
+
 
         notificationService.send(
                 warranty.getCustomer().getUser(),
