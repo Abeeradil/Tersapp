@@ -578,16 +578,20 @@ public class RequestMapper {
         );
     }
 
-    private RequestNoteDTO toRequestNoteDto(
-            RequestNote note
-    ) {
+    private RequestNoteDTO toRequestNoteDto(RequestNote note) {
 
         RequestNoteDTO dto = new RequestNoteDTO();
 
         dto.setId(note.getId());
         dto.setNote(note.getNote());
-        dto.setType(note.getType().name());
+
+        if (note.getType() != null) {
+            dto.setType(note.getType().name());
+        }
+
         dto.setCreatedAt(note.getCreatedAt());
+
+        // الحالة وقت إنشاء الملاحظة
         dto.setRequestStatus(
                 note.getRequestStatus()
         );
@@ -610,6 +614,7 @@ public class RequestMapper {
 
         return dto;
     }
+
 
     public List<RequestNoteDTO> getRequestNotes(
             CarServiceRequest request
