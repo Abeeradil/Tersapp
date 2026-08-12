@@ -202,7 +202,7 @@ public class RequestQueryService {
                     WarrantyStatusHistoryDto dto =
                             new WarrantyStatusHistoryDto();
 
-                    dto.setStatus(history.getStatus());
+                    dto.setCustomerStatus(history.getCustomerStatus());
                     dto.setChangedAt(history.getChangedAt());
 
                     if (history.getChangedBy() != null &&

@@ -1,23 +1,20 @@
 package org.example.tears.DTO;
 
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import lombok.Data;
 import org.example.tears.Enums.WarrantyCustomerStatus;
-import org.example.tears.Model.Employee;
+import org.example.tears.Enums.WarrantyStatus;
 
 import java.time.LocalDateTime;
 
 @Data
 public class WarrantyStatusHistoryDto {
 
-    private WarrantyCustomerStatus status;
 
-    private LocalDateTime changedAt;
+        private WarrantyStatus employeeStatus;
 
-    @ManyToOne
-    @JoinColumn(name = "changed_by_employee_id")
-    private Employee changedBy;
+        private WarrantyCustomerStatus customerStatus;
+
+        private LocalDateTime changedAt;
 
     private String employeeName;
 }

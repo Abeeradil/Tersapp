@@ -738,6 +738,7 @@ public class RequestWorkflowService {
             saveWarrantyHistory(
                     warranty,
                     WarrantyStatus.RECEIVED,
+                    WarrantyCustomerStatus.VEHICLE_RECEIVED,
                     employee
             );
 
@@ -816,6 +817,7 @@ public class RequestWorkflowService {
         saveWarrantyHistory(
                 warranty,
                 newStatus,
+                WarrantyCustomerStatus.VEHICLE_RECEIVED,
                 employee
         );
 
@@ -839,6 +841,7 @@ public class RequestWorkflowService {
             saveWarrantyHistory(
                     warranty,
                     WarrantyStatus.RECEIVED,
+                    WarrantyCustomerStatus.VEHICLE_RECEIVED,
                     employee
             );
 
@@ -948,7 +951,8 @@ public class RequestWorkflowService {
 
     private void saveWarrantyHistory(
             WarrantyRequest warranty,
-            WarrantyStatus status,
+            WarrantyStatus employeeStatus,
+            WarrantyCustomerStatus customerStatus,
             Employee employee
     ) {
 
@@ -956,8 +960,13 @@ public class RequestWorkflowService {
                 new WarrantyStatusHistory();
 
         history.setWarrantyRequest(warranty);
-        history.setStatus(status);
+
+        history.setEmployeeStatus(employeeStatus);
+
+        history.setCustomerStatus(customerStatus);
+
         history.setChangedBy(employee);
+
         history.setChangedAt(LocalDateTime.now());
 
         warrantyHistoryRepos.save(history);
@@ -975,14 +984,8 @@ public class RequestWorkflowService {
                     WarrantyStatusHistoryDto dto =
                             new WarrantyStatusHistoryDto();
 
-                    dto.setStatus(history.getStatus());
+                    dto.setEmployeeStatus(history.getEmployeeStatus());
                     dto.setChangedAt(history.getChangedAt());
-
-                    if (history.getChangedBy() != null) {
-
-                        dto.setChangedBy(
-                                history.getChangedBy()
-                        );
 
                         if (history.getChangedBy().getUser() != null) {
                             dto.setEmployeeName(
@@ -991,7 +994,6 @@ public class RequestWorkflowService {
                                             .getFullName()
                             );
                         }
-                    }
 
                     return dto;
                 })
@@ -1051,6 +1053,7 @@ public class RequestWorkflowService {
         saveWarrantyHistory(
                 warranty,
                 WarrantyStatus.INSPECTION,
+                WarrantyCustomerStatus.VEHICLE_RECEIVED,
                 employee
         );
 

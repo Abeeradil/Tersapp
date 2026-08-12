@@ -77,12 +77,15 @@ public class WarrantyService {
                 warranty,
                 images,
                 WarrantyImageType.CUSTOMER_PROBLEM
+
+
         );
 
-        saveHistory(
+        saveCustomerWarrantyHistory(
                 warranty,
                 WarrantyCustomerStatus.UNDER_REVIEW
         );
+
 
         // ============================
         // إنشاء التذكرة تلقائياً
@@ -268,9 +271,9 @@ public class WarrantyService {
         }
     }
 
-    private void saveHistory(
+    private void saveCustomerWarrantyHistory(
             WarrantyRequest warranty,
-            WarrantyCustomerStatus status
+            WarrantyCustomerStatus customerStatus
     ) {
 
         WarrantyStatusHistory history =
@@ -278,7 +281,34 @@ public class WarrantyService {
 
         history.setWarrantyRequest(warranty);
 
-        history.setStatus(status);
+        history.setEmployeeStatus(null);
+
+        history.setCustomerStatus(customerStatus);
+
+        history.setChangedBy(null);
+
+        history.setChangedAt(LocalDateTime.now());
+
+        warrantyHistoryRepos.save(history);
+    }
+
+    private void saveWarrantyHistory(
+            WarrantyRequest warranty,
+            WarrantyStatus employeeStatus,
+            WarrantyCustomerStatus customerStatus,
+            Employee employee
+    ) {
+
+        WarrantyStatusHistory history =
+                new WarrantyStatusHistory();
+
+        history.setWarrantyRequest(warranty);
+
+        history.setEmployeeStatus(employeeStatus);
+
+        history.setCustomerStatus(customerStatus);
+
+        history.setChangedBy(employee);
 
         history.setChangedAt(LocalDateTime.now());
 
@@ -480,8 +510,8 @@ public class WarrantyService {
                     WarrantyStatusHistoryDto dto =
                             new WarrantyStatusHistoryDto();
 
-                    dto.setStatus(
-                            history.getStatus()
+                    dto.setCustomerStatus(
+                            history.getCustomerStatus()
                     );
 
                     dto.setChangedAt(
@@ -575,9 +605,11 @@ public class WarrantyService {
                 technician
         );
 
-        saveHistory(
+        saveWarrantyHistory(
                 warranty,
-                WarrantyCustomerStatus.WARRANTY_APPROVED
+                WarrantyStatus.APPROVED,
+                WarrantyCustomerStatus.WARRANTY_APPROVED,
+                employee
         );
 
         // ============================
@@ -700,10 +732,14 @@ public class WarrantyService {
         warranty.setApprovedAt(LocalDateTime.now());
 
         warranty.setRejectReason(reason);
-        saveHistory(
+
+        saveWarrantyHistory(
                 warranty,
-                WarrantyCustomerStatus.REJECTED
+                WarrantyStatus.REJECTED,
+                WarrantyCustomerStatus.REJECTED,
+                employee
         );
+
         warranty.setUpdatedAt(LocalDateTime.now());
         warrantyRepo.save(warranty);
 
