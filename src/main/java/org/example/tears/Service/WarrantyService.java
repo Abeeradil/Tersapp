@@ -693,7 +693,6 @@ public class WarrantyService {
         }
 
         warranty.setStatus(WarrantyStatus.REJECTED);
-        warranty.setWarrantyEligibility(WarrantyEligibilityStatus.PENDING_REVIEW);
         warranty.setWarrantyEligibility(WarrantyEligibilityStatus.NOT_COVERED);
 
         warranty.setApprovedBy(employee);
