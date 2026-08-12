@@ -1,8 +1,8 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.Enums.WarrantyCustomerStatus;
 import org.example.tears.Enums.WarrantyReason;
-import org.example.tears.Enums.WarrantyStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,9 +16,11 @@ public class WarrantyDetailsDto {
 
     private WarrantyReason warrantyReason;
 
+    private String serviceOption;    // نوع الخدمة
+
     private String description;
 
-    private WarrantyStatus status;
+    private WarrantyCustomerStatus status;
 
     private String rejectReason;
 

@@ -401,6 +401,11 @@ public class CarServiceRequestService {
         dto.setWarrantyStatus(
                 warranty.map(w -> w.getStatus().name()).orElse(null)
         );
+        dto.setWarrantyEligibility(
+                warranty.map(w -> w.getWarrantyEligibility().name()).orElse(null)
+        );
+
+
 
         return dto;
     }
@@ -420,6 +425,10 @@ public class CarServiceRequestService {
 
         dto.setWarrantyStatus(
                 warranty.map(w -> w.getStatus().name()).orElse(null)
+        );
+
+        dto.setWarrantyEligibility(
+                warranty.map(w -> w.getWarrantyEligibility().name()).orElse(null)
         );
 
         // =========================

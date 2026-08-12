@@ -304,6 +304,7 @@ public class WarrantyService {
             dto.setId(w.getId());
             dto.setOrderNumber(w.getRequest().getOrderNumber());
             dto.setWarrantyReason(w.getWarrantyReason());
+            dto.setWarrantyEligibility(w.getWarrantyEligibility());
             dto.setCustomerStatus(
                     mapCustomerWarrantyStatus(
                             w.getStatus()
@@ -349,7 +350,7 @@ public class WarrantyService {
         );
 
         dto.setStatus(
-                warranty.getStatus()
+                warranty.getCustomerStatus()
         );
 
         dto.setRejectReason(
@@ -389,6 +390,8 @@ public class WarrantyService {
                             .getModel()
                             .getName()
             );
+
+            dto.setServiceOption(request.getServiceOption().name());
 
             dto.setCarModelNameAr(
                     request.getCar()
@@ -555,6 +558,7 @@ public class WarrantyService {
         // ============================
 
         warranty.setStatus(WarrantyStatus.APPROVED);
+        warranty.setWarrantyEligibility(WarrantyEligibilityStatus.COVERED);
 
         warranty.setApprovedBy(employee);
 
@@ -689,6 +693,8 @@ public class WarrantyService {
         }
 
         warranty.setStatus(WarrantyStatus.REJECTED);
+        warranty.setWarrantyEligibility(WarrantyEligibilityStatus.PENDING_REVIEW);
+        warranty.setWarrantyEligibility(WarrantyEligibilityStatus.NOT_COVERED);
 
         warranty.setApprovedBy(employee);
 
@@ -818,7 +824,7 @@ public class WarrantyService {
         );
 
         dto.setStatus(
-                warranty.getStatus()
+                warranty.getCustomerStatus()
         );
 
         dto.setRejectReason(
@@ -841,6 +847,7 @@ public class WarrantyService {
 
         CarServiceRequest request =
                 warranty.getRequest();
+
 
         if (request != null &&
                 request.getCar() != null) {
@@ -870,7 +877,11 @@ public class WarrantyService {
                                     .getPlateNumberEnglish()
                     )
             );
+
+            dto.setServiceOption(request.getServiceOption().name());
         }
+
+
 
         dto.setWarrantyDescription(
                 warranty.getDescription()

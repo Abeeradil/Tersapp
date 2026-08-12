@@ -45,6 +45,7 @@ public class RequestHistoryDto {
 
     private String customerStatus;
     private String requestState;
+    private String warrantyEligibility;
 
 
 }

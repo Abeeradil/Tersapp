@@ -2,6 +2,8 @@ package org.example.tears.Model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.example.tears.Enums.WarrantyCustomerStatus;
+import org.example.tears.Enums.WarrantyEligibilityStatus;
 import org.example.tears.Enums.WarrantyReason;
 import org.example.tears.Enums.WarrantyStatus;
 
@@ -35,6 +37,13 @@ public class WarrantyRequest {
 
     @Enumerated(EnumType.STRING)
     private WarrantyStatus status;
+
+    @Enumerated(EnumType.STRING)
+    private WarrantyCustomerStatus CustomerStatus;
+
+    @Enumerated(EnumType.STRING)
+    private WarrantyEligibilityStatus WarrantyEligibility;
+
 
     @Enumerated(EnumType.STRING)
     private WarrantyReason warrantyReason;

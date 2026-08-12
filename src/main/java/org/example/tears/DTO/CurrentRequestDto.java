@@ -13,6 +13,8 @@ public class CurrentRequestDto {
 
     private String status;
 
+    private String warrantyEligibility;
+
     private String warrantyStatus;
 
     private String requestState;
