@@ -38,6 +38,8 @@ import java.util.stream.Collectors;
     private final CarServiceRequestService carServiceRequestService;
     private final WarrantyService warrantyService;
     private final AppointmentService appointmentService;
+    private final RequestNoteRepository noteRepo;
+
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -848,6 +850,41 @@ import java.util.stream.Collectors;
                             + request.getOrderNumber()
             );
         }
+    }
+
+    @Transactional
+    public void addCustomerNote(
+            Integer requestId,
+            String note,
+            Customer customer
+    ) {
+
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
+
+        if (!request.getCustomer().getId().equals(customer.getId())) {
+            throw new ApiException("غير مصرح لك");
+        }
+
+        if (note == null || note.isBlank()) {
+            throw new ApiException("الملاحظة مطلوبة");
+        }
+
+        RequestNote requestNote = new RequestNote();
+
+        requestNote.setRequest(request);
+        requestNote.setCustomer(customer);
+        requestNote.setEmployee(null);
+        requestNote.setNote(note.trim());
+        requestNote.setRequestStatus(
+                request.getStaffStatus()
+        );
+        requestNote.setType(RequestNoteType.CUSTOMER);
+        requestNote.setCreatedAt(LocalDateTime.now());
+
+        noteRepo.save(requestNote);
     }
 
 

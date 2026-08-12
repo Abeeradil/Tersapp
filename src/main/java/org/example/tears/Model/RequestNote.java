@@ -3,6 +3,7 @@ package org.example.tears.Model;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.example.tears.Enums.RequestNoteType;
+import org.example.tears.Enums.StaffRequestStatus;
 
 import java.time.LocalDateTime;
 @Entity
@@ -24,6 +25,9 @@ public class RequestNote {
         @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "customer_id")
         private Customer customer;
+
+        @Enumerated(EnumType.STRING)
+        private StaffRequestStatus requestStatus;
 
         @Column(nullable = false, columnDefinition = "TEXT")
         private String note;

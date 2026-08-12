@@ -469,9 +469,14 @@ public class RequestWorkflowService {
 
             requestNote.setRequest(request);
             requestNote.setEmployee(employee);
-            requestNote.setCustomer(null);
-            requestNote.setNote(note.trim());
+            requestNote.setNote(note);
             requestNote.setType(RequestNoteType.EMPLOYEE);
+
+            // مهم جداً: نحفظ حالة الطلب وقت كتابة الملاحظة
+            requestNote.setRequestStatus(
+                    request.getStaffStatus()
+            );
+
             requestNote.setCreatedAt(LocalDateTime.now());
 
             noteRepo.save(requestNote);

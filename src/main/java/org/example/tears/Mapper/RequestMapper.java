@@ -588,6 +588,9 @@ public class RequestMapper {
         dto.setNote(note.getNote());
         dto.setType(note.getType().name());
         dto.setCreatedAt(note.getCreatedAt());
+        dto.setRequestStatus(
+                note.getRequestStatus()
+        );
 
         if (note.getEmployee() != null) {
 
