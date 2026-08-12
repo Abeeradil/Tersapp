@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.example.tears.Enums.WarrantyStatus;
+import org.example.tears.Enums.WarrantyCustomerStatus;
 
 import java.time.LocalDateTime;
 
@@ -24,7 +24,7 @@ public class WarrantyStatusHistory {
     private WarrantyRequest warrantyRequest;
 
     @Enumerated(EnumType.STRING)
-    private WarrantyStatus status;
+    private WarrantyCustomerStatus status;
 
     @ManyToOne
     @JoinColumn(name = "changed_by_employee_id")

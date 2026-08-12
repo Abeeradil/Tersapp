@@ -437,6 +437,11 @@ public class TicketService {
             requestRepository.save(serviceRequest);
             ticketRepository.save(ticket);
 
+            notificationService.send(
+                    ticket.getCreatedByEmployee().getUser(),
+                    "قام موظف خدمة العملاء باستلام التذكرة ويمكنك الآن بدء المحادثة."
+            );
+
             return;
         }
 

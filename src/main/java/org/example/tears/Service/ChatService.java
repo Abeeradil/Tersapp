@@ -125,19 +125,6 @@ public class ChatService {
 
             Integer employeeId = user.getEmployee().getId();
 
-            System.out.println("========== CHAT AUTH ==========");
-            System.out.println("Logged Employee = " + employeeId);
-
-            System.out.println("Ticket CreatedByEmployee = "
-                    + (ticket.getCreatedByEmployee() == null
-                    ? null
-                    : ticket.getCreatedByEmployee().getId()));
-
-            System.out.println("Ticket AssignedSupportEmployee = "
-                    + (ticket.getAssignedSupportEmployee() == null
-                    ? null
-                    : ticket.getAssignedSupportEmployee().getId()));
-
             // موظف الصيانة (منشئ التذكرة)
             if (ticket.getCreatedByEmployee() != null &&
                     ticket.getCreatedByEmployee().getId().equals(employeeId)) {

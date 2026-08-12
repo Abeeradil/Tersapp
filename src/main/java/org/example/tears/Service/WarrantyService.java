@@ -81,7 +81,7 @@ public class WarrantyService {
 
         saveHistory(
                 warranty,
-                WarrantyStatus.PENDING_REVIEW
+                WarrantyCustomerStatus.UNDER_REVIEW
         );
 
         // ============================
@@ -270,7 +270,7 @@ public class WarrantyService {
 
     private void saveHistory(
             WarrantyRequest warranty,
-            WarrantyStatus status
+            WarrantyCustomerStatus status
     ) {
 
         WarrantyStatusHistory history =
@@ -577,7 +577,7 @@ public class WarrantyService {
 
         saveHistory(
                 warranty,
-                WarrantyStatus.APPROVED
+                WarrantyCustomerStatus.WARRANTY_APPROVED
         );
 
         // ============================
@@ -702,7 +702,7 @@ public class WarrantyService {
         warranty.setRejectReason(reason);
         saveHistory(
                 warranty,
-                WarrantyStatus.REJECTED
+                WarrantyCustomerStatus.REJECTED
         );
         warranty.setUpdatedAt(LocalDateTime.now());
         warrantyRepo.save(warranty);
