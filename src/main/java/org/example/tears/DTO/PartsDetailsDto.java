@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 public class PartsDetailsDto {
 
-    private String problemDescription;
+    private List<RequestNoteDTO> notes;
 
     private List<PartReportDto> parts;
     private PricingStatus pricingStatus;

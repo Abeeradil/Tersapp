@@ -3,17 +3,14 @@ package org.example.tears.Mapper;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.PricingRequestCardDto;
 import org.example.tears.DTO.PricingRequestDetailsDto;
-import org.example.tears.DTO.RequestNoteDTO;
 import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.RequestNote;
-import org.example.tears.Repository.RequestNoteRepository;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class PricingRequestMapper {
 
-    private final RequestNoteRepository noteRepo;
+    private final RequestMapper requestMapper;
 
 
     public PricingRequestCardDto toPricingCardDto(CarServiceRequest request){
@@ -71,36 +68,17 @@ public class PricingRequestMapper {
                 request.getPricingStatus().name()
         );
 
+        // ملاحظة العميل الأصلية
         dto.setProblemDescription(
                 request.getProblemDescription()
         );
 
-        RequestNote lastNote = noteRepo
-                .findTopByRequestOrderByCreatedAtDesc(request);
-
-        dto.setTechnicianNote(
-                lastNote != null ? lastNote.getNote() : null
-        );
-
-
-
+        // كل الملاحظات الإضافية
         dto.setNotes(
-                noteRepo.findByRequestOrderByCreatedAtDesc(request)
-                        .stream()
-                        .map(note -> {
-                            RequestNoteDTO dtoNote = new RequestNoteDTO();
-
-                            dtoNote.setNote(note.getNote());
-                            dtoNote.setEmployeeName(
-                                    note.getEmployee().getUser().getFullName()
-                            );
-                            dtoNote.setStep(note.getStep().name());
-                            dtoNote.setCreatedAt(note.getCreatedAt());
-
-                            return dtoNote;
-                        })
-                        .toList()
+                requestMapper.getRequestNotes(request)
         );
+
+
 
         dto.setTechnicianName(
                 request.getAssignedTechnician().getUser().getFullName()
@@ -140,6 +118,7 @@ public class PricingRequestMapper {
 
         return dto;
     }
+
 
     private String formatEnglishPlate(String plate) {
 

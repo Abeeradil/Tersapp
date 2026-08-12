@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-
 @Data
 @Getter
 @Setter
@@ -19,7 +18,8 @@ public class RequestPart {
                 private String type;
 
                 private Integer quantity;
-                private String problemDescription;
+
+                 private String notes;
 
                 // يعدلها موظف التسعير
                 private Integer finalPrice;

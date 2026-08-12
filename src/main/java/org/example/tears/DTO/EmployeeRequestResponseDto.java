@@ -2,6 +2,7 @@ package org.example.tears.DTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Data
@@ -22,6 +23,9 @@ import java.time.LocalDateTime;
 
         private String plateNumberArabic;
         private String plateNumberEnglish;
+
+    private List<RequestNoteDTO> notes;
+
 
     private Boolean warrantyEligible;
     private Boolean warrantyRequest;

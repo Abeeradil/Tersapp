@@ -509,9 +509,9 @@ public class RequestPricingService {
                     ),
                     quantity,
                     escapeHtml(
-                            part.getProblemDescription() == null
+                            part.getNotes() == null
                                     ? "-"
-                                    : part.getProblemDescription()
+                                    : part.getNotes()
                     ),
                     partPrice,
                     labor,
@@ -975,8 +975,7 @@ public class RequestPricingService {
 
         for (RequestPart oldPart : currentParts) {
 
-            RequestPart copy =
-                    new RequestPart();
+            RequestPart copy = new RequestPart();
 
             copy.setRequest(request);
             copy.setReport(report);
@@ -993,8 +992,8 @@ public class RequestPricingService {
                     oldPart.getQuantity()
             );
 
-            copy.setProblemDescription(
-                    oldPart.getProblemDescription()
+            copy.setNotes(
+                    oldPart.getNotes()
             );
 
             copy.setFinalPrice(

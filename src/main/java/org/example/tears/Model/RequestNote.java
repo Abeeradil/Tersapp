@@ -2,7 +2,7 @@ package org.example.tears.Model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Enums.RequestNoteType;
 
 import java.time.LocalDateTime;
 @Entity
@@ -10,21 +10,28 @@ import java.time.LocalDateTime;
 public class RequestNote {
 
         @Id
-        @GeneratedValue
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
         private Integer id;
 
-        private String note;
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "request_id", nullable = false)
+        private CarServiceRequest request;
 
-        @ManyToOne
+        @ManyToOne(fetch = FetchType.LAZY)
         @JoinColumn(name = "employee_id")
         private Employee employee;
 
+        @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "customer_id")
+        private Customer customer;
+
+        @Column(nullable = false, columnDefinition = "TEXT")
+        private String note;
+
         @Enumerated(EnumType.STRING)
-        private StaffRequestStatus step;
+        @Column(nullable = false)
+        private RequestNoteType type;
 
+        @Column(nullable = false)
         private LocalDateTime createdAt;
-
-        @ManyToOne
-        @JoinColumn(name = "request_id")
-        private CarServiceRequest request;
 }

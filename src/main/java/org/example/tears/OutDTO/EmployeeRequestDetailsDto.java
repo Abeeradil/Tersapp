@@ -1,10 +1,7 @@
 package org.example.tears.OutDTO;
 
 import lombok.Data;
-import org.example.tears.DTO.RequestImageDto;
-import org.example.tears.DTO.TimelineItemDto;
-import org.example.tears.DTO.WarrantyImageResponseDto;
-import org.example.tears.DTO.WarrantyStatusHistoryDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.WarrantyStatus;
 
 import java.time.LocalDate;
@@ -35,6 +32,8 @@ public class EmployeeRequestDetailsDto {
 
     private List<RequestImageDto> images;
     private List<TimelineItemDto> timeline;
+    private List<RequestNoteDTO> notes;
+
 
     private String problemDescription;
 

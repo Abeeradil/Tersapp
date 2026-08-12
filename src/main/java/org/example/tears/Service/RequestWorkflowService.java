@@ -125,7 +125,7 @@ public class RequestWorkflowService {
                         .orElseThrow(() ->
                                 new ApiException("الموظف غير موجود"));
 
-        saveNote(req, employee, note);
+        saveEmployeeNote(req, employee, note);
 
         saveHistory(req, employeeId);
 
@@ -307,7 +307,7 @@ public class RequestWorkflowService {
                 .orElseThrow(() ->
                         new ApiException("الموظف غير موجود"));
 
-        saveNote(req, employee, note);
+        saveEmployeeNote(req, employee, note);
 
         saveHistory(req, employeeId);
 
@@ -455,22 +455,27 @@ public class RequestWorkflowService {
         // =========================
         // حفظ ملاحظة
         // =========================
-        private void saveNote(
-            CarServiceRequest req,
-            Employee employee,
-            String note
-    ){
+        private void saveEmployeeNote(
+                CarServiceRequest request,
+                Employee employee,
+                String note
+        ) {
 
-            RequestNote n = new RequestNote();
+            if (note == null || note.isBlank()) {
+                return;
+            }
 
-            n.setRequest(req);
-            n.setEmployee(employee);
-            n.setNote(note);
-            n.setStep(req.getStaffStatus());
-            n.setCreatedAt(LocalDateTime.now());
+            RequestNote requestNote = new RequestNote();
 
-            noteRepo.save(n);
-    }
+            requestNote.setRequest(request);
+            requestNote.setEmployee(employee);
+            requestNote.setCustomer(null);
+            requestNote.setNote(note.trim());
+            requestNote.setType(RequestNoteType.EMPLOYEE);
+            requestNote.setCreatedAt(LocalDateTime.now());
+
+            noteRepo.save(requestNote);
+        }
 
         // =========================
         // حفظ History

@@ -504,8 +504,8 @@ import java.util.stream.Collectors;
                     quantity
             );
 
-            newPart.setProblemDescription(
-                    oldPart.getProblemDescription()
+            newPart.setNotes(
+                    oldPart.getNotes()
             );
 
             newPart.setFinalPrice(

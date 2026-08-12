@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.List;
 @Data
 public class AddPartsDto {
-    private String problemDescription;
+    private List<RequestNoteDTO> notes;
     private List<PartDto> parts;
 
 }

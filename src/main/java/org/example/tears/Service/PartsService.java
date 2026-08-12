@@ -10,6 +10,7 @@ import org.example.tears.DTO.PartsDetailsDto;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.RequestPart;
@@ -28,8 +29,7 @@ public class PartsService {
     private final CarServiceRequestRepository requestRepo;
     private final NotificationService notificationService;
     private final RequestWorkflowService workflowService;
-
-
+    private final RequestMapper requestMapper;
 
 
     // إضافة قطعة
@@ -44,7 +44,6 @@ public class PartsService {
 
                 throw new RuntimeException("لا يمكن تسجيل القطع في هذه المرحلة");
             }
-
             /**
             if(dto.getProblemDescription() == null ||
                     dto.getProblemDescription().isBlank()){
@@ -58,12 +57,10 @@ public class PartsService {
                 throw new RuntimeException("يجب إضافة قطعة واحدة على الأقل");
             }
 
-
-            req.setProblemDescription(dto.getProblemDescription());
             req.setStaffStatus(StaffRequestStatus.PARTS_REGISTERING);
             req.setLastUpdated(LocalDateTime.now());
-
             requestRepo.save(req);
+
             for (PartDto p : dto.getParts()) {
 
                 if(p.getName() == null || p.getName().isBlank()){
@@ -80,8 +77,9 @@ public class PartsService {
                 part.setName(p.getName());
                 part.setType(p.getType());
                 part.setQuantity(p.getQuantity());
-                part.setLaborCost((p.getLaborCost())
-                );
+                part.setLaborCost(p.getLaborCost());
+
+
 
                 partRepo.save(part);
             }
@@ -122,9 +120,9 @@ public class PartsService {
             List<RequestPart> parts = partRepo.findByRequestId(requestId);
 
             PartsDetailsDto dto = new PartsDetailsDto();
-
-            dto.setProblemDescription(req.getProblemDescription());
-
+            dto.setNotes(
+                    requestMapper.getRequestNotes(req)
+            );
             List<PartReportDto> list = new ArrayList<>();
 
             int totalQuantity = 0;

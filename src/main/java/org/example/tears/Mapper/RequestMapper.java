@@ -6,6 +6,7 @@ import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.RequestApprovalRepository;
+import org.example.tears.Repository.RequestNoteRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.example.tears.Repository.WarrantyRepository;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,8 @@ public class RequestMapper {
     private final RequestReportRepository reportRepo;
     private final RequestApprovalRepository approvalRepo;
     private final WarrantyRepository warrantyRepo;
+    private final RequestNoteRepository noteRepo;
+
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -113,8 +116,14 @@ public class RequestMapper {
         // Problem
         // ===========================
 
+        // ملاحظة العميل الأصلية
         dto.setProblemDescription(
                 r.getProblemDescription()
+        );
+
+        // كل الملاحظات الإضافية
+        dto.setNotes(
+                getRequestNotes(r)
         );
 
         // ===========================
@@ -288,8 +297,14 @@ public class RequestMapper {
         // Problem
         // ===========================
 
+        // ملاحظة العميل الأصلية
         dto.setProblemDescription(
                 r.getProblemDescription()
+        );
+
+        // كل الملاحظات الإضافية
+        dto.setNotes(
+                getRequestNotes(r)
         );
 
         // ===========================
@@ -561,6 +576,47 @@ public class RequestMapper {
                 && LocalDateTime.now().isBefore(
                 request.getDeliveredAt().plusDays(30)
         );
+    }
+
+    private RequestNoteDTO toRequestNoteDto(
+            RequestNote note
+    ) {
+
+        RequestNoteDTO dto = new RequestNoteDTO();
+
+        dto.setId(note.getId());
+        dto.setNote(note.getNote());
+        dto.setType(note.getType().name());
+        dto.setCreatedAt(note.getCreatedAt());
+
+        if (note.getEmployee() != null) {
+
+            dto.setEmployeeId(
+                    note.getEmployee().getId()
+            );
+
+            if (note.getEmployee().getUser() != null) {
+
+                dto.setEmployeeName(
+                        note.getEmployee()
+                                .getUser()
+                                .getFullName()
+                );
+            }
+        }
+
+        return dto;
+    }
+
+    public List<RequestNoteDTO> getRequestNotes(
+            CarServiceRequest request
+    ) {
+
+        return noteRepo
+                .findByRequestOrderByCreatedAtAsc(request)
+                .stream()
+                .map(this::toRequestNoteDto)
+                .toList();
     }
 
 //        public CustomerRequestStatus toCustomer(WorkflowStage stage) {

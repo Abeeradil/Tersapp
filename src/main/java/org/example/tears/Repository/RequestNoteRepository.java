@@ -11,9 +11,15 @@ import java.util.List;
 public interface RequestNoteRepository
         extends JpaRepository<RequestNote, Integer> {
 
-    RequestNote findTopByRequestOrderByCreatedAtDesc(
+
+    List<RequestNote> findByRequestOrderByCreatedAtDesc(CarServiceRequest request);
+
+    List<RequestNote> findByRequestOrderByCreatedAtAsc(
             CarServiceRequest request
     );
 
-    List<RequestNote> findByRequestOrderByCreatedAtDesc(CarServiceRequest request);
+    List<RequestNote> findByRequestIdOrderByCreatedAtAsc(
+            Integer requestId
+    );
+
 }

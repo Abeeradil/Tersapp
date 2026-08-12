@@ -7,12 +7,15 @@ import java.time.LocalDateTime;
 @Data
 public class RequestNoteDTO {
 
-    private String note;
+        private Integer id;
 
-    private String employeeName;
+        private String note;
 
-    private String step;
+        private String type;
 
-    private LocalDateTime createdAt;
+        private Integer employeeId;
 
-}
+        private String employeeName;
+
+        private LocalDateTime createdAt;
+    }
