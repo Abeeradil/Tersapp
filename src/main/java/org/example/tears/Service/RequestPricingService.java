@@ -774,7 +774,6 @@ public class RequestPricingService {
     }
 
 
-    @Transactional(readOnly = true)
     public ReportPreviewDto getEmpReport(
             Integer requestId,
             Employee employee
@@ -795,8 +794,12 @@ public class RequestPricingService {
                         employee
                 );
 
+        // ==========================================
+        // جلب Snapshot القطع الخاصة بهذا التقرير
+        // ==========================================
+
         List<RequestPart> parts =
-                partRepo.findByRequestIdAndReportIsNull(requestId);
+                partRepo.findByReport(report);
 
         ReportPreviewDto dto =
                 new ReportPreviewDto();
@@ -956,6 +959,14 @@ public class RequestPricingService {
 
         dto.setVatAmount(
                 vat
+        );
+
+        dto.setSubtotal(
+                subtotal
+        );
+
+        dto.setAfterDiscount(
+                afterDiscount
         );
 
         dto.setGrandTotal(

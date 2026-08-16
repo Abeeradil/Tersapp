@@ -16,5 +16,6 @@ public interface RequestPartRepository extends JpaRepository<RequestPart,Integer
 
     void deleteByRequestId(Integer requestId);
     List<RequestPart> findByRequestIdAndReportIsNull(Integer requestId);
+    List<RequestPart> findByReport(RequestReport report);
 
     }
