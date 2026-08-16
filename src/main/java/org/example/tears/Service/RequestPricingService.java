@@ -1033,13 +1033,14 @@ public class RequestPricingService {
         if (employee.getEmployeeRole() == EmployeeRole.PRICING) {
 
             return reportRepo
-                    .findTopByRequest_IdAndCreatedBy_IdOrderByVersionDesc(
+                    .findTopByRequest_IdAndCreatedBy_IdAndVersionTypeOrderByVersionDesc(
                             requestId,
-                            employee.getId()
+                            employee.getId(),
+                            ReportVersionType.PRICING
                     )
                     .orElseThrow(() ->
                             new ApiException(
-                                    "لا يوجد تقرير لهذا الموظف"
+                                    "لا يوجد تقرير تسعير لهذا الموظف"
                             )
                     );
         }

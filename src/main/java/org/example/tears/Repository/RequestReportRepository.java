@@ -18,10 +18,10 @@ public interface RequestReportRepository extends JpaRepository<RequestReport,Int
             Integer employeeId
     );
 
-    Optional<RequestReport>
-    findFirstByRequest_IdAndVersionTypeOrderByVersionDesc(
+
+    Optional<RequestReport> findTopByRequest_IdAndCreatedBy_IdAndVersionTypeOrderByVersionDesc(
             Integer requestId,
+            Integer employeeId,
             ReportVersionType versionType
     );
-
 }
