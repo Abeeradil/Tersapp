@@ -357,15 +357,25 @@ import java.util.stream.Collectors;
             CustomerModifyReportDto dto
     ) {
 
+        // ==========================================
+        // 1. الطلب
+        // ==========================================
+
         CarServiceRequest request =
                 requestRepo.findById(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
+
+        // ==========================================
+        // 2. Approval
+        // ==========================================
+
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(requestId)
                         .orElseThrow(() ->
                                 new ApiException("لا يوجد تقرير"));
+
 
         if (Boolean.TRUE.equals(approval.getApproved())) {
             throw new ApiException("تم اعتماد التقرير");
@@ -375,8 +385,9 @@ import java.util.stream.Collectors;
             throw new ApiException("تم رفض التقرير");
         }
 
+
         // ==========================================
-        // التقرير الحالي الذي يراه العميل
+        // 3. التقرير الحالي الذي يراه العميل
         // ==========================================
 
         RequestReport oldReport =
@@ -384,8 +395,18 @@ import java.util.stream.Collectors;
                         .orElseThrow(() ->
                                 new ApiException("التقرير غير موجود"));
 
+
         // ==========================================
-        // إنشاء تقرير جديد
+        // 4. إغلاق التقرير القديم
+        // ==========================================
+
+        oldReport.setLatest(false);
+
+        reportRepo.save(oldReport);
+
+
+        // ==========================================
+        // 5. إنشاء التقرير الجديد
         // ==========================================
 
         RequestReport newReport =
@@ -393,8 +414,12 @@ import java.util.stream.Collectors;
 
         newReport.setRequest(request);
 
+        /*
+         * نخلي CreatedBy نفس صاحب التقرير الأصلي
+         * لكن التقرير الجديد ليس تقرير التسعير الأصلي.
+         */
         newReport.setCreatedBy(
-                request.getAssignedPricingEmployee()
+                oldReport.getCreatedBy()
         );
 
         newReport.setCreatedAt(
@@ -409,7 +434,24 @@ import java.util.stream.Collectors;
 
         newReport.setSent(false);
 
+        /*
+         * مهم إذا عندك هذا الـ enum.
+         *
+         * إذا كان عندك ReportVersionType مثل:
+         * PRICING / MODIFICATION
+         *
+         * استخدم:
+         */
+        newReport.setVersionType(
+                ReportVersionType.CUSTOMER_MODIFICATION
+        );
+
         reportRepo.save(newReport);
+
+
+        // ==========================================
+        // 6. رقم التقرير
+        // ==========================================
 
         newReport.setReportNumber(
                 "PR-" +
@@ -421,14 +463,21 @@ import java.util.stream.Collectors;
 
         reportRepo.save(newReport);
 
+
         // ==========================================
-        // نسخ القطع الحالية من التقرير القديم
+        // 7. قطع التقرير القديم
         // ==========================================
 
         List<RequestPart> oldParts =
                 partRepo.findByReport_Id(
                         oldReport.getId()
                 );
+
+
+        if (dto.getParts() == null) {
+            throw new ApiException("يجب إرسال القطع");
+        }
+
 
         Map<Integer, CustomerPartDto> selectedParts =
                 dto.getParts()
@@ -439,22 +488,24 @@ import java.util.stream.Collectors;
                                 (a, b) -> b
                         ));
 
+
         int totalPartsPrice = 0;
         int totalLabor = 0;
 
+
         // ==========================================
-        // بناء القطع الجديدة
+        // 8. إنشاء Snapshot جديد للقطع
         // ==========================================
 
         for (RequestPart oldPart : oldParts) {
 
             CustomerPartDto selected =
-                    selectedParts.get(oldPart.getId());
+                    selectedParts.get(
+                            oldPart.getId()
+                    );
 
-            // ======================================
+
             // العميل حذف القطعة
-            // ======================================
-
             if (selected == null ||
                     selected.getQuantity() == null ||
                     selected.getQuantity() <= 0) {
@@ -462,36 +513,46 @@ import java.util.stream.Collectors;
                 continue;
             }
 
+
             int quantity =
                     selected.getQuantity();
+
 
             int oldQuantity =
                     oldPart.getQuantity() == null
                             ? 1
                             : oldPart.getQuantity();
 
+
             int oldLabor =
                     oldPart.getLaborCost() == null
                             ? 0
                             : oldPart.getLaborCost();
 
-            // تكلفة العمالة لكل قطعة
+
+            // ======================================
+            // حساب العمالة حسب الكمية الجديدة
+            // ======================================
+
             int laborPerPiece =
                     oldQuantity > 0
                             ? oldLabor / oldQuantity
                             : 0;
 
+
             int newLabor =
                     laborPerPiece * quantity;
 
+
             // ======================================
-            // إنشاء نسخة جديدة من القطعة
+            // إنشاء نسخة جديدة
             // ======================================
 
             RequestPart newPart =
                     new RequestPart();
 
             newPart.setRequest(request);
+
             newPart.setReport(newReport);
 
             newPart.setName(
@@ -524,8 +585,9 @@ import java.util.stream.Collectors;
 
             partRepo.save(newPart);
 
+
             // ======================================
-            // إعادة الحساب
+            // الحساب
             // ======================================
 
             int partPrice =
@@ -533,24 +595,29 @@ import java.util.stream.Collectors;
                             ? 0
                             : oldPart.getFinalPrice();
 
+
             totalPartsPrice +=
                     partPrice * quantity;
+
 
             totalLabor +=
                     newLabor;
         }
 
+
         // ==========================================
-        // إعادة حساب السعر
+        // 9. الحسابات المالية
         // ==========================================
 
         double subtotal =
                 totalPartsPrice + totalLabor;
 
+
         double discount =
                 request.getDiscount() == null
                         ? 0
                         : request.getDiscount();
+
 
         discount =
                 Math.min(
@@ -558,54 +625,73 @@ import java.util.stream.Collectors;
                         subtotal
                 );
 
+
         double afterDiscount =
                 Math.max(
                         subtotal - discount,
                         0
                 );
 
+
         double vat =
                 afterDiscount * 0.15;
+
 
         double grandTotal =
                 afterDiscount + vat;
 
+
         // ==========================================
-        // تحديث الطلب بالقيم الجديدة
+        // 10. تحديث الطلب
         // ==========================================
+
+        request.setOriginalPrice(
+                (double) Math.round(subtotal)
+        );
+
+        request.setDiscount(
+                discount
+        );
+
+        request.setVatAmount(
+                vat
+        );
 
         request.setFinalPrice(
                 (int) Math.round(grandTotal)
         );
 
-        request.setVatAmount(vat);
-
-        request.setDiscount(discount);
 
         request.setPricingStatus(
                 PricingStatus.PRICED
         );
 
+
         request.setCustomerStatus(
                 CustomerRequestStatus.WAITING_APPROVAL
         );
+
 
         request.setStaffStatus(
                 StaffRequestStatus.REPORT_WRITING
         );
 
+
         request.setCurrentEmployee(
                 request.getAssignedTechnician()
         );
+
 
         request.setLastUpdated(
                 LocalDateTime.now()
         );
 
+
         requestRepo.save(request);
 
+
         // ==========================================
-        // تحديث Approval
+        // 11. إعادة ضبط Approval
         // ==========================================
 
         approval.setApproved(null);
@@ -616,8 +702,9 @@ import java.util.stream.Collectors;
 
         approvalRepo.save(approval);
 
+
         // ==========================================
-        // إشعار العميل
+        // 12. إشعار العميل
         // ==========================================
 
         notificationService.send(
@@ -625,8 +712,9 @@ import java.util.stream.Collectors;
                 "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى."
         );
 
+
         // ==========================================
-        // تحديث مباشر للواجهة
+        // 13. إرسال التقرير الجديد للواجهة
         // ==========================================
 
         socketService.send(
