@@ -1,9 +1,9 @@
 package org.example.tears.DTO;
 
 import lombok.Data;
+import org.example.tears.Enums.WarrantyCustomerStatus;
 import org.example.tears.Enums.WarrantyEligibilityStatus;
 import org.example.tears.Enums.WarrantyReason;
-import org.example.tears.Enums.WarrantyStatus;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -41,7 +41,7 @@ public class RequestHistoryDto {
     private Boolean warrantyRequest;
     private Integer warrantyId;
     private WarrantyReason warrantyReason;
-    private WarrantyStatus warrantyStatus;
+    private WarrantyCustomerStatus warrantyStatus;
     private WarrantyEligibilityStatus warrantyEligibility;
 
 

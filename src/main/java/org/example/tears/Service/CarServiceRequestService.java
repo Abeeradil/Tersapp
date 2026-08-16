@@ -344,9 +344,7 @@ public class CarServiceRequestService {
         if (req.getCustomerStatus() != null) {
             dto.setStatus(req.getCustomerStatus().name());
         }
-        if (req.getCustomerStatus() != null) {
-            dto.setStatus(req.getCustomerStatus().name());
-        }
+
 
         dto.setRequestState(
                 requestMapper.mapRequestState(req)
@@ -368,7 +366,7 @@ public class CarServiceRequestService {
         );
 
         dto.setWarrantyStatus(
-                warranty.map(WarrantyRequest::getStatus)
+                warranty.map(WarrantyRequest::getCustomerStatus)
                         .orElse(null)
         );
 
@@ -406,7 +404,7 @@ public class CarServiceRequestService {
         );
 
         dto.setWarrantyStatus(
-                warranty.map(WarrantyRequest::getStatus)
+                warranty.map(WarrantyRequest::getCustomerStatus)
                         .orElse(null)
         );
 
