@@ -45,6 +45,7 @@ public class PaymentIntentService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final AppointmentService appointmentService;
+    private final CouponService couponService;
 
     @Value("${MOYASAR_SECRET_KEY}")
     private String secretKey;
@@ -606,7 +607,6 @@ public class PaymentIntentService {
                     intent.getServiceRequest()
             );
         }
-
         CarServiceRequest request = intent.getServiceRequest();
 
         if (request == null) {
@@ -628,24 +628,54 @@ public class PaymentIntentService {
             approvalRepo.save(approval);
 
             request.setFinalPaid(true);
-
             request.setFinalTransactionId(paymentId);
-
             request.setNextPaymentMethod(intent.getPaymentMethod());
-
             request.setNextPaymentStatus(PaymentStatus.PAID);
 
-            request.setCustomerStatus(CustomerRequestStatus.UNDER_REPAIR);
+            request.setCustomerStatus(
+                    CustomerRequestStatus.UNDER_REPAIR
+            );
 
-            request.setStaffStatus(StaffRequestStatus.REPAIRING);
+            request.setStaffStatus(
+                    StaffRequestStatus.REPAIRING
+            );
 
-            request.setStage(WorkflowStage.REPAIRING);
+            request.setStage(
+                    WorkflowStage.REPAIRING
+            );
 
             request.setRepairAt(LocalDateTime.now());
-
             request.setLastUpdated(LocalDateTime.now());
 
             requestRepository.save(request);
+
+            // ==============================
+            // Coupon Usage
+            // ==============================
+
+            if (intent.getCouponCode() != null &&
+                    !intent.getCouponCode().isBlank()) {
+
+                Customer customer = request.getCustomer();
+
+                ServiceOption option =
+                        request.getServiceOption();
+
+                Coupon coupon =
+                        couponService.validate(
+                                intent.getCouponCode(),
+                                request.getEstimatedPrice(),
+                                option,
+                                customer
+                        );
+
+                couponService.recordCouponUsage(
+                        coupon,
+                        customer,
+                        request
+                );
+            }
+
 
             socketService.send(
                     "/topic/current-orders/" +

@@ -1,48 +1,22 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.tears.Api.ApiException;
-import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.ServiceOption;
-import org.example.tears.Model.CarServiceRequest;
-import org.example.tears.Model.Coupon;
-import org.example.tears.Model.Employee;
-import org.example.tears.Model.RequestPart;
+import org.example.tears.Model.*;
 import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.CouponRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
 public class PricingCalculationService {
 
-    private final CarServiceRequestRepository requestRepository;
     private final CouponService couponService;
-    private final RequestPartRepository requestPartRepository;
 
     private static final double VAT_PERCENTAGE = 0.15;
     private static final double HYDRAULIC_EXTRA = 100;
-
-    public double calculatePreview(
-            String serviceOption,
-            boolean hydraulicTruck
-    ) {
-
-        double subtotal =
-                calculateSubtotal(
-                        serviceOption,
-                        hydraulicTruck
-                );
-
-        double vatAmount =
-                subtotal * VAT_PERCENTAGE;
-
-        return round(subtotal + vatAmount);
-    }
 
     private double calculateSubtotal(
             String serviceOption,
@@ -65,7 +39,8 @@ public class PricingCalculationService {
     public PricingResponse calculateFinal(
             String serviceOption,
             Boolean hydraulicTruck,
-            String couponCode
+            String couponCode,
+            Customer customer
     ) {
 
         // 1️⃣ سعر الخدمة قبل الضريبة
@@ -98,8 +73,8 @@ public class PricingCalculationService {
                         couponService.validate(
                                 couponCode,
                                 subtotal,
-                                option
-                        );
+                                option,
+                                customer);
 
                 discount =
                         calculateDiscount(

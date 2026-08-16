@@ -203,7 +203,8 @@ public class CarServiceRequestService {
         PricingResponse pricing = pricingCalculationService.calculateFinal(
                 serviceRequest.getServiceOption().name(),
                 serviceRequest.isHydraulicTruck(),
-                dto.getCouponCode()
+                dto.getCouponCode(),
+                user.getCustomer()
         );
 
         serviceRequest.setEstimatedPrice(pricing.finalPrice);
@@ -959,49 +960,6 @@ public class CarServiceRequestService {
         reviewRepository.save(review);
     }
 
-    private CustomerRequestStatus mapToCustomerStatus(WorkflowStage stage) {
-
-        if (stage == null) return CustomerRequestStatus.REQUEST_CREATED;
-
-        return switch (stage) {
-
-            // 🟡 بداية الطلب
-            case NEW_REQUEST, ASSIGNED ->
-                    CustomerRequestStatus.REQUEST_CREATED;
-
-            // 🚗 استلام السيارة
-            case RECEIVED ->
-                    CustomerRequestStatus.CAR_RECEIVED;
-
-            // 🔧 كل مراحل الفحص والتجهيز الداخلية
-            case INSPECTION_IN_PROGRESS,
-                 TESTING,
-                 REPORT_WRITING,
-                 PARTS_REGISTERING,
-                 PRICING ->
-                    CustomerRequestStatus.CAR_INSPECTION;
-
-            // ⏳ انتظار موافقة العميل
-            case WAITING_APPROVAL ->
-                    CustomerRequestStatus.WAITING_APPROVAL;
-
-            // 🛠️ الإصلاح
-            case REPAIRING ->
-                    CustomerRequestStatus.UNDER_REPAIR;
-
-            // ✅ جاهز للتسليم
-            case READY ->
-                    CustomerRequestStatus.READY_FOR_DELIVERY;
-
-            // 🚚 تم التسليم
-            case DELIVERED ->
-                    CustomerRequestStatus.DELIVERED;
-
-            // ❌ إلغاء
-            case CANCELLED ->
-                    CustomerRequestStatus.CANCELED;
-        };
-    }
 
     public CarServiceRequest buildValidatedRequest(User user, CreateRequestStepDto dto) {
         boolean ownsCar = carRepository.findByCustomerId(user.getCustomer().getId())
@@ -1028,7 +986,8 @@ public class CarServiceRequestService {
         PricingResponse pricing = pricingCalculationService.calculateFinal(
                 dto.getServiceOption(),
                 dto.isHydraulicTruck(),
-                dto.getCouponCode()
+                dto.getCouponCode(),
+                user.getCustomer()
         );
 
         PaymentMethod method = PaymentMethod.valueOf(dto.getPaymentMethod().toUpperCase());

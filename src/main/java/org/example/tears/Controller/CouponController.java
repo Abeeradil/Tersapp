@@ -1,15 +1,18 @@
 package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
-import org.example.tears.Enums.ServiceOption;
+import org.example.tears.Api.ApiException;
+import org.example.tears.DTO.CustomerCouponDto;
 import org.example.tears.InpDTO.CreateCouponRequest;
 import org.example.tears.InpDTO.UpdateCouponRequest;
 import org.example.tears.InpDTO.ValidateCouponDto;
 import org.example.tears.Model.Coupon;
+import org.example.tears.Model.User;
 import org.example.tears.OutDTO.PricingResponse;
 import org.example.tears.Service.CouponService;
 import org.example.tears.Service.PricingCalculationService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,13 +45,20 @@ public class CouponController {
 
     @PostMapping("/validate")
     public ResponseEntity<PricingResponse> validate(
-            @RequestBody ValidateCouponDto dto
+            @RequestBody ValidateCouponDto dto,
+            @AuthenticationPrincipal User user
     ) {
+
+        if (user.getCustomer() == null) {
+            throw new ApiException("غير مصرح");
+        }
+
         PricingResponse response =
                 pricingCalculationService.calculateFinal(
                         dto.getServiceOption(),
                         dto.getHydraulicTruck(),
-                        dto.getCouponCode()
+                        dto.getCouponCode(),
+                        user.getCustomer()
                 );
 
         return ResponseEntity.ok(response);
@@ -57,5 +67,19 @@ public class CouponController {
     @PutMapping("/disable/{id}")
     public Coupon disable(@PathVariable Integer id) {
         return couponService.disable(id);
+    }
+
+    @GetMapping("/customer/coupons")
+    public List<CustomerCouponDto> getMyCoupons(
+            @AuthenticationPrincipal User user
+    ) {
+
+        if (user.getCustomer() == null) {
+            throw new ApiException("غير مصرح");
+        }
+
+        return couponService.getCustomerValidCoupons(
+                user.getCustomer()
+        );
     }
 }
