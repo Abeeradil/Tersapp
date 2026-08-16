@@ -68,17 +68,16 @@ import java.util.stream.Collectors;
     public ReportPreviewDto getReport(
             Integer requestId,
             Customer customer
-    ){
+    ) {
 
-            CarServiceRequest request =
-                    requestRepo.findById(requestId)
-                            .orElseThrow(() ->
-                                    new ApiException("الطلب غير موجود"));
+        CarServiceRequest request =
+                requestRepo.findById(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("الطلب غير موجود"));
 
         if (!request.getCustomer().getId().equals(customer.getId())) {
             throw new ApiException("غير مصرح لك");
         }
-
 
         RequestReport report =
                 reportRepo.findByRequest_IdAndLatestTrue(requestId)
@@ -88,14 +87,21 @@ import java.util.stream.Collectors;
         List<RequestPart> parts =
                 partRepo.findByReport_Id(report.getId());
 
+        ReportPreviewDto dto = new ReportPreviewDto();
 
+        dto.setRequestId(request.getId());
+        dto.setOrderNumber(request.getOrderNumber());
+        dto.setProblemDescription(request.getProblemDescription());
 
-            ReportPreviewDto dto = new ReportPreviewDto();
+        if (request.getServiceOption() != null) {
+            dto.setServiceType(
+                    request.getServiceOption().name()
+            );
+        }
 
-            dto.setRequestId(request.getId());
-            dto.setOrderNumber(request.getOrderNumber());
-            dto.setProblemDescription(request.getProblemDescription());
-            dto.setServiceType(request.getServiceOption().name());
+        // ==========================================
+        // Customer Approval
+        // ==========================================
 
         RequestApproval approval =
                 approvalRepo.findByRequest_Id(requestId)
@@ -106,28 +112,46 @@ import java.util.stream.Collectors;
                     approval.getApproved()
             );
         }
-            List<CustomerReportPartDto> list = new ArrayList<>();
+
+        // ==========================================
+        // Parts
+        // ==========================================
+
+        List<CustomerReportPartDto> list =
+                new ArrayList<>();
+
         int totalPartsPrice = 0;
         int totalLabor = 0;
-        double grandTotal = 0;
 
         for (RequestPart part : parts) {
 
-            CustomerReportPartDto p = new CustomerReportPartDto();
+            CustomerReportPartDto p =
+                    new CustomerReportPartDto();
 
             p.setPartId(part.getId());
             p.setName(part.getName());
             p.setType(part.getType());
-
             p.setQuantity(part.getQuantity());
             p.setFinalPrice(part.getFinalPrice());
             p.setLaborCost(part.getLaborCost());
 
-            int partsCost =
-                    part.getFinalPrice() * part.getQuantity();
+            int partPrice =
+                    part.getFinalPrice() == null
+                            ? 0
+                            : part.getFinalPrice();
+
+            int quantity =
+                    part.getQuantity() == null
+                            ? 0
+                            : part.getQuantity();
 
             int labor =
-                    part.getLaborCost();
+                    part.getLaborCost() == null
+                            ? 0
+                            : part.getLaborCost();
+
+            int partsCost =
+                    partPrice * quantity;
 
             double total =
                     partsCost + labor;
@@ -136,30 +160,77 @@ import java.util.stream.Collectors;
 
             totalPartsPrice += partsCost;
             totalLabor += labor;
-            grandTotal += total;
 
             list.add(p);
+        }
 
-            }
+        // ==========================================
+        // Financial Calculation
+        // ==========================================
+
+        double subtotal =
+                totalPartsPrice + totalLabor;
+
+        double discount =
+                request.getDiscount() == null
+                        ? 0
+                        : request.getDiscount();
+
+        discount =
+                Math.min(
+                        discount,
+                        subtotal
+                );
+
+        double afterDiscount =
+                Math.max(
+                        subtotal - discount,
+                        0
+                );
+
+        double vat =
+                afterDiscount * 0.15;
+
+        double grandTotal =
+                afterDiscount + vat;
+
+        // ==========================================
+        // DTO
+        // ==========================================
 
         dto.setParts(list);
 
-        dto.setTotalPartsPrice(totalPartsPrice);
+        dto.setTotalPartsPrice(
+                totalPartsPrice
+        );
 
-        dto.setTotalLabor(totalLabor);
+        dto.setTotalLabor(
+                totalLabor
+        );
 
         dto.setDiscount(
-                request.getDiscount() == null ? 0 : request.getDiscount()
+                discount
         );
 
-        dto.setGrandTotal(grandTotal);
-
-        dto.setServiceType(
-                request.getServiceOption().name()
+        dto.setVatAmount(
+                vat
         );
 
-            return dto;
-        }
+        dto.setSubtotal(
+                subtotal
+        );
+
+        dto.setAfterDiscount(
+                afterDiscount
+        );
+
+        dto.setGrandTotal(
+                grandTotal
+        );
+
+        return dto;
+    }
+
     @Transactional(readOnly = true)
     public List<CustomerReportCardDto> getCustomerReports(
             Customer customer,
