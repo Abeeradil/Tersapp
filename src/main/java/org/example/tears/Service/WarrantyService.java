@@ -489,7 +489,7 @@ public class WarrantyService {
         // ===========================
 
         dto.setTimeline(
-                getWarrantyTimeline(
+                getCustomerWarrantyTimeline(
                         warranty.getId()
                 )
         );
@@ -498,35 +498,28 @@ public class WarrantyService {
     }
 
 
-    public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
+    public List<CustomerWarrantyStatusHistoryDto> getCustomerWarrantyTimeline(
             Integer warrantyId
     ) {
 
         return warrantyHistoryRepos
                 .findByWarrantyRequest_IdOrderByChangedAtAsc(warrantyId)
                 .stream()
+                .filter(history ->
+                        history.getCustomerStatus() != null
+                )
                 .map(history -> {
 
-                    WarrantyStatusHistoryDto dto =
-                            new WarrantyStatusHistoryDto();
+                    CustomerWarrantyStatusHistoryDto dto =
+                            new CustomerWarrantyStatusHistoryDto();
 
-                    dto.setCustomerStatus(
+                    dto.setStatus(
                             history.getCustomerStatus()
                     );
 
                     dto.setChangedAt(
                             history.getChangedAt()
                     );
-
-                    if (history.getChangedBy() != null &&
-                            history.getChangedBy().getUser() != null) {
-
-                        dto.setEmployeeName(
-                                history.getChangedBy()
-                                        .getUser()
-                                        .getFullName()
-                        );
-                    }
 
                     return dto;
                 })
@@ -948,7 +941,7 @@ public class WarrantyService {
         );
 
         dto.setTimeline(
-                getWarrantyTimeline(
+                getCustomerWarrantyTimeline(
                         warranty.getId()
                 )
         );

@@ -282,7 +282,30 @@ import java.util.List;
         return new ApiResponse(
                 true,
                 "تم جلب سجل حالات الضمان",
-                workflowService.getWarrantyTimeline(warrantyId)
+                workflowService.getEmployeeWarrantyTimeline(warrantyId)
+        );
+    }
+
+    @GetMapping("/warranty/{warrantyId}/details")
+    public ApiResponse getEmployeeWarrantyDetails(
+            @PathVariable Integer warrantyId,
+            @AuthenticationPrincipal User user
+    ) {
+
+        if (user.getEmployee() == null) {
+            throw new ApiException("غير مصرح");
+        }
+
+        EmployeeWarrantyDetailsDto data =
+                workflowService.getEmployeeWarrantyDetails(
+                        warrantyId,
+                        user.getEmployee()
+                );
+
+        return new ApiResponse(
+                true,
+                "تم جلب تفاصيل طلب الضمان",
+                data
         );
     }
 

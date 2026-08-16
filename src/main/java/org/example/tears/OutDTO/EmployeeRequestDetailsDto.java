@@ -56,6 +56,6 @@ public class EmployeeRequestDetailsDto {
 
     private String warrantyDescription;
     private List<WarrantyImageResponseDto> warrantyImages;
-    private List<WarrantyStatusHistoryDto> warrantyTimeline;
+    private List< EmployeeWarrantyStatusHistoryDto> warrantyTimeline;
 
 }

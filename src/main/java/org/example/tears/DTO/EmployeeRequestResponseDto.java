@@ -32,6 +32,10 @@ import java.util.List;
     private String warrantyStatus;
     private String warrantyDescription;
 
+    private boolean employeeImagesReceived;
+
+    private boolean employeeReportReceived;
+
 
         private LocalDateTime createdAt;
 

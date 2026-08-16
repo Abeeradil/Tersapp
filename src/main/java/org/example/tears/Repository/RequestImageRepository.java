@@ -15,8 +15,10 @@ RequestImageRepository
 
     long countByRequest(CarServiceRequest request);
 
-    long countByRequest_Id(Integer requestId);
 
-    List<RequestImage> findByRequestIdAndVisibleToCustomerTrue(Integer requestId);
 
+
+    List<RequestImage> findByRequestIdAndVisibleToCustomerTrue(
+            Integer requestId
+    );
 }

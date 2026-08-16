@@ -35,6 +35,7 @@ public class CarServiceRequestService {
     private final LocationRepository locationRepository;
     private final AppointmentService appointmentService;
     private final RequestImageRepository imageRepo;
+    private final RequestReportRepository reportRepo;
     private final PricingCalculationService pricingCalculationService;
     private final RequestReviewRepository reviewRepository;
     private final WarrantyRepository warrantyRequestRepository;
@@ -766,8 +767,6 @@ public class CarServiceRequestService {
                         : null
         );
 
-
-
         dto.setRequestState(
                 requestMapper.mapRequestState(req)
         );
@@ -778,24 +777,52 @@ public class CarServiceRequestService {
                         : req.getEstimatedPrice()
         );
 
+        // ==========================================
+        // هل صور الموظف وصلت للعميل؟
+        // ==========================================
 
+        dto.setEmployeeImagesReceived(
+                !imageRepo
+                        .findByRequestIdAndVisibleToCustomerTrue(req.getId())
+                        .isEmpty()
+        );
+
+        // ==========================================
+        // هل تقرير الموظف وصل للعميل؟
+        // ==========================================
+
+        dto.setEmployeeReportReceived(
+                reportRepo.findByRequest_IdAndSentTrue(req.getId())
+                        .isPresent()
+        );
+
+        // ==========================================
+        // Location
+        // ==========================================
 
         if (req.getLocation() != null) {
-            dto.setLocation(mapLocation(req.getLocation()));
 
+            dto.setLocation(
+                    mapLocation(req.getLocation())
+            );
         }
+
+        // ==========================================
+        // Car
+        // ==========================================
+
         if (req.getCar() != null) {
 
             dto.setPlateNumberArabic(
-                    formatArabicPlate(req.getCar().getPlateNumberArabic())
+                    formatArabicPlate(
+                            req.getCar().getPlateNumberArabic()
+                    )
             );
 
             dto.setPlateNumberEnglish(
-                    formatEnglishPlate(req.getCar().getPlateNumberEnglish())
-            );
-
-            dto.setRequestState(
-                    requestMapper.mapRequestState(req)
+                    formatEnglishPlate(
+                            req.getCar().getPlateNumberEnglish()
+                    )
             );
         }
 

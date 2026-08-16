@@ -24,4 +24,8 @@ public interface RequestReportRepository extends JpaRepository<RequestReport,Int
             Integer employeeId,
             ReportVersionType versionType
     );
+
+    Optional<RequestReport> findByRequest_IdAndSentTrue(
+            Integer requestId
+    );
 }

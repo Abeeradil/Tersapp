@@ -24,4 +24,8 @@ public class RequestDetailsDto {
 
     private LocationDto location;
 
+    private boolean employeeImagesReceived;
+
+    private boolean employeeReportReceived;
+
 }

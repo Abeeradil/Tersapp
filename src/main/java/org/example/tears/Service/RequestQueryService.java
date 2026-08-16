@@ -190,7 +190,7 @@ public class RequestQueryService {
         return dto;
     }
 
-    public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
+    public List<EmployeeWarrantyStatusHistoryDto> getWarrantyTimeline(
             Integer warrantyId
     ) {
 
@@ -199,11 +199,16 @@ public class RequestQueryService {
                 .stream()
                 .map(history -> {
 
-                    WarrantyStatusHistoryDto dto =
-                            new WarrantyStatusHistoryDto();
+                    EmployeeWarrantyStatusHistoryDto dto =
+                            new EmployeeWarrantyStatusHistoryDto();
 
-                    dto.setEmployeeStatus(history.getEmployeeStatus());
-                    dto.setChangedAt(history.getChangedAt());
+                    dto.setStatus(
+                            history.getEmployeeStatus()
+                    );
+
+                    dto.setChangedAt(
+                            history.getChangedAt()
+                    );
 
                     if (history.getChangedBy() != null &&
                             history.getChangedBy().getUser() != null) {

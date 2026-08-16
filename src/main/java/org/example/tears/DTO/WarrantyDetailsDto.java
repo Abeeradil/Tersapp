@@ -37,5 +37,5 @@ public class WarrantyDetailsDto {
 
     private String warrantyDescription;
     private List<WarrantyImageResponseDto> images;
-    private List<WarrantyStatusHistoryDto> timeline;
+    private List<CustomerWarrantyStatusHistoryDto> timeline;
 }

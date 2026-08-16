@@ -1,10 +1,11 @@
 package org.example.tears.Service;
 
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,8 @@ public class RequestWorkflowService {
     private final WarrantyService warrantyService;
     private final RequestApprovalService requestApprovalService;
     private final CarServiceRequestService carServiceRequestService;
+    private final RequestQueryService requestQueryService;
+    private final RequestMapper requestMapper;
 
     @Transactional
     public void updateStatus(
@@ -280,6 +283,7 @@ public class RequestWorkflowService {
                 image.setRequest(req);
                 image.setImageUrl(fileUrl);
                 image.setUploadedAt(LocalDateTime.now());
+                image.setVisibleToCustomer(true);
                 image.setUploadedAtStatus(StaffRequestStatus.RECEIVED);
 
                 imageRepo.save(image);
@@ -982,28 +986,38 @@ public class RequestWorkflowService {
         warrantyHistoryRepos.save(history);
     }
 
-    public List<WarrantyStatusHistoryDto> getWarrantyTimeline(
+    public List<EmployeeWarrantyStatusHistoryDto> getEmployeeWarrantyTimeline(
             Integer warrantyId
     ) {
 
         return warrantyHistoryRepos
                 .findByWarrantyRequest_IdOrderByChangedAtAsc(warrantyId)
                 .stream()
+                .filter(history ->
+                        history.getEmployeeStatus() != null
+                )
                 .map(history -> {
 
-                    WarrantyStatusHistoryDto dto =
-                            new WarrantyStatusHistoryDto();
+                    EmployeeWarrantyStatusHistoryDto dto =
+                            new EmployeeWarrantyStatusHistoryDto();
 
-                    dto.setEmployeeStatus(history.getEmployeeStatus());
-                    dto.setChangedAt(history.getChangedAt());
+                    dto.setStatus(
+                            history.getEmployeeStatus()
+                    );
 
-                        if (history.getChangedBy().getUser() != null) {
-                            dto.setEmployeeName(
-                                    history.getChangedBy()
-                                            .getUser()
-                                            .getFullName()
-                            );
-                        }
+                    dto.setChangedAt(
+                            history.getChangedAt()
+                    );
+
+                    if (history.getChangedBy() != null &&
+                            history.getChangedBy().getUser() != null) {
+
+                        dto.setEmployeeName(
+                                history.getChangedBy()
+                                        .getUser()
+                                        .getFullName()
+                        );
+                    }
 
                     return dto;
                 })
@@ -1097,6 +1111,167 @@ public class RequestWorkflowService {
                 warranty.getCustomer().getUser(),
                 "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص."
         );
+    }
+
+
+    @Transactional(readOnly = true)
+    public EmployeeWarrantyDetailsDto getEmployeeWarrantyDetails(
+            Integer warrantyId,
+            Employee employee
+    ) {
+
+        WarrantyRequest warranty =
+                warrantyRepo.findById(warrantyId)
+                        .orElseThrow(() ->
+                                new ApiException("طلب الضمان غير موجود")
+                        );
+
+        // =========================
+        // Authorization
+        // =========================
+
+        if (warranty.getAssignedTechnician() == null ||
+                !warranty.getAssignedTechnician()
+                        .getId()
+                        .equals(employee.getId())) {
+
+            throw new ApiException("غير مصرح لك");
+        }
+
+        EmployeeWarrantyDetailsDto dto =
+                new EmployeeWarrantyDetailsDto();
+
+        CarServiceRequest request =
+                warranty.getRequest();
+
+        // =========================
+        // Warranty Information
+        // =========================
+
+        dto.setWarrantyId(
+                warranty.getId()
+        );
+
+        dto.setRequestId(
+                request != null
+                        ? request.getId()
+                        : null
+        );
+
+        dto.setOrderNumber(
+                request != null
+                        ? request.getOrderNumber()
+                        : null
+        );
+
+        dto.setStatus(
+                warranty.getStatus()
+        );
+
+        dto.setDescription(
+                warranty.getDescription()
+        );
+
+        // =========================
+        // Customer
+        // =========================
+
+        if (warranty.getCustomer() != null &&
+                warranty.getCustomer().getUser() != null) {
+
+            dto.setCustomerName(
+                    warranty.getCustomer()
+                            .getUser()
+                            .getFullName()
+            );
+
+            dto.setCustomerPhone(
+                    warranty.getCustomer().getUser().getPhoneNumber()
+            );
+        }
+        // =========================
+        // Car
+        // =========================
+
+        if (request != null &&
+                request.getCar() != null &&
+                request.getCar().getModel() != null) {
+
+            dto.setCarModelName(
+                    request.getCar()
+                            .getModel()
+                            .getName()
+            );
+
+            dto.setCarModelNameAr(
+                    request.getCar()
+                            .getModel()
+                            .getNameAr()
+            );
+
+            if (request.getServiceOption() != null) {
+                dto.setServiceOption(
+                        request.getServiceOption().name()
+                );
+            }
+
+            dto.setPlateNumberArabic(
+                    requestMapper.formatArabicPlate(
+                            request.getCar()
+                                    .getPlateNumberArabic()
+                    )
+            );
+
+            dto.setPlateNumberEnglish(
+                    requestMapper.formatEnglishPlate(
+                            request.getCar()
+                                    .getPlateNumberEnglish()
+                    )
+            );
+        }
+
+        // =========================
+        // Warranty Images
+        // =========================
+
+        dto.setImages(
+                warranty.getImages()
+                        .stream()
+                        .map(img -> {
+
+                            WarrantyImageResponseDto imageDto =
+                                    new WarrantyImageResponseDto();
+
+                            imageDto.setId(
+                                    img.getId()
+                            );
+
+                            imageDto.setImageUrl(
+                                    img.getImageUrl()
+                            );
+
+                            if (img.getType() != null) {
+                                imageDto.setType(
+                                        img.getType().name()
+                                );
+                            }
+
+                            return imageDto;
+                        })
+                        .toList()
+        );
+
+        // =========================
+        // Employee Timeline
+        // =========================
+
+        dto.setTimeline(
+                requestQueryService.getWarrantyTimeline(
+                        warranty.getId()
+                )
+        );
+
+        return dto;
     }
 
 
