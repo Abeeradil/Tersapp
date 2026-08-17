@@ -3,8 +3,11 @@ package org.example.tears.DTO;
 import lombok.Data;
 import org.example.tears.Enums.WarrantyCustomerStatus;
 import org.example.tears.Enums.WarrantyReason;
+import org.example.tears.InpDTO.LocationDto;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Data
@@ -34,8 +37,20 @@ public class WarrantyDetailsDto {
     private String plateNumberArabic;
     private String plateNumberEnglish;
 
+    private LocationDto receivingLocation;
+    private LocalDate receivingDate;
+    private LocalTime receivingTime;
+
+    private LocationDto deliveryLocation;
+    private LocalDate deliveryDate;
+    private LocalTime deliveryTime;
+
+    private boolean canChooseReceivingAppointment;
+    private boolean canChooseDeliveryAppointment;
+    private boolean vehicleReceived;
 
     private String warrantyDescription;
     private List<WarrantyImageResponseDto> images;
     private List<CustomerWarrantyStatusHistoryDto> timeline;
+
 }

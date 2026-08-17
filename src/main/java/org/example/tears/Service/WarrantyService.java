@@ -390,6 +390,56 @@ public class WarrantyService {
         dto.setCreatedAt(
                 warranty.getCreatedAt()
         );
+        // ===========================
+// Warranty Receiving Appointment
+// ===========================
+
+        dto.setReceivingDate(
+                warranty.getReceivingDate()
+        );
+
+        dto.setReceivingTime(
+                warranty.getReceivingTime()
+        );
+
+        if (warranty.getReceivingLocation() != null) {
+            dto.setReceivingLocation(
+                    carServiceRequestService.mapLocation(warranty.getReceivingLocation())
+            );
+        }
+
+
+// ===========================
+// Warranty Delivery Appointment
+// ===========================
+
+        dto.setDeliveryDate(
+                warranty.getDeliveryDate()
+        );
+
+        dto.setDeliveryTime(
+                warranty.getDeliveryTime()
+        );
+
+        if (warranty.getDeliveryLocation() != null) {
+            dto.setDeliveryLocation(
+                    carServiceRequestService.mapLocation(warranty.getDeliveryLocation())
+            );
+        }
+
+        // ===========================
+        // Warranty Actions
+        // ===========================
+
+        dto.setCanChooseReceivingAppointment(
+                warranty.getStatus() == WarrantyStatus.APPROVED
+                        && warranty.getReceivingDate() == null
+        );
+
+        dto.setCanChooseDeliveryAppointment(
+                warranty.getStatus() == WarrantyStatus.DELIVERY_IN_PROGRESS
+                        && warranty.getDeliveryDate() == null
+        );
 
         // ===========================
         // Customer
