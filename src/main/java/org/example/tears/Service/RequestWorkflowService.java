@@ -1071,6 +1071,7 @@ public class RequestWorkflowService {
 
         warranty.setStatus(WarrantyStatus.INSPECTION);
         warranty.setUpdatedAt(now);
+        warranty.setVehicleReceived(true);
 
         warrantyRepo.save(warranty);
 

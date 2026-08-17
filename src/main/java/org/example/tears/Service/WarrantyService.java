@@ -998,6 +998,8 @@ public class WarrantyService {
                 )
         );
 
+        dto.setVehicleReceived(warranty.isVehicleReceived());
+
         return dto;
     }
 
