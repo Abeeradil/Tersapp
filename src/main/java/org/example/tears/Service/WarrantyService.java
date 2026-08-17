@@ -581,6 +581,7 @@ public class WarrantyService {
         // ============================
 
         warranty.setStatus(WarrantyStatus.APPROVED);
+        warranty.setCustomerStatus(WarrantyCustomerStatus.WARRANTY_APPROVED);
         warranty.setWarrantyEligibility(WarrantyEligibilityStatus.COVERED);
 
         warranty.setApprovedBy(employee);
@@ -718,6 +719,7 @@ public class WarrantyService {
         }
 
         warranty.setStatus(WarrantyStatus.REJECTED);
+        warranty.setCustomerStatus(WarrantyCustomerStatus.REJECTED);
         warranty.setWarrantyEligibility(WarrantyEligibilityStatus.NOT_COVERED);
 
         warranty.setApprovedBy(employee);
