@@ -1,13 +1,10 @@
 package org.example.tears.Service;
 
-import org.example.tears.Enums.ReportVersionType;
+import org.example.tears.Enums.*;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
-import org.example.tears.Enums.EmployeeRole;
-import org.example.tears.Enums.PricingStatus;
-import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.*;
 import org.springframework.http.MediaType;
@@ -420,9 +417,20 @@ public class RequestPricingService {
 
         notificationService.send(
                 request.getCustomer().getUser(),
+
+                NotificationType.QUOTATION_CREATED,
+                NotificationCategory.QUOTATION,
+
+                "تم تجهيز تقرير التسعير",
+
                 "تم تجهيز تقرير التسعير للطلب #"
                         + request.getOrderNumber()
-                        + "، يرجى مراجعته."
+                        + "، يرجى مراجعته.",
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                request.getId().toString(),
+                NotificationSection.REQUESTS
         );
     }
 

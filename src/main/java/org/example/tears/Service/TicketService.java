@@ -5,10 +5,7 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
-import org.example.tears.Enums.EmployeeRole;
-import org.example.tears.Enums.MessageType;
-import org.example.tears.Enums.ReadStatus;
-import org.example.tears.Enums.TicketStatus;
+import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.ChatMessageRepository;
@@ -397,20 +394,17 @@ public class TicketService {
             ticketRepository.save(ticket);
 
 // إشعار بدء المحادثة
-            if (ticket.getWarrantyRequest() != null) {
-
-                notificationService.send(
-                        ticket.getCustomer().getUser(),
-                        "قام موظف خدمة العملاء باستلام طلب الضمان ويمكنك الآن بدء المحادثة."
-                );
-
-            } else {
-
-                notificationService.send(
-                        ticket.getCreatedByEmployee().getUser(),
-                        "قام موظف خدمة العملاء باستلام التذكرة ويمكنك الآن بدء المحادثة."
-                );
-            }
+            notificationService.send(
+                    ticket.getCustomer().getUser(),
+                    NotificationType.SUPPORT_TICKET_ACCEPTED,
+                            NotificationCategory.SUPPORT,
+                    "تم استلام طلبك",
+                    "قام موظف خدمة العملاء باستلام طلب الضمان ويمكنك الآن بدء المحادثة.",
+                    NotificationActionType.OPEN_SECTION,
+                    NotificationEntityType.SUPPORT_TICKET,
+                    ticket.getId().toString(),
+                    NotificationSection.CHAT
+            );
             return;
         }
 
@@ -439,7 +433,17 @@ public class TicketService {
 
             notificationService.send(
                     ticket.getCreatedByEmployee().getUser(),
-                    "قام موظف خدمة العملاء باستلام التذكرة ويمكنك الآن بدء المحادثة."
+
+                    NotificationType.CHAT_MESSAGE_RECEIVED,
+                    NotificationCategory.CHAT,
+
+                    "تم استلام التذكرة",
+                    "قام موظف خدمة العملاء باستلام التذكرة ويمكنك الآن بدء المحادثة." ,
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.CHAT,
+                    ticket.getId().toString(),
+                    NotificationSection.CHAT
             );
 
             return;

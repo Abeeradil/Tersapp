@@ -7,9 +7,7 @@ import org.example.tears.DTO.AddPartsDto;
 import org.example.tears.DTO.PartDto;
 import org.example.tears.DTO.PartReportDto;
 import org.example.tears.DTO.PartsDetailsDto;
-import org.example.tears.Enums.EmployeeRole;
-import org.example.tears.Enums.PricingStatus;
-import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Enums.*;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
@@ -96,7 +94,14 @@ public class PartsService {
 
             notificationService.send(
                     pricingEmployee.getUser(),
-                    "تم إسناد طلب جديد للتسعير رقم #" + req.getId()
+                    NotificationType.REQUEST_ASSIGNED,
+                    NotificationCategory.REQUEST,
+                    "تم إسناد طلب جديد للتسعير",
+                    "تم إسناد الطلب رقم #" + req.getId() + " إليك للتسعير.",
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    req.getId().toString(),
+                    NotificationSection.REQUESTS
             );
         }
 

@@ -416,8 +416,19 @@ import java.util.stream.Collectors;
 
         notificationService.send(
                 request.getAssignedTechnician().getUser(),
+
+                NotificationType.QUOTATION_UPDATED,
+                NotificationCategory.QUOTATION,
+
+                "تم رفض تقرير التسعير",
+
                 "رفض العميل تقرير التسعير وحدد موعد استلام السيارة للطلب #"
-                        + request.getOrderNumber()
+                        + request.getOrderNumber(),
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                request.getId().toString(),
+                NotificationSection.REQUESTS
         );
     }
 
@@ -780,7 +791,18 @@ import java.util.stream.Collectors;
 
         notificationService.send(
                 request.getCustomer().getUser(),
-                "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى."
+
+                NotificationType.QUOTATION_UPDATED,
+                NotificationCategory.QUOTATION,
+
+                "تم تحديث تقرير التسعير",
+
+                "تم تحديث تقرير التسعير، يرجى مراجعته مرة أخرى.",
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                request.getId().toString(),
+                NotificationSection.REQUESTS
         );
 
 
@@ -997,8 +1019,7 @@ import java.util.stream.Collectors;
 
         if (request.getCurrentEmployee() != null) {
 
-            notificationService.send(
-                    request.getCurrentEmployee().getUser(),
+            String body =
                     isWarrantyReceiving
                             ? "قام العميل بحجز موعد استلام سيارة الضمان للطلب #"
                             + request.getOrderNumber()
@@ -1006,8 +1027,24 @@ import java.util.stream.Collectors;
                             ? "قام العميل بحجز موعد تسليم سيارة الضمان للطلب #"
                             + request.getOrderNumber()
                             : "قام العميل بحجز موعد تسليم السيارة للطلب #"
-                            + request.getOrderNumber()
+                            + request.getOrderNumber();
+
+            notificationService.send(
+                    request.getCurrentEmployee().getUser(),
+
+                    NotificationType.APPOINTMENT_CONFIRMED,
+                    NotificationCategory.APPOINTMENT,
+
+                    "تم حجز موعد",
+
+                    body,
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    request.getId().toString(),
+                    NotificationSection.REQUESTS
             );
+
         }
     }
 

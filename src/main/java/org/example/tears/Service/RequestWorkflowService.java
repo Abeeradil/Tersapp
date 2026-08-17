@@ -107,7 +107,18 @@ public class RequestWorkflowService {
 
             notificationService.send(
                     req.getCustomer().getUser(),
-                    "تم تجهيز سيارتك للتسليم، وسيتم تسليمها في الموعد الذي اخترته."
+
+                    NotificationType.REQUEST_STATUS_CHANGED,
+                    NotificationCategory.REQUEST,
+
+                    "السيارة جاهزة للتسليم",
+
+                    "تم تجهيز سيارتك للتسليم، وسيتم تسليمها في الموعد الذي اخترته.",
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    req.getId().toString(),
+                    NotificationSection.REQUESTS
             );
         }
 
@@ -115,7 +126,18 @@ public class RequestWorkflowService {
 
             notificationService.send(
                     req.getCustomer().getUser(),
-                    "تم تسليم سيارتك بنجاح، شكرًا لاستخدامك خدماتنا."
+
+                    NotificationType.REQUEST_DELIVERED,
+                    NotificationCategory.REQUEST,
+
+                    "تم تسليم السيارة",
+
+                    "تم تسليم سيارتك بنجاح، شكرًا لاستخدامك خدماتنا.",
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    req.getId().toString(),
+                    NotificationSection.REQUESTS
             );
         }
 
@@ -147,7 +169,19 @@ public class RequestWorkflowService {
 
         notificationService.send(
                 req.getCustomer().getUser(),
-                "تم تحديث حالة طلبك رقم #" + req.getId()
+
+                NotificationType.REQUEST_STATUS_CHANGED,
+                NotificationCategory.REQUEST,
+
+                "تم تحديث حالة الطلب",
+
+                "تم تحديث حالة طلبك رقم #"
+                        + req.getOrderNumber(),
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                req.getId().toString(),
+                NotificationSection.REQUESTS
         );
     }
 
@@ -334,7 +368,19 @@ public class RequestWorkflowService {
 
         notificationService.send(
                 req.getCustomer().getUser(),
-                "تم استلام السيارة وبدء مرحلة الفحص لطلب رقم #" + req.getId()
+
+                NotificationType.CAR_RESEIVE_ATTACHED,
+                NotificationCategory.REQUEST,
+
+                "تم استلام السيارة",
+
+                "تم استلام السيارة وبدء مرحلة الفحص لطلب رقم #"
+                        + req.getOrderNumber(),
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                req.getId().toString(),
+                NotificationSection.REQUESTS
         );
     }
 
@@ -686,7 +732,20 @@ public class RequestWorkflowService {
 
         notificationService.send(
                 request.getCustomer().getUser(),
-                "تم إرسال تقرير التسعير، بانتظار موافقتك."
+
+                NotificationType.QUOTATION_SENT,
+                NotificationCategory.QUOTATION,
+
+                "تم إرسال تقرير التسعير",
+
+                "تم إرسال تقرير التسعير للطلب #"
+                        + request.getOrderNumber()
+                        + "، بانتظار موافقتك.",
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                request.getId().toString(),
+                NotificationSection.REQUESTS
         );
     }
 
@@ -783,7 +842,18 @@ public class RequestWorkflowService {
 
             notificationService.send(
                     warranty.getCustomer().getUser(),
-                    "تم تأكيد موعد استلام السيارة لطلب الضمان."
+
+                    NotificationType.WARRANTY_RECEIVING_CONFIRMED,
+                    NotificationCategory.WARRANTY,
+
+                    "تم تأكيد موعد استلام السيارة",
+
+                    "تم تأكيد موعد استلام السيارة لطلب الضمان.",
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.WARRANTY,
+                    warranty.getId().toString(),
+                    NotificationSection.WARRANTY
             );
 
             return;
@@ -910,8 +980,19 @@ public class RequestWorkflowService {
 
         notificationService.send(
                 warranty.getCustomer().getUser(),
+
+                NotificationType.WARRANTY_STATUS_UPDATED,
+                NotificationCategory.WARRANTY,
+
+                "تم تحديث حالة طلب الضمان",
+
                 "تم تحديث حالة طلب الضمان رقم #"
-                        + warranty.getId()
+                        + warranty.getId(),
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.WARRANTY,
+                warranty.getId().toString(),
+                NotificationSection.WARRANTY
         );
 
     }
@@ -1107,10 +1188,20 @@ public class RequestWorkflowService {
         );
 
 
-
         notificationService.send(
                 warranty.getCustomer().getUser(),
-                "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص."
+
+                NotificationType.WARRANTY_RECEIVED,
+                NotificationCategory.WARRANTY,
+
+                "تم استلام السيارة",
+
+                "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص.",
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.WARRANTY,
+                warranty.getId().toString(),
+                NotificationSection.WARRANTY
         );
     }
 

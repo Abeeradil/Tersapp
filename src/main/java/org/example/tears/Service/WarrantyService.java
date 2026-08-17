@@ -155,22 +155,48 @@ public class WarrantyService {
 
         notifyEmployees(
                 EmployeeRole.SUPPORT,
-                notify
+                notify,
+                warranty.getId()
         );
 
         List<User> admins =
                 userRepo.findByRole(UserRole.ADMIN);
 
         for (User admin : admins) {
+
             notificationService.send(
                     admin,
-                    notify
+
+                    NotificationType.WARRANTY_RECEIVED,
+                    NotificationCategory.WARRANTY,
+
+                    "طلب ضمان جديد",
+
+                    notify,
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.WARRANTY,
+
+                    warranty.getId().toString(),
+
+                    NotificationSection.WARRANTY
             );
         }
 
         notificationService.send(
                 customer.getUser(),
-                "تم استلام طلب الضمان بنجاح، وسيتم التواصل معك عبر المحادثة."
+
+                NotificationType.WARRANTY_CREATED,
+                NotificationCategory.WARRANTY,
+
+                "تم استلام طلب الضمان",
+
+                "تم استلام طلب الضمان بنجاح، وسيتم التواصل معك عبر المحادثة.",
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.WARRANTY,
+                warranty.getId().toString(),
+                NotificationSection.WARRANTY
         );
         return toWarrantyRequestSummaryDto(warranty);
     }
@@ -731,9 +757,20 @@ public class WarrantyService {
 
         notificationService.send(
                 technician.getUser(),
+
+                NotificationType.WARRANTY_APPROVED,
+                NotificationCategory.WARRANTY,
+
+                "تم إسناد طلب ضمان",
+
                 "تمت الموافقة على طلب الضمان للطلب #"
                         + request.getOrderNumber()
-                        + " وتم إسناد الطلب لك لإكمال إجراء الضمان."
+                        + " وتم إسناد الطلب لك لإكمال إجراء الضمان.",
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.WARRANTY,
+                warranty.getId().toString(),
+                NotificationSection.WARRANTY
         );
 
         // ============================
@@ -742,8 +779,19 @@ public class WarrantyService {
 
         notificationService.send(
                 request.getCustomer().getUser(),
+
+                NotificationType.WARRANTY_APPROVED,
+                NotificationCategory.WARRANTY,
+
+                "تمت الموافقة على الضمان",
+
                 "تمت الموافقة على طلب الضمان للطلب #"
-                        + request.getOrderNumber()
+                        + request.getOrderNumber(),
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.WARRANTY,
+                warranty.getId().toString(),
+                NotificationSection.WARRANTY
         );
     }
 
@@ -827,25 +875,53 @@ public class WarrantyService {
         );
 
         notificationService.send(
-                warranty.getRequest()
-                        .getCustomer()
-                        .getUser(),
+                warranty.getRequest().getCustomer().getUser(),
+
+                NotificationType.WARRANTY_REJECTED,
+                NotificationCategory.WARRANTY,
+
+                "تم رفض طلب الضمان",
+
                 "تم رفض طلب الضمان للطلب #"
                         + warranty.getRequest().getOrderNumber()
-                        + "\nالسبب: " + reason
+                        + "\nالسبب: "
+                        + reason,
+
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.WARRANTY,
+                warranty.getId().toString(),
+                NotificationSection.WARRANTY
         );
 
     }
 
-    private void notifyEmployees(EmployeeRole role, String message) {
+    private void notifyEmployees(
+            EmployeeRole role,
+            String message,
+            Integer warrantyId
+    ) {
 
         List<Employee> employees =
                 employeeRepo.findByEmployeeRole(role);
 
         for (Employee employee : employees) {
+
             notificationService.send(
                     employee.getUser(),
-                    message
+
+                    NotificationType.WARRANTY_RECEIVED,
+                    NotificationCategory.WARRANTY,
+
+                    "طلب ضمان جديد",
+
+                    message,
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.WARRANTY,
+
+                    warrantyId.toString(),
+
+                    NotificationSection.WARRANTY
             );
         }
     }

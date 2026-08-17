@@ -1,10 +1,8 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
-import org.example.tears.Model.CarModel;
 import org.example.tears.OutDTO.OutCarBrandDTO;
 import org.example.tears.Model.CarBrand;
-import org.example.tears.OutDTO.OutCarModelDTO;
 import org.example.tears.Repository.CarBrandRepository;
 import org.springframework.stereotype.Service;
 
@@ -75,21 +73,5 @@ public class CarBrandService {
         }
 
 
-        // إضافة ماركة جديدة
-        public CarBrand addBrand(CarBrand brand) {
-            return carBrandRepository.save(brand);
-        }
-
-        // حذف ماركة
-        public void deleteBrand(Integer id) {
-            carBrandRepository.deleteById(id);
-        }
-
-
-        // جلب ماركة بالآيدي
-        public CarBrand getBrandById(Integer id) {
-            return carBrandRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Brand not found"));
-        }
 
 }

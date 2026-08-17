@@ -146,22 +146,6 @@ public class LocationService {
             return location;
         }
 
-        // ---------------------------
-        // Create Location
-        // ---------------------------
-        private Location createAndSaveLocation(LocationDto loc, User user) {
-
-            Location location = new Location();
-
-            location.setLat(loc.getLat());
-            location.setLng(loc.getLng());
-            location.setAddress(loc.getAddress());
-            location.setTitle(loc.getTitle());
-
-            location.setCustomer(user.getCustomer());
-
-            return locationRepository.save(location);
-        }
 
         // ---------------------------
         // My Locations

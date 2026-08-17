@@ -55,7 +55,17 @@ public class AssignmentService {
                 carServiceRequestService.toCurrentDto(request)
         );
 
-        notificationService.send(user, "تم إسناد طلب جديد لك");
+        notificationService.send(
+                user,
+                NotificationType.REQUEST_ASSIGNED,
+                NotificationCategory.REQUEST,
+                "تم إسناد طلب جديد لك",
+                "تم إسناد طلب جديد لك، يمكنك الآن متابعة الطلب.",
+                NotificationActionType.OPEN_ENTITY,
+                NotificationEntityType.REQUEST,
+                request.getId().toString(),
+                NotificationSection.REQUESTS
+        );
     }
 
 }

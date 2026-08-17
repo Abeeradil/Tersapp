@@ -279,9 +279,21 @@ public class PaymentIntentService {
         if (request.getCurrentEmployee() != null) {
             notificationService.send(
                     request.getCurrentEmployee().getUser(),
+
+                    NotificationType.PAYMENT_SUCCEEDED,
+                    NotificationCategory.PAYMENT,
+
+                    "تم سداد الدفعة النهائية",
+
                     "تم سداد الدفعة النهائية للطلب #"
-                            + request.getOrderNumber()
+                            + request.getOrderNumber(),
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    request.getId().toString(),
+                    NotificationSection.REQUESTS
             );
+
         }
 
         return carServiceRequestService.toResponseDto(request);
@@ -586,11 +598,24 @@ public class PaymentIntentService {
         paymentIntentRepository.save(intent);
 
         // إشعار للفني
-        notificationService.send(
-                request.getCurrentEmployee().getUser(),
-                "تم دفع الدفعة النهائية للطلب #" +
-                        request.getOrderNumber()
-        );
+        if (request.getCurrentEmployee() != null) {
+            notificationService.send(
+                    request.getCurrentEmployee().getUser(),
+
+                    NotificationType.PAYMENT_SUCCEEDED,
+                    NotificationCategory.PAYMENT,
+
+                    "تم سداد الدفعة النهائية",
+
+                    "تم سداد الدفعة النهائية للطلب #"
+                            + request.getOrderNumber(),
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    request.getId().toString(),
+                    NotificationSection.REQUESTS
+            );
+        }
 
         return carServiceRequestService.toResponseDto(request);
     }
@@ -688,17 +713,38 @@ public class PaymentIntentService {
             );
 
             if (request.getCurrentEmployee() != null) {
-
                 notificationService.send(
                         request.getCurrentEmployee().getUser(),
-                        "تم دفع الدفعة النهائية للطلب #" +
-                                request.getOrderNumber()
+
+                        NotificationType.PAYMENT_SUCCEEDED,
+                        NotificationCategory.PAYMENT,
+
+                        "تم سداد الدفعة النهائية",
+
+                        "تم سداد الدفعة النهائية للطلب #"
+                                + request.getOrderNumber(),
+
+                        NotificationActionType.OPEN_ENTITY,
+                        NotificationEntityType.REQUEST,
+                        request.getId().toString(),
+                        NotificationSection.REQUESTS
                 );
             }
 
             notificationService.send(
                     request.getCustomer().getUser(),
-                    "تم استلام الدفعة بنجاح، وتم تحويل الطلب إلى مرحلة الإصلاح."
+
+                    NotificationType.PAYMENT_SUCCEEDED,
+                    NotificationCategory.PAYMENT,
+
+                    "تم سداد الدفعة بنجاح",
+
+                    "تم استلام الدفعة بنجاح، وتم تحويل الطلب إلى مرحلة الإصلاح.",
+
+                    NotificationActionType.OPEN_ENTITY,
+                    NotificationEntityType.REQUEST,
+                    request.getId().toString(),
+                    NotificationSection.REQUESTS
             );
         }
 

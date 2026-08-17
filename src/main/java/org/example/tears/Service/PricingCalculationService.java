@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Enums.ServiceOption;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.PricingResponse;
-import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
 
 

@@ -2,14 +2,11 @@ package org.example.tears.Controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.Model.Notification;
+import org.example.tears.DTO.NotificationListResponse;
 import org.example.tears.Model.User;
 import org.example.tears.Service.NotificationService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tears/notifications")
@@ -21,7 +18,7 @@ public class NotificationController {
 
     // إشعاراتي
     @GetMapping("/my-notification")
-    public List<Notification> myNotifications(
+    public NotificationListResponse myNotifications(
             @AuthenticationPrincipal User user
     ) {
         return notificationService
@@ -30,11 +27,30 @@ public class NotificationController {
 
 
     // قراءة إشعار
-    @PutMapping("notification/{id}/read")
-    public ApiResponse markRead(@PathVariable Integer id) {
+    @PutMapping("/notification/{id}/read")
+    public ApiResponse markRead(
+            @PathVariable Integer id,
+            @AuthenticationPrincipal User user
+    ) {
 
-        notificationService.markAsRead(id);
+        notificationService.markAsRead(
+                id,
+                user.getId()
+        );
 
-        return new ApiResponse(true,"تم التحديث");
+        return new ApiResponse(true, "تم تحديث الإشعار");
+    }
+
+    @PutMapping("/read-all")
+    public ApiResponse markAllAsRead(
+            @AuthenticationPrincipal User user
+    ) {
+
+        notificationService.markAllAsRead(user.getId());
+
+        return new ApiResponse(
+                true,
+                "تم تحديث جميع الإشعارات"
+        );
     }
 }
