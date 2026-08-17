@@ -13,6 +13,10 @@ public class CreateCouponRequest {
 
     private String code;
 
+    private String title;
+
+    private String description;
+
     private Integer discountPercentage;
 
     private Integer fixedDiscount;

@@ -30,6 +30,10 @@ public class Coupon {
         // خصم ثابت بالريال
         private Integer fixedDiscount;
 
+        private String title;
+
+        private String description;
+
         // أقل مبلغ مسموح لتطبيق الكوبون
         private Integer minimumOrderPrice;
 

@@ -36,6 +36,8 @@ public class CouponService {
 
         coupon.setCode(dto.getCode().toUpperCase());
         coupon.setActive(true);
+        coupon.setTitle(dto.getTitle());
+        coupon.setDescription(dto.getDescription());
         coupon.setDiscountPercentage(dto.getDiscountPercentage());
         coupon.setFixedDiscount(dto.getFixedDiscount());
         coupon.setUsageLimit(dto.getUsageLimit());
@@ -254,6 +256,10 @@ public class CouponService {
                     dto.setDiscountPercentage(
                             coupon.getDiscountPercentage()
                     );
+
+                    dto.setTitle(coupon.getTitle());
+
+                    dto.setDescription(coupon.getDescription());
 
                     dto.setFixedDiscount(
                             coupon.getFixedDiscount()

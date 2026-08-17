@@ -86,8 +86,6 @@ public class WarrantyRequest {
     @ManyToOne
     @JoinColumn(name = "delivery_location_id")
     private Location deliveryLocation;
-
     private LocalDate deliveryDate;
-
     private LocalTime deliveryTime;
 }
