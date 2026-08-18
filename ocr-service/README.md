@@ -1,26 +1,29 @@
 # Istimara OCR service
 
-A standalone FastAPI service for extracting fields from Saudi vehicle-registration images.
+A free, local PaddleOCR v3 service for Saudi vehicle-registration images.
 
-## Run locally
+## What it returns
 
-```bash
-cd ocr-service
-python -m venv .venv
-source .venv/bin/activate # Windows: .venv\\Scripts\\activate
-pip install -r requirements.txt
-export OPENAI_API_KEY="..."
-uvicorn main:app --reload --port 8000
-```
+`POST /extract-istimara` returns the Java-compatible `data` object plus a
+`quality` object. When the image is blurry, too small, or does not produce the
+plate/brand/model, `success` is `false`; the Java backend must not save a car.
 
-Open `http://127.0.0.1:8000/docs` and use `POST /extract-istimara` with a `file` field.
+The service uses document-orientation classification, document unwarping, and
+Arabic OCR. It accepts JPEG, PNG, or WEBP images up to 10 MB.
 
-## Deploy
+## Railway
 
-Deploy the `ocr-service` directory as a separate Railway service. Set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in Railway variables. Copy the resulting public URL into the Spring application's `OCR_API_URL` variable, for example:
+Deploy `ocr-service` as its own service with Root Directory `/ocr-service`.
+Set the Railway health check to `/health`. No API key is required.
+
+Then set the Java service variable:
 
 ```
 OCR_API_URL=https://your-ocr-service.up.railway.app/extract-istimara
 ```
 
-Never expose `OPENAI_API_KEY` in the mobile/web client.
+## Accuracy
+
+Take a landscape photo with the full card visible, the camera parallel to the
+card, no glare, and at least 1000×600 pixels. The first image can download
+PaddleOCR models, so the initial request may take longer.

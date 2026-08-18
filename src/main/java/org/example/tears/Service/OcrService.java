@@ -55,7 +55,7 @@ public class OcrService {
 
             JsonNode root = objectMapper.readTree(response.getBody());
             if (!root.path("success").asBoolean(false)) {
-                throw new ApiException("OCR service could not read this istimara image.");
+                throw new ApiException("OCR rejected the image: " + qualityIssues(root));
             }
 
             JsonNode data = root.path("data");
@@ -92,6 +92,21 @@ public class OcrService {
         factory.setConnectTimeout(10_000);
         factory.setReadTimeout(60_000);
         return new RestTemplate(factory);
+    }
+
+    private String qualityIssues(JsonNode root) {
+        JsonNode issues = root.path("quality").path("issues");
+        if (!issues.isArray() || issues.isEmpty()) {
+            return "required vehicle fields were not found";
+        }
+        StringBuilder message = new StringBuilder();
+        for (JsonNode issue : issues) {
+            if (message.length() > 0) {
+                message.append(", ");
+            }
+            message.append(issue.asText());
+        }
+        return message.toString();
     }
 
     private String textOrNull(JsonNode data, String field) {
