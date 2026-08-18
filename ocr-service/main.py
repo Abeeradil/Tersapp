@@ -13,8 +13,8 @@ from paddleocr import PaddleOCR
 app = FastAPI(title="Tersapp Istimara OCR", version="3.0.0")
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
-MIN_WIDTH = 1000
-MIN_HEIGHT = 600
+MIN_WIDTH = 700
+MIN_HEIGHT = 450
 MIN_SHARPNESS = 45.0
 
 # Add aliases here only when the same spelling exists in the Java car-brand/model database.
@@ -151,11 +151,19 @@ async def extract_istimara(file: UploadFile = File(...)) -> dict:
         raise HTTPException(400, "The uploaded file is not a valid image.")
 
     sharpness, issues = quality_for(image)
-    if "IMAGE_RESOLUTION_TOO_LOW" in issues or "IMAGE_BLURRY" in issues:
+    height, width = image.shape[:2]
+    if "IMAGE_BLURRY" in issues:
         return {
             "success": False,
             "data": {},
-            "quality": {"accepted": False, "score": 0, "issues": issues, "sharpness": round(sharpness, 2)},
+            "quality": {
+                "accepted": False,
+                "score": 0,
+                "width": width,
+                "height": height,
+                "issues": issues,
+                "sharpness": round(sharpness, 2),
+            },
         }
 
     suffix = Path(file.filename or "istimara.jpg").suffix or ".jpg"
