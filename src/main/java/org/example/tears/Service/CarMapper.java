@@ -69,6 +69,7 @@ public class CarMapper {
     // ================= AUTO BUILD =================
     public Car buildAutoCar(
             Map<String, String> info,
+            MultipartFile image,
             User user,
             CarBrand brand,
             CarModel model,
@@ -91,6 +92,10 @@ public class CarMapper {
         car.setPlateNumberEnglish(en);
 
         car.setCarYear(parseYear(info.get("carYear")));
+
+        if (image != null && !image.isEmpty()) {
+            car.setFormImagePath(fileStorageService.saveFile(image, "forms"));
+        }
 
         return car;
     }

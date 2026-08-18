@@ -2,86 +2,100 @@ package org.example.tears.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Model.MultipartInputStreamFileResource;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class OcrService {
 
+    private final String apiUrl;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public OcrService(@Value("${ocr.api-url:}") String apiUrl) {
+        this.apiUrl = apiUrl;
+    }
+
     public Map<String, String> extractCarInfo(MultipartFile file) {
+        if (apiUrl == null || apiUrl.isBlank()) {
+            throw new ApiException("OCR service is not configured. Set OCR_API_URL.");
+        }
 
         try {
-
-            String apiUrl = "https://tersapp-production.up.railway.app/extract-istimara";
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new MultipartInputStreamFileResource(
+                    file.getInputStream(),
+                    file.getOriginalFilename(),
+                    file.getSize()
+            ));
 
-            body.add("file",
-                    new MultipartInputStreamFileResource(
-                            file.getInputStream(),
-                            file.getOriginalFilename()
-                    )
+            ResponseEntity<String> response = restTemplate().postForEntity(
+                    apiUrl,
+                    new HttpEntity<>(body, headers),
+                    String.class
             );
 
-            HttpEntity<MultiValueMap<String, Object>> request =
-                    new HttpEntity<>(body, headers);
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new ApiException("OCR service returned HTTP " + response.getStatusCode().value());
+            }
 
-            RestTemplate restTemplate = new RestTemplate();
-
-            ResponseEntity<String> response =
-                    restTemplate.postForEntity(apiUrl, request, String.class);
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode root = mapper.readTree(response.getBody());
-
+            JsonNode root = objectMapper.readTree(response.getBody());
             if (!root.path("success").asBoolean(false)) {
-                throw new ApiException("OCR failed");
+                throw new ApiException("OCR service could not read this istimara image.");
             }
 
             JsonNode data = root.path("data");
+            if (data.isMissingNode() || data.isNull()) {
+                throw new ApiException("OCR service returned no vehicle data.");
+            }
 
             Map<String, String> result = new LinkedHashMap<>();
-
-            result.put("plateNumberArabic", data.path("plate_number").asText(null));
-            result.put("plateTextAr", data.path("plate_text_ar").asText(null));
-
-            result.put("plateNumberEnglish", data.path("plate_text_en").asText(null));
-
-            result.put("brandName", data.path("vehicle_make").asText(null));
-            result.put("modelName", data.path("vehicle_model").asText(null));
-
-            result.put("carYear", data.path("model_year").asText(null));
-            result.put("color", data.path("color").asText(null));
-
-            result.put("vin", data.path("vin").asText(null));
-            result.put("ownerName", data.path("owner_name").asText(null));
-
+            result.put("plateNumberArabic", textOrNull(data, "plate_number"));
+            result.put("plateTextAr", textOrNull(data, "plate_text_ar"));
+            result.put("plateNumberEnglish", textOrNull(data, "plate_text_en"));
+            result.put("brandName", textOrNull(data, "vehicle_make"));
+            result.put("modelName", textOrNull(data, "vehicle_model"));
+            result.put("carYear", textOrNull(data, "model_year"));
+            result.put("color", textOrNull(data, "color"));
+            result.put("vin", textOrNull(data, "vin"));
+            result.put("ownerName", textOrNull(data, "owner_name"));
             return result;
-
+        } catch (ApiException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiException("Could not read the uploaded image.", 400);
         } catch (Exception e) {
-            throw new ApiException("OCR API failed: " + e.getMessage());
+            throw new ApiException("OCR service request failed: " + e.getMessage(), 502);
         }
     }
+
     public String extractOwnerName(MultipartFile file) {
-        Map<String, String> info = extractCarInfo(file);
-        return info.get("ownerName");
+        return extractCarInfo(file).get("ownerName");
     }
 
-    public String extractTextFromImage(MultipartFile file) {
-        throw new UnsupportedOperationException("Optional feature (Tesseract)");
+    private RestTemplate restTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(10_000);
+        factory.setReadTimeout(60_000);
+        return new RestTemplate(factory);
+    }
+
+    private String textOrNull(JsonNode data, String field) {
+        String value = data.path(field).asText("").trim();
+        return value.isEmpty() ? null : value;
     }
 }
