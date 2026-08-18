@@ -3,6 +3,7 @@ package org.example.tears.Controller;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.NotificationListResponse;
+import org.example.tears.DTO.RegisterDeviceDto;
 import org.example.tears.Model.User;
 import org.example.tears.Service.NotificationService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -51,6 +52,22 @@ public class NotificationController {
         return new ApiResponse(
                 true,
                 "تم تحديث جميع الإشعارات"
+        );
+    }
+    @PostMapping("/device")
+    public ApiResponse registerDevice(
+            @AuthenticationPrincipal User user,
+            @RequestBody RegisterDeviceDto dto
+    ) {
+
+        notificationService.registerDevice(
+                user,
+                dto
+        );
+
+        return new ApiResponse(
+                true,
+                "تم تسجيل الجهاز"
         );
     }
 }

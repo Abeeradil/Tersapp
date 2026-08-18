@@ -77,6 +77,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.7.0</version>
+        </dependency>
+
         <!-- مكتبات أخرى -->
         <dependency>
             <groupId>com.google.code.gson</groupId>

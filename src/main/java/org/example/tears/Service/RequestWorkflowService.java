@@ -374,7 +374,7 @@ public class RequestWorkflowService {
 
                 "تم استلام السيارة",
 
-                "تم استلام السيارة وبدء مرحلة الفحص لطلب رقم #"
+                "تم استلام السيارة وبدء مرحلة الفحص يمكنك رؤيه السيارة لطلب رقم #"
                         + req.getOrderNumber(),
 
                 NotificationActionType.OPEN_ENTITY,
@@ -847,7 +847,6 @@ public class RequestWorkflowService {
                     NotificationCategory.WARRANTY,
 
                     "تم تأكيد موعد استلام السيارة",
-
                     "تم تأكيد موعد استلام السيارة لطلب الضمان.",
 
                     NotificationActionType.OPEN_ENTITY,
@@ -974,9 +973,9 @@ public class RequestWorkflowService {
                 )
         );
 
-// ============================
-// Notification
-// ============================
+        // ============================
+        // Notification
+        // ============================
 
         notificationService.send(
                 warranty.getCustomer().getUser(),
@@ -985,7 +984,6 @@ public class RequestWorkflowService {
                 NotificationCategory.WARRANTY,
 
                 "تم تحديث حالة طلب الضمان",
-
                 "تم تحديث حالة طلب الضمان رقم #"
                         + warranty.getId(),
 
@@ -1196,7 +1194,7 @@ public class RequestWorkflowService {
 
                 "تم استلام السيارة",
 
-                "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص.",
+                "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص يمكنك رؤيه السيارة.",
 
                 NotificationActionType.OPEN_ENTITY,
                 NotificationEntityType.WARRANTY,

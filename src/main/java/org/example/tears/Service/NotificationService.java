@@ -4,14 +4,17 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.DTO.NotificationActionDto;
 import org.example.tears.DTO.NotificationDto;
 import org.example.tears.DTO.NotificationListResponse;
+import org.example.tears.DTO.RegisterDeviceDto;
 import org.example.tears.Model.Notification;
 import org.example.tears.Model.User;
+import org.example.tears.Model.UserDevice;
 import org.example.tears.Repository.NotificationRepository;
 import org.example.tears.Enums.NotificationActionType;
 import org.example.tears.Enums.NotificationCategory;
 import org.example.tears.Enums.NotificationEntityType;
 import org.example.tears.Enums.NotificationSection;
 import org.example.tears.Enums.NotificationType;
+import org.example.tears.Repository.UserDeviceRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +26,10 @@ public class NotificationService {
 
     private final NotificationRepository repo;
     private final SocketService socketService;
+    private final FcmService fcmService;
+    private final UserDeviceRepository userDeviceRepository;
+
+
 
     public void send(
             User user,
@@ -60,11 +67,23 @@ public class NotificationService {
 
         Notification saved = repo.save(n);
 
-        if (Boolean.TRUE.equals(user.getNotificationsEnabled())) {
+        // WebSocket
+        if (user.getNotificationsEnabled() != null &&
+                user.getNotificationsEnabled()) {
 
             socketService.send(
                     "/topic/notifications/" + user.getId(),
                     toDto(saved)
+            );
+        }
+
+// FCM Push
+        if (user.getNotificationsEnabled() != null &&
+                user.getNotificationsEnabled()) {
+
+            fcmService.send(
+                    user,
+                    saved
             );
         }
     }
@@ -156,5 +175,29 @@ public class NotificationService {
                 });
 
         repo.saveAll(notifications);
+    }
+
+    public void registerDevice(
+            User user,
+            RegisterDeviceDto dto
+    ) {
+
+        UserDevice device =
+                userDeviceRepository
+                        .findByFcmToken(dto.getFcmToken())
+                        .orElse(new UserDevice());
+
+        device.setUser(user);
+        device.setFcmToken(dto.getFcmToken());
+        device.setDeviceType(dto.getDeviceType());
+        device.setActive(true);
+        device.setLastSeen(LocalDateTime.now());
+        device.setUpdatedAt(LocalDateTime.now());
+
+        if (device.getCreatedAt() == null) {
+            device.setCreatedAt(LocalDateTime.now());
+        }
+
+        userDeviceRepository.save(device);
     }
 }
