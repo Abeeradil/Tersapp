@@ -73,8 +73,9 @@ public class CarService {
 
         CarBrand brand = carMapper.detectBrand(info.get("brandName"));
         CarModel model = carMapper.detectModel(info.get("modelName"), brand);
+        carValidator.validateBrandModel(brand, model);
 
-        Car car = carMapper.buildAutoCar(info, user, brand, model, mileage);
+        Car car = carMapper.buildAutoCar(info, image, user, brand, model, mileage);
 
         carRepository.save(car);
 
