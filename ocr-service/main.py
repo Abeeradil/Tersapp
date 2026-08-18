@@ -1,18 +1,23 @@
+import os
 import re
+import tempfile
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import cv2
 import numpy as np
-import pytesseract
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from pytesseract import TesseractNotFoundError
+from paddleocr import PaddleOCR
 
-app = FastAPI(title="Tersapp Istimara OCR", version="2.0.0")
+app = FastAPI(title="Tersapp Istimara OCR", version="3.0.0")
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
-ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp"}
-ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
+MIN_WIDTH = 1000
+MIN_HEIGHT = 600
+MIN_SHARPNESS = 45.0
 
+# Add aliases here only when the same spelling exists in the Java car-brand/model database.
 VEHICLES = {
     "Toyota": ["Camry", "Corolla", "Yaris", "Land Cruiser", "Hilux", "RAV4", "Prado", "Fortuner"],
     "Hyundai": ["Elantra", "Sonata", "Accent", "Tucson", "Santa Fe"],
@@ -35,49 +40,84 @@ BRAND_ALIASES = {
     "GMC": ["gmc", "جي ام سي"], "MG": ["mg", "ام جي"],
     "Changan": ["changan", "شانجان"], "Geely": ["geely", "جيلي"],
 }
+ARABIC_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
 
-def normalize(text: str) -> str:
-    return text.translate(ARABIC_DIGITS).replace("ـ", "").lower()
+ocr: Optional[PaddleOCR] = None
 
-def preprocess(contents: bytes) -> np.ndarray:
-    image = cv2.imdecode(np.frombuffer(contents, np.uint8), cv2.IMREAD_COLOR)
-    if image is None:
-        raise HTTPException(400, "The uploaded file is not a valid image.")
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
-    gray = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8)).apply(gray)
-    return cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+def engine() -> PaddleOCR:
+    global ocr
+    if ocr is None:
+        # PaddleOCR v3 document preprocessing corrects rotation and mild perspective
+        # distortion before reading. The Arabic recognizer also reads Arabic digits.
+        ocr = PaddleOCR(
+            lang="ar",
+            use_doc_orientation_classify=True,
+            use_doc_unwarping=True,
+            use_textline_orientation=True,
+            text_recognition_model_name="arabic_PP-OCRv3_mobile_rec",
+            engine="paddle",
+        )
+    return ocr
 
-def value_after_label(text: str, labels: list[str]) -> Optional[str]:
-    for label in labels:
-        match = re.search(rf"{label}\s*[:\-]?\s*([^\n]{{2,80}})", text, re.IGNORECASE)
-        if match:
-            return match.group(1).strip()
-    return None
+def normalize(value: str) -> str:
+    return value.translate(ARABIC_DIGITS).replace("ـ", "").lower().strip()
+
+@dataclass
+class TextItem:
+    text: str
+    score: float
+    box: list
+
+def quality_for(image: np.ndarray) -> tuple[float, list[str]]:
+    height, width = image.shape[:2]
+    issues: list[str] = []
+    if width < MIN_WIDTH or height < MIN_HEIGHT:
+        issues.append("IMAGE_RESOLUTION_TOO_LOW")
+    sharpness = float(cv2.Laplacian(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), cv2.CV_64F).var())
+    if sharpness < MIN_SHARPNESS:
+        issues.append("IMAGE_BLURRY")
+    return sharpness, issues
+
+def read_items(image_path: str) -> tuple[list[TextItem], int]:
+    result = next(engine().predict(image_path))
+    payload = result.json
+    payload = payload.get("res", payload)
+    texts = payload.get("rec_texts", [])
+    scores = payload.get("rec_scores", [])
+    boxes = payload.get("rec_boxes", [])
+    items = [
+        TextItem(text=str(text).strip(), score=float(score), box=box.tolist() if hasattr(box, "tolist") else box)
+        for text, score, box in zip(texts, scores, boxes)
+        if str(text).strip()
+    ]
+    angle = int(payload.get("doc_preprocessor_res", {}).get("angle", 0) or 0)
+    return items, angle
 
 def detect_vehicle(text: str) -> tuple[Optional[str], Optional[str]]:
-    normalized = normalize(text)
+    source = normalize(text)
     brand = next(
         (name for name, aliases in BRAND_ALIASES.items()
-         if any(normalize(alias) in normalized for alias in aliases)),
+         if any(normalize(alias) in source for alias in aliases)),
         None,
     )
     if not brand:
         return None, None
-    model = next((model for model in VEHICLES[brand] if normalize(model) in normalized), None)
+    model = next((model for model in VEHICLES[brand] if normalize(model) in source), None)
     return brand, model
 
 def extract_plate(text: str) -> Optional[str]:
-    normalized = text.translate(ARABIC_DIGITS).upper()
-    match = re.search(r"\b[A-Z]{1,3}\s*\d{1,4}\b", normalized)
+    source = text.translate(ARABIC_DIGITS).upper()
+    # Saudi plate lines normally contain three letters and up to four digits.
+    match = re.search(r"\b(?:[A-Z]\s*){1,3}(?:\d\s*){1,4}\b", source)
     if match:
-        return re.sub(r"\s+", " ", match.group(0))
-    arabic = re.search(r"[أبحدرسصطعقكلمنهوي]{1,3}\s*\d{1,4}", normalized)
-    return re.sub(r"\s+", " ", arabic.group(0)) if arabic else None
+        return re.sub(r"\s+", " ", match.group(0)).strip()
+    match = re.search(r"\b(?:\d\s*){1,4}(?:[A-Z]\s*){1,3}\b", source)
+    return re.sub(r"\s+", " ", match.group(0)).strip() if match else None
 
-def extract_data(text: str) -> dict:
+def extract_data(items: list[TextItem]) -> dict:
+    text = "\n".join(item.text for item in items)
     brand, model = detect_vehicle(text)
-    vin_match = re.search(r"(?<![A-Z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Z0-9])", text.upper())
+    vin = re.search(r"(?<![A-Z0-9])[A-HJ-NPR-Z0-9]{17}(?![A-Z0-9])", text.upper())
     years = re.findall(r"\b(?:19|20)\d{2}\b", text.translate(ARABIC_DIGITS))
     return {
         "plate_number": extract_plate(text),
@@ -86,18 +126,18 @@ def extract_data(text: str) -> dict:
         "vehicle_make": brand,
         "vehicle_model": model,
         "model_year": years[0] if years else None,
-        "color": value_after_label(text, ["اللون", "color"]),
-        "vin": vin_match.group(0) if vin_match else None,
-        "owner_name": value_after_label(text, ["اسم المالك", "مالك المركبة", "owner name"]),
+        "color": None,
+        "vin": vin.group(0) if vin else None,
+        "owner_name": None,
     }
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok", "engine": "tesseract", "languages": "ara+eng"}
+    return {"status": "ok", "engine": "paddleocr-v3", "languages": ["ar", "en"]}
 
 @app.post("/extract-istimara")
 async def extract_istimara(file: UploadFile = File(...)) -> dict:
-    if file.content_type not in ALLOWED_MEDIA_TYPES:
+    if file.content_type not in {"image/jpeg", "image/png", "image/webp"}:
         raise HTTPException(415, "Upload a JPEG, PNG, or WEBP image.")
 
     contents = await file.read()
@@ -106,19 +146,49 @@ async def extract_istimara(file: UploadFile = File(...)) -> dict:
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(413, "The image must not exceed 10 MB.")
 
-    try:
-        raw_text = pytesseract.image_to_string(
-            preprocess(contents), lang="ara+eng", config="--oem 1 --psm 6"
-        )
-    except TesseractNotFoundError as exc:
-        raise HTTPException(500, "Tesseract is not installed in this deployment.") from exc
+    image = cv2.imdecode(np.frombuffer(contents, np.uint8), cv2.IMREAD_COLOR)
+    if image is None:
+        raise HTTPException(400, "The uploaded file is not a valid image.")
 
-    data = extract_data(raw_text)
+    sharpness, issues = quality_for(image)
+    if "IMAGE_RESOLUTION_TOO_LOW" in issues or "IMAGE_BLURRY" in issues:
+        return {
+            "success": False,
+            "data": {},
+            "quality": {"accepted": False, "score": 0, "issues": issues, "sharpness": round(sharpness, 2)},
+        }
+
+    suffix = Path(file.filename or "istimara.jpg").suffix or ".jpg"
+    try:
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as temporary:
+            temporary.write(contents)
+            temporary_path = temporary.name
+        items, angle = read_items(temporary_path)
+    except Exception as exc:
+        raise HTTPException(502, "PaddleOCR could not process this image.") from exc
+    finally:
+        if "temporary_path" in locals():
+            os.unlink(temporary_path)
+
+    data = extract_data(items)
+    average_confidence = sum(item.score for item in items) / len(items) if items else 0
     required = ["plate_number", "vehicle_make", "vehicle_model"]
     missing = [field for field in required if not data[field]]
+    if average_confidence < 0.70:
+        issues.append("LOW_TEXT_CONFIDENCE")
+    if missing:
+        issues.append("REQUIRED_FIELDS_MISSING")
+
+    accepted = not issues
     return {
-        "success": not missing,
+        "success": accepted,
         "data": data,
-        "missing_fields": missing,
-        "raw_text": raw_text,
+        "quality": {
+            "accepted": accepted,
+            "score": round(average_confidence, 3),
+            "issues": issues,
+            "missing_fields": missing,
+            "rotation_corrected_degrees": angle,
+            "sharpness": round(sharpness, 2),
+        },
     }
