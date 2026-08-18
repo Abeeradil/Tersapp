@@ -288,43 +288,26 @@ def quality_for(
 # OCR reading
 # =========================================================
 
-def read_items(
-    image_path: str,
-) -> tuple[list[TextItem], int]:
+def read_items(image_path: str) -> tuple[list[TextItem], int]:
 
-    print(
-        f"Running PaddleOCR on: {image_path}"
-    )
+    print(f"Running PaddleOCR on: {image_path}")
 
-    results = engine().predict(
-        image_path
-    )
+    results = engine().predict(image_path)
 
-    result = next(results)
+    # PaddleOCR 3.0.0 predict() returns a list
+    if not results:
+        return [], 0
+
+    result = results[0]
 
     payload = result.json
 
     if isinstance(payload, dict):
+        payload = payload.get("res", payload)
 
-        payload = payload.get(
-            "res",
-            payload
-        )
-
-    texts = payload.get(
-        "rec_texts",
-        []
-    )
-
-    scores = payload.get(
-        "rec_scores",
-        []
-    )
-
-    boxes = payload.get(
-        "rec_boxes",
-        []
-    )
+    texts = payload.get("rec_texts", [])
+    scores = payload.get("rec_scores", [])
+    boxes = payload.get("rec_boxes", [])
 
     items: list[TextItem] = []
 
@@ -333,7 +316,6 @@ def read_items(
         scores,
         boxes
     ):
-
         text_value = str(text).strip()
 
         if not text_value:
@@ -350,17 +332,16 @@ def read_items(
             )
         )
 
+    doc_preprocessor = payload.get(
+        "doc_preprocessor_res",
+        {}
+    )
+
     angle = int(
-        payload
-        .get(
-            "doc_preprocessor_res",
-            {}
-        )
-        .get(
+        doc_preprocessor.get(
             "angle",
             0
-        )
-        or 0
+        ) or 0
     )
 
     print(
@@ -368,7 +349,6 @@ def read_items(
     )
 
     return items, angle
-
 
 # =========================================================
 # Vehicle detection
