@@ -1,24 +1,29 @@
-# Istimara OCR service (free)
+# Istimara OCR service
 
-A standalone FastAPI OCR service for Saudi vehicle-registration images. It runs
-Tesseract locally with Arabic and English language packs, so it has no external
-AI API charge and does not require an API key.
+A free, local PaddleOCR v3 service for Saudi vehicle-registration images.
 
-## Deploy on Railway
+## What it returns
 
-Deploy the `ocr-service` directory as its own Railway service. Use
-`/ocr-service` as the Root Directory and set `/health` as the health-check
-path. Generate a public domain, then set the Spring application's
-`OCR_API_URL` variable to:
+`POST /extract-istimara` returns the Java-compatible `data` object plus a
+`quality` object. When the image is blurry, too small, or does not produce the
+plate/brand/model, `success` is `false`; the Java backend must not save a car.
+
+The service uses document-orientation classification, document unwarping, and
+Arabic OCR. It accepts JPEG, PNG, or WEBP images up to 10 MB.
+
+## Railway
+
+Deploy `ocr-service` as its own service with Root Directory `/ocr-service`.
+Set the Railway health check to `/health`. No API key is required.
+
+Then set the Java service variable:
 
 ```
-https://your-ocr-service.up.railway.app/extract-istimara
+OCR_API_URL=https://your-ocr-service.up.railway.app/extract-istimara
 ```
 
-## Important accuracy note
+## Accuracy
 
-Tesseract is free but cannot guarantee correct Arabic document understanding.
-For reliable registration, use a clear, straight, full-page image. The service
-returns `success: false` rather than guessing when it cannot identify the
-plate, brand, or model. Review the `raw_text` and `missing_fields` fields
-during testing to see what needs improving.
+Take a landscape photo with the full card visible, the camera parallel to the
+card, no glare, and at least 1000×600 pixels. The first image can download
+PaddleOCR models, so the initial request may take longer.
