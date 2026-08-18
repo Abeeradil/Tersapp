@@ -182,24 +182,20 @@ ocr: Optional[PaddleOCR] = None
 
 
 def engine() -> PaddleOCR:
-
     global ocr
 
     if ocr is None:
-
-        print("====================================")
-        print("Initializing PaddleOCR...")
-        print("====================================")
+        print("Initializing PaddleOCR PP-OCRv5 Arabic...")
 
         ocr = PaddleOCR(
             lang="ar",
             use_doc_orientation_classify=True,
             use_doc_unwarping=True,
             use_textline_orientation=True,
-            text_recognition_model_name="arabic_PP-OCRv3_mobile_rec",
+            text_recognition_model_name="arabic_PP-OCRv5_mobile_rec",
         )
 
-        print("PaddleOCR initialized successfully.")
+        print("PaddleOCR PP-OCRv5 initialized successfully.")
 
     return ocr
 
