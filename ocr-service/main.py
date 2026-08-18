@@ -200,27 +200,18 @@ ARABIC_DIGITS = str.maketrans(
 
 ocr: Optional[PaddleOCR] = None
 
-
 def engine() -> PaddleOCR:
-
     global ocr
 
     if ocr is None:
-
         print("Initializing PaddleOCR...")
 
         ocr = PaddleOCR(
             lang="ar",
-
             use_doc_orientation_classify=True,
             use_doc_unwarping=True,
             use_textline_orientation=True,
-
-            text_recognition_model_name=(
-                "arabic_PP-OCRv3_mobile_rec"
-            ),
-
-            engine="paddle",
+            text_recognition_model_name="arabic_PP-OCRv3_mobile_rec",
         )
 
         print("PaddleOCR initialized successfully.")
