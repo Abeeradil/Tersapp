@@ -15,15 +15,15 @@ ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp"}
 class IstimaraData(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    plate_number: Optional[str] = None
-    plate_text_ar: Optional[str] = None
-    plate_text_en: Optional[str] = None
-    vehicle_make: Optional[str] = None
-    vehicle_model: Optional[str] = None
-    model_year: Optional[str] = None
-    color: Optional[str] = None
-    vin: Optional[str] = None
-    owner_name: Optional[str] = None
+    plate_number: str | None
+    plate_text_ar: str | None
+    plate_text_en: str | None
+    vehicle_make: str | None
+    vehicle_model: str | None
+    model_year: str | None
+    color: str | None
+    vin: str | None
+    owner_name: str | None
 
 INSTRUCTIONS = """
 You extract data from Saudi vehicle registration (Istimara) images.

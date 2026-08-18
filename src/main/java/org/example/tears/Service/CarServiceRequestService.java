@@ -253,8 +253,8 @@ public class CarServiceRequestService {
                         .findByCustomer_Id(customerId)
                         .stream()
                         .filter(w ->
-                                w.getStatus() != WarrantyStatus.REJECTED &&
-                                        w.getStatus() != WarrantyStatus.DELIVERED
+                                w.getCustomerStatus() != WarrantyCustomerStatus.REJECTED &&
+                                        w.getCustomerStatus() != WarrantyCustomerStatus.DELIVERED
                         )
                         .map(WarrantyRequest::getRequest)
                         .filter(r ->
@@ -304,8 +304,8 @@ public class CarServiceRequestService {
         Set<Integer> activeWarrantyRequestIds =
                 warranties.stream()
                         .filter(w ->
-                                w.getStatus() != WarrantyStatus.REJECTED &&
-                                        w.getStatus() != WarrantyStatus.DELIVERED
+                                w.getCustomerStatus() != WarrantyCustomerStatus.REJECTED &&
+                                        w.getCustomerStatus() != WarrantyCustomerStatus.DELIVERED
                         )
                         .map(w -> w.getRequest().getId())
                         .collect(Collectors.toSet());
