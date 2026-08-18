@@ -1028,19 +1028,22 @@ async def extract_istimara(
         "data": data,
         "quality": {
             "accepted": accepted,
-            "score": round(
-                average_confidence,
-                3
-            ),
-            "issues": quality_issues,
+            "score": round(average_confidence, 3),
+            "issues": issues,
             "missing_fields": missing,
             "rotation_corrected_degrees": angle,
+            "sharpness": round(sharpness, 2),
             "width": width,
             "height": height,
-            "sharpness": round(
-                sharpness,
-                2
-            ),
             "detected_text_count": len(items),
-        }
+        },
+        "ocr_text": [
+            {
+                "text": item.text,
+                "score": round(item.score, 3),
+                "box": item.box
+            }
+            for item in items
+        ],
+    }
     }
