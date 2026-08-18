@@ -78,7 +78,10 @@ public class CarController {
     /*--------------------------------------------------------------
       🧩 1) التسجيل التلقائي من الاستمارة (OCR)
      --------------------------------------------------------------*/
-    @PostMapping(\n            value = "/register/auto",\n            consumes = MediaType.MULTIPART_FORM_DATA_VALUE\n    )
+    @PostMapping(
+            value = "/register/auto",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public ResponseEntity<Map<String, Object>> registerCarAuto(
             HttpServletRequest request,
             @RequestParam("formImage") MultipartFile formImage,
