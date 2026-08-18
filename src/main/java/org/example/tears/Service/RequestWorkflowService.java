@@ -1149,6 +1149,7 @@ public class RequestWorkflowService {
         LocalDateTime now = LocalDateTime.now();
 
         warranty.setStatus(WarrantyStatus.INSPECTION);
+        warranty.setCustomerStatus(WarrantyCustomerStatus.VEHICLE_RECEIVED);
         warranty.setUpdatedAt(now);
         warranty.setVehicleReceived(true);
 

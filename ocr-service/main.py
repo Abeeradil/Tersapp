@@ -83,6 +83,14 @@ async def extract_istimara(file: UploadFile = File(...)) -> dict:
         data = IstimaraData.model_validate(json.loads(response.output_text))
         return {"success": True, "data": data.model_dump()}
     except json.JSONDecodeError as exc:
-        raise HTTPException(502, "The OCR provider returned invalid JSON.") from exc
-   except Exception as exc:print(f"OCR provider error: {type(exc).__name__}: {exc}")
-       raise HTTPException(502, f"OCR provider request failed: {exc}") from exc
+        raise HTTPException(
+            502,
+            "The OCR provider returned invalid JSON."
+        ) from exc
+
+    except Exception as exc:
+        print(f"OCR provider error: {type(exc).__name__}: {exc}")
+        raise HTTPException(
+            502,
+            f"OCR provider request failed: {exc}"
+        ) from exc
