@@ -4,9 +4,10 @@ import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import jakarta.annotation.PostConstruct;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Base64;
 import org.springframework.context.annotation.Configuration;
-
-import java.io.FileInputStream;
 import java.io.IOException;
 
 @Configuration
@@ -19,19 +20,22 @@ public class FirebaseConfig {
             return;
         }
 
-        String firebaseCredentialsPath =
-                System.getenv("FIREBASE_CREDENTIALS_PATH");
+        String firebaseCredentials =
+                System.getenv("FIREBASE_CREDENTIALS_BASE64");
 
-        if (firebaseCredentialsPath == null ||
-                firebaseCredentialsPath.isBlank()) {
+        if (firebaseCredentials == null ||
+                firebaseCredentials.isBlank()) {
 
             throw new IllegalStateException(
-                    "FIREBASE_CREDENTIALS_PATH is not configured"
+                    "FIREBASE_CREDENTIALS_BASE64 is not configured"
             );
         }
 
-        try (FileInputStream serviceAccount =
-                     new FileInputStream(firebaseCredentialsPath)) {
+        byte[] decodedCredentials =
+                Base64.getDecoder().decode(firebaseCredentials);
+
+        try (InputStream serviceAccount =
+                     new ByteArrayInputStream(decodedCredentials)) {
 
             FirebaseOptions options =
                     FirebaseOptions.builder()
