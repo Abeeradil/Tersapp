@@ -1,26 +1,24 @@
-# Istimara OCR service
+# Istimara OCR service (free)
 
-A standalone FastAPI service for extracting fields from Saudi vehicle-registration images.
+A standalone FastAPI OCR service for Saudi vehicle-registration images. It runs
+Tesseract locally with Arabic and English language packs, so it has no external
+AI API charge and does not require an API key.
 
-## Run locally
+## Deploy on Railway
 
-```bash
-cd ocr-service
-python -m venv .venv
-source .venv/bin/activate # Windows: .venv\\Scripts\\activate
-pip install -r requirements.txt
-export OPENAI_API_KEY="..."
-uvicorn main:app --reload --port 8000
-```
-
-Open `http://127.0.0.1:8000/docs` and use `POST /extract-istimara` with a `file` field.
-
-## Deploy
-
-Deploy the `ocr-service` directory as a separate Railway service. Set `OPENAI_API_KEY` and optionally `OPENAI_MODEL` in Railway variables. Copy the resulting public URL into the Spring application's `OCR_API_URL` variable, for example:
+Deploy the `ocr-service` directory as its own Railway service. Use
+`/ocr-service` as the Root Directory and set `/health` as the health-check
+path. Generate a public domain, then set the Spring application's
+`OCR_API_URL` variable to:
 
 ```
-OCR_API_URL=https://your-ocr-service.up.railway.app/extract-istimara
+https://your-ocr-service.up.railway.app/extract-istimara
 ```
 
-Never expose `OPENAI_API_KEY` in the mobile/web client.
+## Important accuracy note
+
+Tesseract is free but cannot guarantee correct Arabic document understanding.
+For reliable registration, use a clear, straight, full-page image. The service
+returns `success: false` rather than guessing when it cannot identify the
+plate, brand, or model. Review the `raw_text` and `missing_fields` fields
+during testing to see what needs improving.
