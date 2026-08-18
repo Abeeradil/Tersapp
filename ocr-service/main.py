@@ -11,19 +11,21 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from paddleocr import PaddleOCR
 
 
+# =========================================================
+# APP
+# =========================================================
+
 app = FastAPI(
     title="Tersapp Istimara OCR",
-    version="4.0.0"
+    version="5.0.0"
 )
 
 
 # =========================================================
-# Configuration
+# CONFIG
 # =========================================================
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
-
-# Do NOT reject a clear but relatively small image.
 MIN_SHARPNESS = 45.0
 
 SUPPORTED_TYPES = {
@@ -39,17 +41,155 @@ ARABIC_DIGITS = str.maketrans(
 
 
 # =========================================================
-# OCR Engine
+# VEHICLES
+# =========================================================
+
+VEHICLES = {
+    "Toyota": [
+        "Camry",
+        "Corolla",
+        "Yaris",
+        "Land Cruiser",
+        "Hilux",
+        "RAV4",
+        "Prado",
+        "Fortuner",
+    ],
+    "Hyundai": [
+        "Elantra",
+        "Sonata",
+        "Accent",
+        "Tucson",
+        "Santa Fe",
+    ],
+    "Kia": [
+        "K5",
+        "Cerato",
+        "Sportage",
+        "Rio",
+        "Seltos",
+    ],
+    "Nissan": [
+        "Altima",
+        "Sunny",
+        "Patrol",
+        "X-Trail",
+    ],
+    "Honda": [
+        "Accord",
+        "Civic",
+        "City",
+    ],
+    "Mazda": [
+        "Mazda 3",
+        "Mazda 6",
+        "CX-5",
+    ],
+    "Chevrolet": [
+        "Tahoe",
+        "Malibu",
+        "Captiva",
+    ],
+    "Ford": [
+        "Taurus",
+        "Explorer",
+        "Edge",
+    ],
+    "GMC": [
+        "Yukon",
+        "Terrain",
+    ],
+    "MG": [
+        "MG 5",
+        "MG 6",
+        "ZS",
+        "RX5",
+    ],
+    "Changan": [
+        "CS35",
+        "CS55",
+        "CS75",
+    ],
+    "Geely": [
+        "Emgrand",
+        "Coolray",
+        "Monjaro",
+    ],
+}
+
+
+BRAND_ALIASES = {
+    "Toyota": [
+        "toyota",
+        "تويوتا",
+        "تويوتا",
+    ],
+    "Hyundai": [
+        "hyundai",
+        "هيونداي",
+        "هيونداى",
+    ],
+    "Kia": [
+        "kia",
+        "كيا",
+    ],
+    "Nissan": [
+        "nissan",
+        "نيسان",
+    ],
+    "Honda": [
+        "honda",
+        "هوندا",
+    ],
+    "Mazda": [
+        "mazda",
+        "مازدا",
+    ],
+    "Chevrolet": [
+        "chevrolet",
+        "شيفروليه",
+    ],
+    "Ford": [
+        "ford",
+        "فورد",
+    ],
+    "GMC": [
+        "gmc",
+        "جي ام سي",
+        "جي إم سي",
+    ],
+    "MG": [
+        "mg",
+        "ام جي",
+        "إم جي",
+    ],
+    "Changan": [
+        "changan",
+        "شانجان",
+    ],
+    "Geely": [
+        "geely",
+        "جيلي",
+    ],
+}
+
+
+# =========================================================
+# OCR
 # =========================================================
 
 ocr: Optional[PaddleOCR] = None
 
 
 def engine() -> PaddleOCR:
+
     global ocr
 
     if ocr is None:
+
+        print("====================================")
         print("Initializing PaddleOCR...")
+        print("====================================")
 
         ocr = PaddleOCR(
             lang="ar",
@@ -65,21 +205,23 @@ def engine() -> PaddleOCR:
 
 
 # =========================================================
-# Models
+# MODEL
 # =========================================================
 
 @dataclass
 class TextItem:
+
     text: str
     score: float
     box: list
 
 
 # =========================================================
-# Utilities
+# TEXT
 # =========================================================
 
 def normalize(value: str) -> str:
+
     if not value:
         return ""
 
@@ -87,12 +229,15 @@ def normalize(value: str) -> str:
         value
         .translate(ARABIC_DIGITS)
         .replace("ـ", "")
+        .replace("\n", " ")
+        .replace("\r", " ")
         .strip()
         .lower()
     )
 
 
 def clean_text(value: str) -> str:
+
     if not value:
         return ""
 
@@ -105,44 +250,61 @@ def clean_text(value: str) -> str:
     ).strip()
 
 
-def box_center(box: list) -> tuple[float, float]:
-    """
-    PaddleOCR rec_boxes format:
-    [x_min, y_min, x_max, y_max]
-    """
+# =========================================================
+# BOX
+# =========================================================
 
-    if len(box) < 4:
-        return 0, 0
+def box_center(box: list):
 
-    x1, y1, x2, y2 = map(float, box[:4])
+    if not box or len(box) < 4:
+        return 0.0, 0.0
 
-    return (
-        (x1 + x2) / 2,
-        (y1 + y2) / 2
-    )
+    try:
+
+        # [x1, y1, x2, y2]
+
+        x1, y1, x2, y2 = map(
+            float,
+            box[:4]
+        )
+
+        return (
+            (x1 + x2) / 2,
+            (y1 + y2) / 2
+        )
+
+    except Exception:
+
+        return 0.0, 0.0
 
 
-def box_size(box: list) -> tuple[float, float]:
-    if len(box) < 4:
-        return 0, 0
+def box_size(box: list):
 
-    x1, y1, x2, y2 = map(float, box[:4])
+    if not box or len(box) < 4:
+        return 0.0, 0.0
 
-    return (
-        abs(x2 - x1),
-        abs(y2 - y1)
-    )
+    try:
+
+        x1, y1, x2, y2 = map(
+            float,
+            box[:4]
+        )
+
+        return (
+            abs(x2 - x1),
+            abs(y2 - y1)
+        )
+
+    except Exception:
+
+        return 0.0, 0.0
 
 
 # =========================================================
-# Image quality
+# IMAGE QUALITY
 # =========================================================
 
-def quality_for(
-    image: np.ndarray
-) -> tuple[float, list[str]]:
-
-    issues = []
+def quality_for(image: np.ndarray):
 
     gray = cv2.cvtColor(
         image,
@@ -156,6 +318,8 @@ def quality_for(
         ).var()
     )
 
+    issues = []
+
     if sharpness < MIN_SHARPNESS:
         issues.append("IMAGE_BLURRY")
 
@@ -163,17 +327,21 @@ def quality_for(
 
 
 # =========================================================
-# PaddleOCR
+# OCR RESULT
 # =========================================================
 
 def read_items(
     image_path: str
-) -> tuple[list[TextItem], int]:
+):
 
-    results = engine().predict(image_path)
+    results = engine().predict(
+        image_path
+    )
 
-    # PaddleOCR versions may return either
-    # a list or an iterator.
+    # PaddleOCR 3.x predict is normally
+    # a generator. Some versions/configurations
+    # may return a list.
+
     if isinstance(results, list):
 
         if not results:
@@ -188,8 +356,9 @@ def read_items(
     payload = result.json
 
     if not isinstance(payload, dict):
+
         raise ValueError(
-            "Unexpected PaddleOCR result format."
+            "Unexpected PaddleOCR result."
         )
 
     payload = payload.get(
@@ -198,8 +367,9 @@ def read_items(
     )
 
     if not isinstance(payload, dict):
+
         raise ValueError(
-            "Unexpected PaddleOCR payload format."
+            "Unexpected PaddleOCR payload."
         )
 
     texts = payload.get(
@@ -217,7 +387,7 @@ def read_items(
         []
     )
 
-    items: list[TextItem] = []
+    items = []
 
     for text, score, box in zip(
         texts,
@@ -232,7 +402,10 @@ def read_items(
         if not text:
             continue
 
-        if hasattr(box, "tolist"):
+        if hasattr(
+            box,
+            "tolist"
+        ):
             box = box.tolist()
 
         items.append(
@@ -243,32 +416,51 @@ def read_items(
             )
         )
 
-    doc_preprocessor = payload.get(
+    # PaddleOCR gives document angle
+    # as part of doc_preprocessor_res.
+
+    preprocessor = payload.get(
         "doc_preprocessor_res",
         {}
     )
 
     if not isinstance(
-        doc_preprocessor,
+        preprocessor,
         dict
     ):
-        doc_preprocessor = {}
+        preprocessor = {}
 
-    angle = int(
-        doc_preprocessor.get(
-            "angle",
-            0
-        ) or 0
+    angle = preprocessor.get(
+        "angle",
+        0
     )
+
+    try:
+        angle = int(angle)
+    except Exception:
+        angle = 0
+
+    print(
+        f"OCR detected {len(items)} text items."
+    )
+
+    for item in items:
+
+        print(
+            f"[OCR {item.score:.2f}] "
+            f"{item.text}"
+        )
 
     return items, angle
 
 
 # =========================================================
-# Text helpers
+# ALL TEXT
 # =========================================================
 
-def all_text(items: list[TextItem]) -> str:
+def all_text(
+    items: list[TextItem]
+):
 
     return "\n".join(
         item.text
@@ -276,32 +468,16 @@ def all_text(items: list[TextItem]) -> str:
     )
 
 
-def find_year(
-    items: list[TextItem]
-) -> Optional[str]:
-
-    for item in items:
-
-        text = item.text.translate(
-            ARABIC_DIGITS
-        )
-
-        match = re.search(
-            r"\b(?:19|20)\d{2}\b",
-            text
-        )
-
-        if match:
-            return match.group(0)
-
-    return None
-
+# =========================================================
+# VIN
+# =========================================================
 
 def find_vin(
     items: list[TextItem]
-) -> Optional[str]:
+):
 
-    # Search every OCR item separately first.
+    # First search each OCR item.
+
     for item in items:
 
         text = (
@@ -319,9 +495,11 @@ def find_vin(
         )
 
         if match:
+
             return match.group(0)
 
-    # Fallback: search combined OCR text.
+    # Then combined text.
+
     text = (
         all_text(items)
         .upper()
@@ -336,23 +514,56 @@ def find_vin(
         text
     )
 
-    return (
-        match.group(0)
-        if match
-        else None
-    )
+    if match:
+
+        return match.group(0)
+
+    return None
 
 
 # =========================================================
-# Saudi plate
+# YEAR
 # =========================================================
 
-# Saudi plates use a restricted set of Arabic letters.
-# This mapping is useful when OCR recognizes Arabic plate
-# characters separately from the numbers.
+def find_year(
+    items: list[TextItem]
+):
+
+    for item in items:
+
+        text = item.text.translate(
+            ARABIC_DIGITS
+        )
+
+        match = re.search(
+            r"(?:19|20)\d{2}",
+            text
+        )
+
+        if match:
+
+            year = int(
+                match.group(0)
+            )
+
+            if 1950 <= year <= 2035:
+
+                return str(year)
+
+    return None
+
+
+# =========================================================
+# SAUDI PLATE
+# =========================================================
 
 SAUDI_ARABIC_TO_ENGLISH = {
+
     "ا": "A",
+    "أ": "A",
+    "إ": "A",
+    "آ": "A",
+
     "ب": "B",
     "ح": "J",
     "د": "D",
@@ -374,7 +585,7 @@ SAUDI_ARABIC_TO_ENGLISH = {
 
 def normalize_plate_text(
     text: str
-) -> str:
+):
 
     text = text.translate(
         ARABIC_DIGITS
@@ -385,26 +596,32 @@ def normalize_plate_text(
     for char in text:
 
         if char in SAUDI_ARABIC_TO_ENGLISH:
+
             result.append(
-                SAUDI_ARABIC_TO_ENGLISH[char]
+                SAUDI_ARABIC_TO_ENGLISH[
+                    char
+                ]
             )
 
-        elif char.isascii() and char.isalnum():
+        elif (
+            char.isascii()
+            and char.isalnum()
+        ):
+
             result.append(
                 char.upper()
             )
 
         elif char.isdigit():
+
             result.append(char)
 
     return "".join(result)
 
 
-def plate_candidate_score(
+def plate_score(
     value: str
-) -> int:
-
-    value = value.upper()
+):
 
     letters = sum(
         c.isalpha()
@@ -418,21 +635,27 @@ def plate_candidate_score(
 
     score = 0
 
-    if 1 <= letters <= 3:
+    if letters == 3:
+        score += 5
+
+    elif letters == 2:
         score += 3
+
+    elif letters == 1:
+        score += 1
 
     if 1 <= digits <= 4:
-        score += 3
+        score += 4
 
     if 4 <= len(value) <= 7:
-        score += 2
+        score += 3
 
     return score
 
 
 def extract_plate(
     items: list[TextItem]
-) -> Optional[str]:
+):
 
     candidates = []
 
@@ -445,12 +668,14 @@ def extract_plate(
         if not normalized:
             continue
 
-        # Whole OCR item
-        score = plate_candidate_score(
+        # Whole item
+
+        score = plate_score(
             normalized
         )
 
-        if score >= 5:
+        if score >= 6:
+
             candidates.append(
                 (
                     score,
@@ -459,27 +684,50 @@ def extract_plate(
                 )
             )
 
-        # Look for smaller chunks.
-        chunks = re.findall(
-            r"[A-Z]{1,3}\d{1,4}"
-            r"|\d{1,4}[A-Z]{1,3}",
+        # Split combinations
+
+        parts = re.findall(
+            r"[A-Z]+|\d+",
             normalized
         )
 
-        for chunk in chunks:
+        if len(parts) >= 2:
 
-            score = plate_candidate_score(
-                chunk
-            )
+            letters = ""
+            digits = ""
 
-            if score >= 5:
-                candidates.append(
-                    (
-                        score,
-                        item.score,
-                        chunk
-                    )
+            for part in parts:
+
+                if part.isalpha():
+                    letters += part
+
+                elif part.isdigit():
+                    digits += part
+
+            if (
+                1 <= len(letters) <= 3
+                and
+                1 <= len(digits) <= 4
+            ):
+
+                candidate = (
+                    letters
+                    + digits
                 )
+
+                score = plate_score(
+                    candidate
+                )
+
+                if score >= 6:
+
+                    candidates.append(
+                        (
+                            score,
+                            item.score,
+                            candidate
+                        )
+                    )
 
     if not candidates:
         return None
@@ -496,121 +744,145 @@ def extract_plate(
 
 
 # =========================================================
-# Label detection
+# BRAND / MODEL
+# =========================================================
+
+def detect_vehicle(
+    items: list[TextItem]
+):
+
+    text = normalize(
+        all_text(items)
+    )
+
+    brand = None
+    model = None
+
+    # Brand
+
+    for name, aliases in BRAND_ALIASES.items():
+
+        for alias in aliases:
+
+            if normalize(alias) in text:
+
+                brand = name
+                break
+
+        if brand:
+            break
+
+    # Model
+
+    if brand:
+
+        for vehicle_model in VEHICLES.get(
+            brand,
+            []
+        ):
+
+            if normalize(
+                vehicle_model
+            ) in text:
+
+                model = vehicle_model
+                break
+
+    return brand, model
+
+
+# =========================================================
+# LABELS
 # =========================================================
 
 LABELS = {
-    "plate": [
-        "رقم اللوحة",
-        "رقم لوحه",
-        "plate number",
-        "plate no",
-        "plate"
-    ],
 
     "make": [
         "ماركة المركبة",
         "ماركة المركبه",
+        "ماركة المركبة",
+        "ماركه المركبه",
         "ماركة",
-        "car name",
         "vehicle make",
-        "make"
+        "car make",
+        "make",
     ],
 
     "model": [
         "طراز المركبة",
         "طراز المركبه",
         "طراز",
-        "car model",
+        "موديل المركبة",
+        "موديل المركبه",
+        "موديل",
         "vehicle model",
-        "model"
+        "car model",
+        "model",
     ],
 
     "year": [
         "سنة الصنع",
         "سنه الصنع",
         "سنة",
-        "car year",
+        "سنه",
+        "year",
+        "model year",
         "vehicle year",
-        "year"
-    ],
-
-    "vin": [
-        "رقم الهيكل",
-        "رقم هیکل",
-        "رقم الشاسيه",
-        "الشاسيه",
-        "chassis number",
-        "chassis",
-        "vin",
-        "vehicle identification"
     ],
 
     "color": [
         "لون المركبة",
         "لون المركبه",
         "لون",
-        "car color",
-        "vehicle colour",
-        "vehicle color",
         "color",
-        "colour"
+        "colour",
+        "vehicle color",
+        "vehicle colour",
     ],
 
     "owner": [
         "اسم المالك",
+        "اسم مالك",
         "المالك",
         "owner name",
-        "owner"
-    ]
+        "owner",
+    ],
 }
 
 
 def label_kind(
     text: str
-) -> Optional[str]:
+):
 
-    source = normalize(text)
-
-    if not source:
-        return None
+    source = normalize(
+        text
+    )
 
     for kind, aliases in LABELS.items():
 
         for alias in aliases:
 
             if normalize(alias) in source:
+
                 return kind
 
     return None
 
 
 # =========================================================
-# Spatial extraction
+# VALUE EXTRACTION
 # =========================================================
 
-def distance(
-    a: tuple[float, float],
-    b: tuple[float, float]
-) -> float:
-
-    return (
-        (a[0] - b[0]) ** 2
-        +
-        (a[1] - b[1]) ** 2
-    ) ** 0.5
-
-
-def value_near_label(
+def value_for_label(
     label: TextItem,
     items: list[TextItem]
-) -> Optional[TextItem]:
+):
 
     lx, ly = box_center(
         label.box
     )
 
-    label_width, label_height = box_size(
+    lw, lh = box_size(
         label.box
     )
 
@@ -638,39 +910,45 @@ def value_near_label(
         dx = x - lx
         dy = y - ly
 
-        # Candidate on the same horizontal row.
+        # Same line
+
         same_row = (
             abs(dy)
             <= max(
-                label_height * 2.5,
-                40
+                lh * 2.0,
+                30
             )
         )
 
-        # Candidate below the label.
+        # Directly below
+
         below = (
             dy > 0
-            and dy
+            and
+            dy
             <= max(
-                label_height * 5,
-                100
+                lh * 4.0,
+                80
             )
         )
 
         if not same_row and not below:
             continue
 
-        # Prefer values to the left/right
-        # of the label before values far below it.
-        score = abs(dy) * 2 + abs(dx)
+        distance_score = (
+            abs(dx)
+            +
+            abs(dy) * 1.5
+        )
 
         if same_row:
-            score *= 0.5
+
+            distance_score *= 0.5
 
         candidates.append(
             (
-                score,
-                item.score,
+                distance_score,
+                -item.score,
                 item
             )
         )
@@ -681,18 +959,23 @@ def value_near_label(
     candidates.sort(
         key=lambda x: (
             x[0],
-            -x[1]
+            x[1]
         )
     )
 
     return candidates[0][2]
 
 
+# =========================================================
+# LABELED FIELDS
+# =========================================================
+
 def extract_labeled_fields(
     items: list[TextItem]
-) -> dict:
+):
 
     result = {
+
         "vehicle_make": None,
         "vehicle_model": None,
         "model_year": None,
@@ -700,26 +983,17 @@ def extract_labeled_fields(
         "owner_name": None,
     }
 
-    labels = []
-
     for item in items:
 
         kind = label_kind(
             item.text
         )
 
-        if kind:
-            labels.append(
-                (
-                    kind,
-                    item
-                )
-            )
+        if not kind:
+            continue
 
-    for kind, label in labels:
-
-        value = value_near_label(
-            label,
+        value = value_for_label(
+            item,
             items
         )
 
@@ -734,10 +1008,16 @@ def extract_labeled_fields(
             continue
 
         if kind == "make":
-            result["vehicle_make"] = text
+
+            result[
+                "vehicle_make"
+            ] = text
 
         elif kind == "model":
-            result["vehicle_model"] = text
+
+            result[
+                "vehicle_model"
+            ] = text
 
         elif kind == "year":
 
@@ -748,31 +1028,62 @@ def extract_labeled_fields(
                 )
             )
 
-            result["model_year"] = (
-                match.group(0)
-                if match
-                else text
-            )
+            if match:
+
+                year = int(
+                    match.group(0)
+                )
+
+                if 1950 <= year <= 2035:
+
+                    result[
+                        "model_year"
+                    ] = str(year)
 
         elif kind == "color":
-            result["color"] = text
+
+            result[
+                "color"
+            ] = text
 
         elif kind == "owner":
-            result["owner_name"] = text
+
+            result[
+                "owner_name"
+            ] = text
 
     return result
 
 
 # =========================================================
-# Final extraction
+# FINAL EXTRACTION
 # =========================================================
 
 def extract_data(
     items: list[TextItem]
-) -> dict:
+):
 
     labeled = extract_labeled_fields(
         items
+    )
+
+    detected_brand, detected_model = (
+        detect_vehicle(items)
+    )
+
+    brand = (
+        labeled["vehicle_make"]
+        or detected_brand
+    )
+
+    model = (
+        labeled["vehicle_model"]
+        or detected_model
+    )
+
+    year = (
+        labeled["model_year"]
+        or find_year(items)
     )
 
     plate = extract_plate(
@@ -783,26 +1094,26 @@ def extract_data(
         items
     )
 
-    year = (
-        labeled["model_year"]
-        or find_year(items)
-    )
-
     return {
+
         "plate_number": plate,
+
         "plate_text_ar": None,
+
         "plate_text_en": plate,
-        "vehicle_make": labeled[
-            "vehicle_make"
-        ],
-        "vehicle_model": labeled[
-            "vehicle_model"
-        ],
+
+        "vehicle_make": brand,
+
+        "vehicle_model": model,
+
         "model_year": year,
+
         "color": labeled[
             "color"
         ],
+
         "vin": vin,
+
         "owner_name": labeled[
             "owner_name"
         ],
@@ -810,15 +1121,18 @@ def extract_data(
 
 
 # =========================================================
-# Health
+# HEALTH
 # =========================================================
 
 @app.get("/health")
-def health() -> dict:
+def health():
 
     return {
+
         "status": "ok",
+
         "engine": "paddleocr-v3",
+
         "languages": [
             "ar",
             "en"
@@ -827,15 +1141,20 @@ def health() -> dict:
 
 
 # =========================================================
-# OCR endpoint
+# OCR ENDPOINT
 # =========================================================
 
 @app.post("/extract-istimara")
 async def extract_istimara(
     file: UploadFile = File(...)
-) -> dict:
+):
+
+    # -----------------------------------------------------
+    # File validation
+    # -----------------------------------------------------
 
     if file.content_type not in SUPPORTED_TYPES:
+
         raise HTTPException(
             status_code=415,
             detail=(
@@ -846,18 +1165,24 @@ async def extract_istimara(
     contents = await file.read()
 
     if not contents:
+
         raise HTTPException(
             status_code=400,
             detail="The uploaded image is empty."
         )
 
     if len(contents) > MAX_FILE_SIZE:
+
         raise HTTPException(
             status_code=413,
             detail=(
                 "The image must not exceed 10 MB."
             )
         )
+
+    # -----------------------------------------------------
+    # Decode image
+    # -----------------------------------------------------
 
     image = cv2.imdecode(
         np.frombuffer(
@@ -868,6 +1193,7 @@ async def extract_istimara(
     )
 
     if image is None:
+
         raise HTTPException(
             status_code=400,
             detail=(
@@ -881,25 +1207,40 @@ async def extract_istimara(
         image
     )
 
-    # Only reject genuinely blurry images.
-    # Do not reject small but sharp images.
+    # -----------------------------------------------------
+    # Blur check only
+    # -----------------------------------------------------
+
     if "IMAGE_BLURRY" in issues:
 
         return {
+
             "success": False,
+
             "data": {},
+
             "quality": {
+
                 "accepted": False,
+
                 "score": 0,
+
                 "width": width,
+
                 "height": height,
+
                 "issues": issues,
+
                 "sharpness": round(
                     sharpness,
                     2
                 ),
             }
         }
+
+    # -----------------------------------------------------
+    # Temporary image
+    # -----------------------------------------------------
 
     temporary_path = None
 
@@ -926,6 +1267,10 @@ async def extract_istimara(
                 temporary.name
             )
 
+        # -------------------------------------------------
+        # OCR
+        # -------------------------------------------------
+
         items, angle = read_items(
             temporary_path
         )
@@ -933,9 +1278,25 @@ async def extract_istimara(
     except Exception as exc:
 
         print(
-            "PaddleOCR error:",
-            type(exc).__name__,
+            "===================================="
+        )
+
+        print(
+            "PaddleOCR ERROR"
+        )
+
+        print(
+            "TYPE:",
+            type(exc).__name__
+        )
+
+        print(
+            "MESSAGE:",
             str(exc)
+        )
+
+        print(
+            "===================================="
         )
 
         raise HTTPException(
@@ -951,53 +1312,77 @@ async def extract_istimara(
 
         if (
             temporary_path
-            and os.path.exists(
+            and
+            os.path.exists(
                 temporary_path
             )
         ):
+
             os.unlink(
                 temporary_path
             )
+
+    # -----------------------------------------------------
+    # Extract
+    # -----------------------------------------------------
 
     data = extract_data(
         items
     )
 
-    average_confidence = (
-        sum(
-            item.score
-            for item in items
+    # -----------------------------------------------------
+    # Confidence
+    # -----------------------------------------------------
+
+    if items:
+
+        average_confidence = (
+            sum(
+                item.score
+                for item in items
+            )
+            /
+            len(items)
         )
-        /
-        len(items)
-        if items
-        else 0
-    )
+
+    else:
+
+        average_confidence = 0.0
+
+    # -----------------------------------------------------
+    # Missing fields
+    # -----------------------------------------------------
 
     missing = []
 
-    # We no longer require make/model
-    # to mark the whole OCR as failed.
-    #
-    # VIN is highly reliable when available.
-    # Plate is also independently extracted.
+    if not data[
+        "plate_number"
+    ]:
 
-    if not data["plate_number"]:
         missing.append(
             "plate_number"
         )
 
-    if not data["vehicle_make"]:
+    if not data[
+        "vehicle_make"
+    ]:
+
         missing.append(
             "vehicle_make"
         )
 
-    if not data["vehicle_model"]:
+    if not data[
+        "vehicle_model"
+    ]:
+
         missing.append(
             "vehicle_model"
         )
 
-    if not data["model_year"]:
+    if not data[
+        "model_year"
+    ]:
+
         missing.append(
             "model_year"
         )
@@ -1007,43 +1392,79 @@ async def extract_istimara(
     )
 
     if average_confidence < 0.70:
+
         quality_issues.append(
             "LOW_TEXT_CONFIDENCE"
         )
 
     if missing:
+
         quality_issues.append(
             "FIELDS_NOT_DETECTED"
         )
 
-    # OCR itself succeeded even if some fields
-    # were not detected.
+    # -----------------------------------------------------
+    # Success
+    # -----------------------------------------------------
+
     accepted = (
         data["plate_number"] is not None
-        or data["vin"] is not None
+        or
+        data["vin"] is not None
     )
 
+    # -----------------------------------------------------
+    # Response
+    # -----------------------------------------------------
+
     return {
+
         "success": accepted,
+
         "data": data,
+
         "quality": {
+
             "accepted": accepted,
-            "score": round(average_confidence, 3),
-            "issues": issues,
+
+            "score": round(
+                average_confidence,
+                3
+            ),
+
+            "issues": quality_issues,
+
             "missing_fields": missing,
+
             "rotation_corrected_degrees": angle,
-            "sharpness": round(sharpness, 2),
+
+            "sharpness": round(
+                sharpness,
+                2
+            ),
+
             "width": width,
+
             "height": height,
-            "detected_text_count": len(items),
+
+            "detected_text_count": len(
+                items
+            ),
         },
+
         "ocr_text": [
+
             {
                 "text": item.text,
-                "score": round(item.score, 3),
+
+                "score": round(
+                    item.score,
+                    3
+                ),
+
                 "box": item.box
             }
+
             for item in items
         ],
-    }
     }
