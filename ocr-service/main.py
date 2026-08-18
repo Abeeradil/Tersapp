@@ -172,8 +172,11 @@ async def extract_istimara(file: UploadFile = File(...)) -> dict:
             temporary.write(contents)
             temporary_path = temporary.name
         items, angle = read_items(temporary_path)
-    except Exception as exc:
-        raise HTTPException(502, "PaddleOCR could not process this image.") from exc
+    except Exception as exc:print(f"PaddleOCR error: {type(exc).__name__}: {exc}")
+            raise HTTPException(
+                502,
+                f"PaddleOCR could not process this image: {type(exc).__name__}: {exc}"
+            ) from exc
     finally:
         if "temporary_path" in locals():
             os.unlink(temporary_path)
