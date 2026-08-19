@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.DTO.IstimaraData;
 import org.example.tears.InpDTO.InpCarDto;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.OutCarDetailsDTO;
@@ -26,6 +27,7 @@ public class CarService {
     private final OcrService ocrService;
     private final CarValidator carValidator;
     private final CarMapper carMapper;
+    private final OpenAiIstimaraService openAiIstimaraService;
 
     // ================= MANUAL =================
     public Map<String, Object> registerCarManual(
@@ -66,26 +68,63 @@ public class CarService {
 
         User user = authService.getAuthenticatedUser(request);
 
+        // 1. Validate image
         carValidator.validateImage(image);
 
-        Map<String, String> info = ocrService.extractCarInfo(image);
+        // 2. OpenAI OCR
+        IstimaraData info =
+                openAiIstimaraService.extractIstimara(image);
 
-        carValidator.validateOcr(info, user);
+        // 3. Validate OCR
+        carValidator.validateOcr(info);
 
-        CarBrand brand = carMapper.detectBrand(info.get("brandName"));
-        CarModel model = carMapper.detectModel(info.get("modelName"), brand);
-        carValidator.validateBrandModel(brand, model);
+        // 4. Detect brand
+        CarBrand brand =
+                carMapper.detectBrand(
+                        info.getVehicle_make()
+                );
 
-        Car car = carMapper.buildAutoCar(info, image, user, brand, model, mileage);
+        // 5. Detect model
+        CarModel model =
+                carMapper.detectModel(
+                        info.getVehicle_model(),
+                        brand
+                );
 
+        // 6. Validate brand/model
+        carValidator.validateBrandModel(
+                brand,
+                model
+        );
+
+        // 7. Build car
+        Car car =
+                carMapper.buildAutoCar(
+                        info,
+                        image,
+                        user,
+                        brand,
+                        model,
+                        mileage
+                );
+
+        // 8. Save
         carRepository.save(car);
 
+        // 9. Build response
         Map<String, Object> response =
                 carMapper.toResponse(
                         car,
                         user.getFullName()
                 );
 
+        // OCR owner name
+        response.put(
+                "istimaraOwnerName",
+                info.getOwner_name()
+        );
+
+        // 10. Send realtime update
         socketService.send(
                 "/topic/cars/" + user.getId(),
                 response
@@ -165,6 +204,32 @@ public class CarService {
                 car,
                 user.getFullName()
         );
+    }
+    private boolean isOwnerMatched(
+            String formOwnerName,
+            String userName
+    ) {
+
+        if (formOwnerName == null || formOwnerName.isBlank()) {
+            return false;
+        }
+
+        if (userName == null || userName.isBlank()) {
+            return false;
+        }
+
+        String formName = normalizeName(formOwnerName);
+        String accountName = normalizeName(userName);
+
+        return formName.equals(accountName);
+    }
+
+    private String normalizeName(String name) {
+
+        return name
+                .trim()
+                .replaceAll("\\s+", " ")
+                .toLowerCase();
     }
 
 

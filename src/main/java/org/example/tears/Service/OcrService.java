@@ -113,4 +113,6 @@ public class OcrService {
         String value = data.path(field).asText("").trim();
         return value.isEmpty() ? null : value;
     }
+
+
 }

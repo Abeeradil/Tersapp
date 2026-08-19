@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.DTO.IstimaraData;
 import org.example.tears.InpDTO.InpCarDto;
 import org.example.tears.Model.Car;
 import org.example.tears.Model.CarModel;
@@ -26,7 +27,6 @@ public class CarMapper {
 
     private final CarBrandRepository carBrandRepository;
     private final CarModelRepository carModelRepository;
-
 
 
     // ================= MANUAL BUILD =================
@@ -68,7 +68,7 @@ public class CarMapper {
 
     // ================= AUTO BUILD =================
     public Car buildAutoCar(
-            Map<String, String> info,
+            IstimaraData info,
             MultipartFile image,
             User user,
             CarBrand brand,
@@ -79,22 +79,54 @@ public class CarMapper {
         Car car = new Car();
 
         car.setCustomer(user.getCustomer());
+
         car.setBrand(brand);
+
         car.setModel(model);
+
         car.setMileage(mileage);
 
-        String ar = info.get("plateNumberArabic");
-        ar = plateService.normalizePlate(ar);
 
-        String en = plateService.convertPlateToEnglish(ar);
+        // ================= PLATE =================
+
+        String ar = info.getPlate_text_ar();
+
+        String en = info.getPlate_text_en();
+
+        if (ar != null && !ar.isBlank()) {
+
+            ar = plateService.normalizePlate(ar);
+
+        }
+
+        if (en == null || en.isBlank()) {
+
+            en = plateService.convertPlateToEnglish(ar);
+
+        }
 
         car.setPlateNumberArabic(ar);
+
         car.setPlateNumberEnglish(en);
 
-        car.setCarYear(parseYear(info.get("carYear")));
+
+        // ================= YEAR =================
+
+        car.setCarYear(
+                parseYear(info.getModel_year())
+        );
+
+
+        // ================= IMAGE =================
 
         if (image != null && !image.isEmpty()) {
-            car.setFormImagePath(fileStorageService.saveFile(image, "forms"));
+
+            car.setFormImagePath(
+                    fileStorageService.saveFile(
+                            image,
+                            "forms"
+                    )
+            );
         }
 
         return car;

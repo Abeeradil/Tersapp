@@ -1,13 +1,12 @@
 package org.example.tears.Service;
 
 import org.example.tears.Api.ApiException;
+import org.example.tears.DTO.IstimaraData;
 import org.example.tears.InpDTO.InpCarDto;
 import org.example.tears.Model.*;
 import org.example.tears.Repository.CarRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.Map;
 
 @Service
 public class CarValidator {
@@ -47,15 +46,31 @@ public class CarValidator {
     }
 
     // ================= OCR =================
-    public void validateOcr(Map<String, String> info, User user) {
+    public void validateOcr(IstimaraData info) {
 
-        if (info == null || info.isEmpty()) {
+        if (info == null) {
             throw new ApiException("OCR empty result");
         }
 
-        if (info.get("plateNumberArabic") == null) {
+        if (isBlank(info.getPlate_text_ar())
+                && isBlank(info.getPlate_text_en())) {
+
             throw new ApiException("Plate not found");
         }
+
+        if (isBlank(info.getVehicle_make())) {
+            throw new ApiException("Vehicle make not found");
+        }
+
+        if (isBlank(info.getVehicle_model())) {
+            throw new ApiException("Vehicle model not found");
+        }
+    }
+
+    private boolean isBlank(String value) {
+
+        return value == null
+                || value.isBlank();
     }
 
     // ================= BRAND/MODEL =================
