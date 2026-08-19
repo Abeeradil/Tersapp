@@ -384,6 +384,11 @@ public class RequestPricingService {
                                 .getId(),
                 carServiceRequestService.toCurrentDto(request)
         );
+        socketService.send(
+                "/topic/request/" +
+                        request.getId(),
+                carServiceRequestService.toResponseDto(request)
+        );
 
         /*
          * ==========================================
