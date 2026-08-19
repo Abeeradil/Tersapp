@@ -402,8 +402,21 @@ import java.util.stream.Collectors;
                 carServiceRequestService.toCurrentDto(request)
         );
         socketService.send(
+                "/topic/past-orders/" +
+                        request.getCustomer()
+                        .getUser()
+                        .getId(),
+                carServiceRequestService.toHistoryDto(request)
+        );
+        socketService.send(
                 "/topic/availability",
                 appointmentService.getAllAvailability()
+        );
+
+        socketService.send(
+                "/topic/request/" +
+                        request.getId(),
+                carServiceRequestService.toResponseDto(request)
         );
 
         socketService.send(
@@ -817,6 +830,11 @@ import java.util.stream.Collectors;
                         request.getCustomer()
                 )
         );
+        socketService.send(
+                "/topic/request/" +
+                        request.getId(),
+                carServiceRequestService.toResponseDto(request)
+        );
     }
 
 
@@ -893,6 +911,13 @@ import java.util.stream.Collectors;
                     "/topic/availability",
                     appointmentService.getAllAvailability()
             );
+
+            socketService.send(
+                    "/topic/current-orders/" +
+                            customer.getUser().getId(),
+                    carServiceRequestService.toCurrentDto(request)
+            );
+
 
         }
 

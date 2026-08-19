@@ -26,6 +26,7 @@ public class CarService {
     private final OcrService ocrService;
     private final CarValidator carValidator;
     private final CarMapper carMapper;
+
     // ================= MANUAL =================
     public Map<String, Object> registerCarManual(
             HttpServletRequest request,

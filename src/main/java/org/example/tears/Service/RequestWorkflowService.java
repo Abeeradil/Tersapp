@@ -167,6 +167,11 @@ public class RequestWorkflowService {
                 carServiceRequestService.toResponseDto(req)
         );
 
+        socketService.send(
+                "/topic/past-orders/" + req.getCustomer().getUser().getId(),
+                carServiceRequestService.toHistoryDto(req)
+        );
+
         notificationService.send(
                 req.getCustomer().getUser(),
 
@@ -971,6 +976,11 @@ public class RequestWorkflowService {
                 carServiceRequestService.toCurrentDto(
                         warranty.getRequest()
                 )
+        );
+
+        socketService.send(
+                "/topic/past-orders/" + warranty.getCustomer().getUser().getId(),
+                carServiceRequestService.toHistoryDto(warranty.getRequest())
         );
 
         // ============================
