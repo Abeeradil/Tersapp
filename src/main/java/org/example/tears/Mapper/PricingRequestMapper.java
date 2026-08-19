@@ -67,6 +67,7 @@ public class PricingRequestMapper {
         dto.setPricingStatus(
                 request.getPricingStatus().name()
         );
+        dto.setCreatedAt(request.getCreatedAt());
 
         // ملاحظة العميل الأصلية
         dto.setProblemDescription(

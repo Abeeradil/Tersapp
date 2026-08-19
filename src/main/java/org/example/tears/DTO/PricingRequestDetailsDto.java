@@ -2,6 +2,7 @@ package org.example.tears.DTO;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 @Data
 public class PricingRequestDetailsDto {
@@ -26,7 +27,10 @@ public class PricingRequestDetailsDto {
                 // الموقع
                 private String address;
 
-                // المشكلة
+                  private LocalDateTime createdAt;
+
+
+                 // المشكلة
                 private String problemDescription;
 
                 private String technicianNote;
