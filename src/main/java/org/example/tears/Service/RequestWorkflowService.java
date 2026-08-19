@@ -124,6 +124,10 @@ public class RequestWorkflowService {
 
         if (status == StaffRequestStatus.DELIVERED) {
 
+            socketService.send(
+                    "/topic/past-orders/" + req.getCustomer().getUser().getId(),
+                    carServiceRequestService.toHistoryDto(req)
+            );
             notificationService.send(
                     req.getCustomer().getUser(),
 
@@ -167,10 +171,6 @@ public class RequestWorkflowService {
                 carServiceRequestService.toResponseDto(req)
         );
 
-        socketService.send(
-                "/topic/past-orders/" + req.getCustomer().getUser().getId(),
-                carServiceRequestService.toHistoryDto(req)
-        );
 
         notificationService.send(
                 req.getCustomer().getUser(),
