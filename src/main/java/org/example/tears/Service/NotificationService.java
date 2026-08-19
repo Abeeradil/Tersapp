@@ -20,7 +20,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import lombok.extern.slf4j.Slf4j;
 import java.util.List;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService {
@@ -68,24 +71,27 @@ public class NotificationService {
 
         Notification saved = repo.save(n);
 
-        // WebSocket
-        if (user.getNotificationsEnabled() != null &&
-                user.getNotificationsEnabled()) {
+        log.info(
+                "Notification saved: userId={}, notificationId={}",
+                user.getId(),
+                saved.getId()
+        );
+
+// WebSocket + FCM
+        if (Boolean.TRUE.equals(user.getNotificationsEnabled())) {
 
             socketService.send(
                     "/topic/notifications/" + user.getId(),
                     toDto(saved)
             );
-        }
 
-// FCM Push
-        if (user.getNotificationsEnabled() != null &&
-                user.getNotificationsEnabled()) {
-
-            fcmService.send(
-                    user,
-                    saved
+            log.info(
+                    "Sending FCM notification: userId={}, notificationId={}",
+                    user.getId(),
+                    saved.getId()
             );
+
+            fcmService.send(user, saved);
         }
     }
 
