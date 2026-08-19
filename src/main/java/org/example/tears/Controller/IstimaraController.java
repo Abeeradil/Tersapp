@@ -163,4 +163,32 @@ public class IstimaraController {
         return value == null
                 || value.isBlank();
     }
+
+    @GetMapping("/test-openai")
+    public ResponseEntity<?> testOpenAi() {
+
+        try {
+            String result = openAiIstimaraService.testConnection();
+
+            return ResponseEntity.ok(
+                    java.util.Map.of(
+                            "success", true,
+                            "message", "OpenAI connection successful",
+                            "response", result
+                    )
+            );
+
+        } catch (Exception e) {
+
+            return ResponseEntity
+                    .internalServerError()
+                    .body(
+                            java.util.Map.of(
+                                    "success", false,
+                                    "message", "OpenAI connection failed",
+                                    "error", e.getMessage()
+                            )
+                    );
+        }
+    }
 }

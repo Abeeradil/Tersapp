@@ -137,6 +137,12 @@ public class OpenAiIstimaraService {
                             String.class
                     );
 
+            System.out.println("======================================");
+            System.out.println("OPENAI STATUS: " + response.getStatusCode());
+            System.out.println("OPENAI RESPONSE:");
+            System.out.println(response.getBody());
+            System.out.println("======================================");
+
 
             if (!response.getStatusCode().is2xxSuccessful()) {
 
@@ -590,5 +596,59 @@ public class OpenAiIstimaraService {
         throw new RuntimeException(
                 "Could not find structured JSON in OpenAI response."
         );
+    }
+    public String testConnection() {
+
+        try {
+
+            HttpHeaders headers = new HttpHeaders();
+
+            headers.setBearerAuth(apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> request = new LinkedHashMap<>();
+
+            request.put("model", model);
+
+            request.put(
+                    "input",
+                    "Reply with exactly: OPENAI_CONNECTION_OK"
+            );
+
+            HttpEntity<Map<String, Object>> entity =
+                    new HttpEntity<>(
+                            request,
+                            headers
+                    );
+
+            ResponseEntity<String> response =
+                    restTemplate.exchange(
+                            openAiUrl,
+                            HttpMethod.POST,
+                            entity,
+                            String.class
+                    );
+
+            System.out.println("=================================");
+            System.out.println("OPENAI TEST STATUS:");
+            System.out.println(response.getStatusCode());
+            System.out.println("OPENAI TEST RESPONSE:");
+            System.out.println(response.getBody());
+            System.out.println("=================================");
+
+            return response.getBody();
+
+        } catch (Exception e) {
+
+            System.out.println("=================================");
+            System.out.println("OPENAI CONNECTION ERROR");
+            System.out.println(e.getMessage());
+            System.out.println("=================================");
+
+            throw new RuntimeException(
+                    "OpenAI connection failed: " + e.getMessage(),
+                    e
+            );
+        }
     }
 }
