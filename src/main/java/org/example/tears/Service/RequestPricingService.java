@@ -387,7 +387,7 @@ public class RequestPricingService {
         socketService.send(
                 "/topic/request/" +
                         request.getId(),
-                carServiceRequestService.toResponseDto(request)
+                carServiceRequestService.toDetailsDto(request)
         );
 
         /*

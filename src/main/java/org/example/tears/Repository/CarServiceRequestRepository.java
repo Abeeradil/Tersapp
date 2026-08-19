@@ -1,11 +1,13 @@
 package org.example.tears.Repository;
 
+import jakarta.persistence.LockModeType;
 import org.example.tears.Enums.CustomerRequestStatus;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -86,5 +88,9 @@ AND
     List<CarServiceRequest> findByAppointmentDate(LocalDate appointmentDate);
 
     List<CarServiceRequest> findAllByOrderByIdDesc();
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM CarServiceRequest r WHERE r.id = :id")
+    Optional<CarServiceRequest> findByIdForUpdate(@Param("id") Integer id);
 
 }

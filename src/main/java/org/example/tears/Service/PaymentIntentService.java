@@ -24,7 +24,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -625,13 +624,24 @@ public class PaymentIntentService {
             PaymentIntent intent,
             String paymentId
     ) {
+        intent = paymentIntentRepository
+                .findByIdForUpdate(intent.getId())
+                .orElseThrow(() ->
+                        new ApiException("PaymentIntent not found"));
+
 
         if (intent.getPaymentStatus() == PaymentStatus.PAID) {
+
+            if (intent.getPaymentId() != null
+                    && !intent.getPaymentId().equals(paymentId)) {
+                throw new ApiException("Payment already completed with another transaction");
+            }
 
             return carServiceRequestService.toResponseDto(
                     intent.getServiceRequest()
             );
         }
+
         CarServiceRequest request = intent.getServiceRequest();
 
         if (request == null) {
@@ -766,6 +776,7 @@ public class PaymentIntentService {
             HttpServletRequest request,
             CreateRequestStepDto dto
     ) {
+        
 
         User user = authService.getAuthenticatedUser(request);
 
@@ -773,6 +784,7 @@ public class PaymentIntentService {
                 carServiceRequestService.buildValidatedRequest(user, dto);
 
         PaymentIntent intent = new PaymentIntent();
+
         intent.setCustomer(user.getCustomer());
         intent.setCar(draft.getCar());
         intent.setServiceOption(draft.getServiceOption());
@@ -1095,11 +1107,55 @@ public class PaymentIntentService {
 
         User user = authService.getAuthenticatedUser(httpRequest);
 
+        // 1. جلب الطلب
         CarServiceRequest request =
-                requestRepository.findById(requestId)
+                requestRepository.findByIdForUpdate(requestId)
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
+        // 2. التحقق من ملكية الطلب قبل أي عملية دفع
+        if (request.getCustomer() == null
+                || user.getCustomer() == null
+                || !request.getCustomer().getId()
+                .equals(user.getCustomer().getId())) {
+
+            throw new ApiException("غير مصرح لك");
+        }
+
+        // 3. التأكد أن الدفعة النهائية لم تتم مسبقًا
+        if (Boolean.TRUE.equals(request.isFinalPaid())) {
+            throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
+        }
+
+        // 4. التأكد من وجود مبلغ صحيح
+        if (request.getFinalPrice() == null
+                || request.getFinalPrice() <= 0) {
+
+            throw new ApiException("لا يوجد مبلغ للدفع");
+        }
+
+        // 5. التحقق من حالة الموافقة
+        RequestApproval approval =
+                approvalRepo.findByRequest_Id(requestId)
+                        .orElseThrow(() ->
+                                new ApiException("لا يوجد تقرير للموافقة"));
+
+        /*
+         * حسب منطق النظام عندك:
+         *
+         * approved = false
+         * → لم تتم الدفعة النهائية بعد
+         *
+         * approved = true
+         * → الدفعة النهائية تمت وتم اعتماد التقرير
+         *
+         * لذلك لا تسمحي بإنشاء دفعة جديدة إذا كانت true.
+         */
+        if (Boolean.TRUE.equals(approval.getApproved())) {
+            throw new ApiException("تمت الموافقة على التقرير مسبقاً");
+        }
+
+        // 6. البحث عن PaymentIntent موجود لنفس الطلب ونفس نوع الدفعة
         PaymentIntent existingIntent =
                 paymentIntentRepository.findByServiceRequestIdAndType(
                         request.getId(),
@@ -1108,14 +1164,24 @@ public class PaymentIntentService {
 
         if (existingIntent != null) {
 
-            if (existingIntent.getPaymentStatus() == PaymentStatus.PAID) {
+            PaymentStatus status = existingIntent.getPaymentStatus();
+
+            // 6.1 إذا تمت الدفعة بالفعل
+            if (status == PaymentStatus.PAID) {
                 throw new ApiException("تم سداد الدفعة النهائية مسبقاً");
             }
 
-            if (existingIntent.getExpiresAt() != null
-                    && existingIntent.getExpiresAt().isAfter(LocalDateTime.now())
-                    && (existingIntent.getPaymentStatus() == PaymentStatus.INITIATED
-                    || existingIntent.getPaymentStatus() == PaymentStatus.PENDING)) {
+            // 6.2 إذا كانت محاولة الدفع ما زالت صالحة
+            boolean notExpired =
+                    existingIntent.getExpiresAt() != null
+                            && existingIntent.getExpiresAt()
+                            .isAfter(LocalDateTime.now());
+
+            boolean paymentStillActive =
+                    status == PaymentStatus.INITIATED
+                            || status == PaymentStatus.PENDING;
+
+            if (notExpired && paymentStillActive) {
 
                 return new FinalMobilePaymentResponse(
                         existingIntent.getId(),
@@ -1126,63 +1192,50 @@ public class PaymentIntentService {
                 );
             }
 
-            paymentIntentRepository.delete(existingIntent);
-        }
+            /*
+             * 6.3 يوجد Intent قديم لكنه منتهي
+             *
+             * بدل إنشاء Row جديد ثم الاصطدام بـ Unique Constraint
+             * نعيد استخدام نفس الـPaymentIntent ونحدّث بيانات المحاولة.
+             */
+            existingIntent.setCustomer(user.getCustomer());
+            existingIntent.setPaymentMethod(request.getPaymentMethod());
 
-        if (!request.getCustomer().getId()
-                .equals(user.getCustomer().getId())) {
+            existingIntent.setInitialPaymentAmount(
+                    request.getFinalPrice().doubleValue()
+            );
 
-            throw new ApiException("غير مصرح لك");
-        }
+            int amount = request.getFinalPrice() * 100;
 
-        if (request.isFinalPaid()) {
-            throw new ApiException("تم الدفع مسبقاً");
-        }
+            existingIntent.setInitialPaymentAmountHalalah(amount);
 
-        if (request.getFinalPrice() == null ||
-                request.getFinalPrice() <= 0) {
+            existingIntent.setPaymentStatus(PaymentStatus.INITIATED);
 
-            throw new ApiException("لا يوجد مبلغ للدفع");
-        }
+            existingIntent.setCreatedAt(LocalDateTime.now());
+            existingIntent.setExpiresAt(
+                    LocalDateTime.now().plusMinutes(5)
+            );
 
-        RequestApproval approval =
-                approvalRepo.findByRequest_Id(requestId)
-                        .orElseThrow(() ->
-                                new ApiException("لا يوجد تقرير للموافقة"));
+            existingIntent.setGivenId(UUID.randomUUID().toString());
 
-        if (Boolean.TRUE.equals(approval.getApproved())) {
-            throw new ApiException("تمت الموافقة على التقرير مسبقاً");
-        }
+            existingIntent.setPaymentId(null);
+            existingIntent.setPaidAt(null);
 
-        PaymentIntent oldIntent =
-                paymentIntentRepository
-                        .findByServiceRequestIdAndTypeAndPaymentStatusInAndExpiresAtAfter(
-                                request.getId(),
-                                PaymentIntentType.FINAL_PAYMENT,
-                                List.of(
-                                        PaymentStatus.INITIATED,
-                                        PaymentStatus.PENDING
-                                ),
-                                LocalDateTime.now()
-                        )
-                        .orElse(null);
+            existingIntent.setType(PaymentIntentType.FINAL_PAYMENT);
 
-        if (oldIntent != null) {
+            paymentIntentRepository.save(existingIntent);
 
             return new FinalMobilePaymentResponse(
-
-                    oldIntent.getId(),
-
-                    oldIntent.getGivenId(),
-
-                    oldIntent.getInitialPaymentAmountHalalah(),
-
+                    existingIntent.getId(),
+                    existingIntent.getGivenId(),
+                    amount,
                     "SAR",
-
                     "PREPARED"
             );
         }
 
+        // 7. لا يوجد PaymentIntent سابق
+        // ننشئ واحدًا جديدًا
         PaymentIntent intent = new PaymentIntent();
 
         intent.setCustomer(user.getCustomer());
@@ -1200,7 +1253,9 @@ public class PaymentIntentService {
         intent.setPaymentStatus(PaymentStatus.INITIATED);
 
         intent.setCreatedAt(LocalDateTime.now());
-        intent.setExpiresAt(LocalDateTime.now().plusMinutes(5));
+        intent.setExpiresAt(
+                LocalDateTime.now().plusMinutes(5)
+        );
 
         intent.setGivenId(UUID.randomUUID().toString());
 
@@ -1209,15 +1264,10 @@ public class PaymentIntentService {
         paymentIntentRepository.save(intent);
 
         return new FinalMobilePaymentResponse(
-
                 intent.getId(),
-
                 intent.getGivenId(),
-
                 amount,
-
                 "SAR",
-
                 "PREPARED"
         );
     }

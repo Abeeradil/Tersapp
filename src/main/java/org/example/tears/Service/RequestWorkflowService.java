@@ -168,7 +168,7 @@ public class RequestWorkflowService {
 
         socketService.send(
                 "/topic/request/" + req.getId(),
-                carServiceRequestService.toResponseDto(req)
+                carServiceRequestService.toDetailsDto(req)
         );
 
 
@@ -364,7 +364,7 @@ public class RequestWorkflowService {
 
         socketService.send(
                 "/topic/request/" + req.getId(),
-                carServiceRequestService.toResponseDto(req)
+                carServiceRequestService.toDetailsDto(req)
         );
 
         // ===========================

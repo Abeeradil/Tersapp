@@ -14,7 +14,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "payment_intents")
+@Table(
+        name = "payment_intents",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_payment_intent_request_type",
+                        columnNames = {"service_request_id", "type"}
+                )
+        }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -63,9 +71,9 @@ public class PaymentIntent {
     @Enumerated(EnumType.STRING)
     private PaymentIntentType type;
 
-    @OneToOne
+    @ManyToOne
+    @JoinColumn(name = "service_request_id")
     private CarServiceRequest serviceRequest;
-
 
     private String invoiceId;
     private String checkoutUrl;

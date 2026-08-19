@@ -10,6 +10,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, Integer> {
 
@@ -18,13 +22,6 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, In
             String invoiceId
     );
     Optional<PaymentIntent> findByGivenId(String givenId);
-
-    Optional<PaymentIntent> findByServiceRequestIdAndTypeAndPaymentStatusInAndExpiresAtAfter(
-            Integer serviceRequestId,
-            PaymentIntentType type,
-            List<PaymentStatus> statuses,
-            LocalDateTime now
-    );
 
     Optional<PaymentIntent> findByServiceRequestIdAndType(
             Integer serviceRequestId,
@@ -37,5 +34,8 @@ public interface PaymentIntentRepository extends JpaRepository<PaymentIntent, In
             List<PaymentStatus> statuses,
             LocalDateTime expiresAt
     );
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT p FROM PaymentIntent p WHERE p.id = :id")
+    Optional<PaymentIntent> findByIdForUpdate(@Param("id") Integer id);
 
 }
