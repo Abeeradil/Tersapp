@@ -12,4 +12,9 @@ public interface UserDeviceRepository
     List<UserDevice> findByUserIdAndActiveTrue(Integer userId);
 
     Optional<UserDevice> findByFcmToken(String fcmToken);
+
+    Optional<UserDevice> findByFcmTokenAndUserId(
+            String fcmToken,
+            Integer userId
+    );
 }

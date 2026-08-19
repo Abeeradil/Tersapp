@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.NotificationActionDto;
 import org.example.tears.DTO.NotificationDto;
 import org.example.tears.DTO.NotificationListResponse;
@@ -197,6 +198,28 @@ public class NotificationService {
         if (device.getCreatedAt() == null) {
             device.setCreatedAt(LocalDateTime.now());
         }
+
+        userDeviceRepository.save(device);
+    }
+
+    @Transactional
+    public void unregisterDevice(User user, String fcmToken) {
+
+        if (fcmToken == null || fcmToken.isBlank()) {
+            throw new ApiException("FCM token is required");
+        }
+
+        UserDevice device =
+                userDeviceRepository
+                        .findByFcmTokenAndUserId(
+                                fcmToken,
+                                user.getId()
+                        )
+                        .orElseThrow(() ->
+                                new ApiException("Device not found"));
+
+        device.setActive(false);
+        device.setUpdatedAt(LocalDateTime.now());
 
         userDeviceRepository.save(device);
     }

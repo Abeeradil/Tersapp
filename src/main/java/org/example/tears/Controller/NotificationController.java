@@ -1,11 +1,15 @@
 package org.example.tears.Controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.NotificationListResponse;
 import org.example.tears.DTO.RegisterDeviceDto;
+import org.example.tears.DTO.UnregisterDeviceDto;
 import org.example.tears.Model.User;
+import org.example.tears.Service.AuthService;
 import org.example.tears.Service.NotificationService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class NotificationController {
 
     private final NotificationService notificationService;
+    private final AuthService authService;
 
 
     // إشعاراتي
@@ -70,4 +75,27 @@ public class NotificationController {
                 "تم تسجيل الجهاز"
         );
     }
+
+    @DeleteMapping("/notifications/device")
+    public ResponseEntity<ApiResponse> unregisterDevice(
+            HttpServletRequest request,
+            @RequestBody UnregisterDeviceDto dto
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        notificationService.unregisterDevice(
+                user,
+                dto.getFcmToken()
+        );
+
+        return ResponseEntity.ok(
+                new ApiResponse(
+                        true,
+                        "Device unregistered successfully",
+                        null
+                )
+        );
+    }
+
 }
