@@ -271,6 +271,37 @@ public class OpenAiIstimaraService {
                   be reliably determined from the image or the
                   corresponding representation, return null rather
                   than guessing.
+               
+                  PLATE FORMAT:
+               
+                          The Saudi vehicle plate consists of:
+               
+                          - three Arabic letters
+                          - four Arabic digits
+                
+                          The field plate_number MUST contain the COMPLETE plate,
+                          including the three letters AND the four digits.
+                
+                          plate_text_ar MUST contain the COMPLETE Arabic plate,
+                          including the three Arabic letters AND four Arabic digits.
+                
+                          plate_text_en MUST contain the COMPLETE English plate,
+                          including the three English letters AND four digits.
+                
+                          Never return only the letters.
+                
+                          Never return only the digits.
+                
+                          Example:
+                
+                          plate_number: "3266 KER"
+                          plate_text_ar: "ر ك ع ٣٢٦٦"
+                          plate_text_en: "3266 KER"
+               
+                          All three fields must represent the SAME physical plate.
+               
+                          Before returning the JSON, inspect the entire plate
+                          again and verify that all four digits are included.
         
         
                 VIN:
@@ -343,7 +374,7 @@ public class OpenAiIstimaraService {
                 """
                 Extract the following fields from this Saudi
                 vehicle registration document:
-
+        
                 - plate_number
                 - plate_text_ar
                 - plate_text_en
@@ -353,9 +384,25 @@ public class OpenAiIstimaraService {
                 - color
                 - vin
                 - owner_name
-
-                Be especially careful with Arabic fields.
-                Do not guess.
+        
+                IMPORTANT PLATE REQUIREMENT:
+        
+                The plate MUST contain the complete plate number:
+                three letters and four digits.
+        
+                plate_number must contain all letters and digits.
+        
+                plate_text_ar must contain all three Arabic letters
+                and all four Arabic digits.
+        
+                plate_text_en must contain all three English letters
+                and all four digits.
+        
+                Do not return only the letters.
+        
+                Do not omit any digit.
+        
+                Carefully inspect the entire plate before answering.
                 """
         );
 

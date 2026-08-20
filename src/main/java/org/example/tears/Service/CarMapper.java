@@ -89,14 +89,45 @@ public class CarMapper {
 
         // ================= PLATE =================
 
+        // ================= PLATE =================
+
         String ar = info.getPlate_text_ar();
         String en = info.getPlate_text_en();
+        String plateNumber = info.getPlate_number();
 
-        Map<String, String> plate =
-                plateService.normalizePlatePair(ar, en);
+// إذا plate_text_ar أو plate_text_en ناقصين،
+// استخدم plate_number كمصدر للوحة الكاملة.
 
-        ar = plate.get("ar");
-        en = plate.get("en");
+        if (plateNumber != null && !plateNumber.isBlank()) {
+
+            plateNumber = plateService.normalizePlate(plateNumber);
+
+            // إذا كانت plate_number تحتوي على أرقام وحروف إنجليزية
+            // نستخدمها كأساس للوحة الإنجليزية.
+            if (plateNumber.matches(".*[A-Z].*")) {
+                en = plateNumber;
+            }
+        }
+
+// إذا الإنجليزية موجودة، نحاول تحويلها للعربي
+        if (en != null && !en.isBlank()) {
+            en = plateService.normalizePlate(en);
+
+            String convertedAr =
+                    plateService.convertPlateToArabic(en);
+
+            if (convertedAr != null && !convertedAr.isBlank()) {
+                ar = convertedAr;
+            }
+        }
+
+// إذا العربي موجود والإنجليزي غير موجود
+        if ((en == null || en.isBlank())
+                && ar != null
+                && !ar.isBlank()) {
+
+            en = plateService.convertPlateToEnglish(ar);
+        }
 
         if (ar == null || ar.isBlank()) {
             throw new RuntimeException(
@@ -108,7 +139,6 @@ public class CarMapper {
             throw new RuntimeException(
                     "English plate could not be detected"
             );
-
         }
 
         car.setPlateNumberArabic(ar);
