@@ -9,13 +9,10 @@ import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
-import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.Employee;
-import org.example.tears.Model.Location;
 import org.example.tears.Model.User;
 import org.example.tears.OutDTO.EmployeeLoginInfo;
-import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.EmployeeRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -137,14 +134,5 @@ public class AdminService {
 
         return new ApiResponse(true,"Employee deactivated");
     }
-    private LocationDto mapLocation(Location loc) {
-        if (loc == null) return null;
 
-        LocationDto dto = new LocationDto();
-        dto.setId(loc.getId());
-        dto.setLat(loc.getLat());
-        dto.setLng(loc.getLng());
-        dto.setAddress(loc.getAddress());
-        return dto;
-    }
 }

@@ -3,13 +3,13 @@ package org.example.tears.Mapper;
 import lombok.AllArgsConstructor;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
+import org.example.tears.InpDTO.LocationDto;
 import org.example.tears.Model.*;
 import org.example.tears.OutDTO.EmployeeRequestDetailsDto;
 import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestNoteRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.example.tears.Repository.WarrantyRepository;
-import org.example.tears.Service.CarServiceRequestService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -27,7 +27,6 @@ public class RequestMapper {
     private final RequestApprovalRepository approvalRepo;
     private final WarrantyRepository warrantyRepo;
     private final RequestNoteRepository noteRepo;
-    private final CarServiceRequestService carServiceRequestService;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -756,10 +755,9 @@ public class RequestMapper {
 
         if (warranty.getReceivingLocation() != null) {
             dto.setReceivingLocation(
-                    carServiceRequestService.mapLocation(warranty.getReceivingLocation())
+                    mapLocation(warranty.getReceivingLocation())
             );
         }
-
 
         // ===========================
         // Warranty Delivery Appointment
@@ -775,7 +773,7 @@ public class RequestMapper {
 
         if (warranty.getDeliveryLocation() != null) {
             dto.setDeliveryLocation(
-                    carServiceRequestService.mapLocation(warranty.getDeliveryLocation())
+                    mapLocation(warranty.getDeliveryLocation())
             );
         }
         // =========================
@@ -810,6 +808,17 @@ public class RequestMapper {
 
         dto.setTimeline(timeline);
 
+        return dto;
+    }
+
+    private LocationDto mapLocation(Location loc) {
+        if (loc == null) return null;
+
+        LocationDto dto = new LocationDto();
+        dto.setId(loc.getId());
+        dto.setLat(loc.getLat());
+        dto.setLng(loc.getLng());
+        dto.setAddress(loc.getAddress());
         return dto;
     }
 }
