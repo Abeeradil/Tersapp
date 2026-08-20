@@ -85,30 +85,10 @@ public class CarMapper {
 
         // ================= PLATE =================
 
-        String lettersAr = info.getPlate_text_ar();
-        String lettersEn = info.getPlate_text_en();
-        String number = info.getPlate_number();
+        // ================= PLATE =================
 
-        String ar = plateService.buildArabicPlate(
-                lettersAr,
-                number
-        );
-
-        String en = null;
-
-        if (lettersEn != null && !lettersEn.isBlank()
-                && number != null && !number.isBlank()) {
-
-            en = number.trim() + " " + lettersEn.trim();
-
-        } else if (lettersEn != null && !lettersEn.isBlank()) {
-
-            en = lettersEn.trim();
-
-        } else if (number != null && !number.isBlank()) {
-
-            en = number.trim();
-        }
+        String ar = info.getPlate_text_ar();
+        String en = info.getPlate_text_en();
 
         car.setPlateNumberArabic(ar);
         car.setPlateNumberEnglish(en);
