@@ -24,7 +24,6 @@ public class CarService {
     private final SocketService socketService;
 
 
-    private final OcrService ocrService;
     private final CarValidator carValidator;
     private final CarMapper carMapper;
     private final OpenAiIstimaraService openAiIstimaraService;
@@ -75,6 +74,9 @@ public class CarService {
         IstimaraData info =
                 openAiIstimaraService.extractIstimara(image);
 
+        System.out.println("PLATE NUMBER = [" + info.getPlate_number() + "]");
+        System.out.println("PLATE AR     = [" + info.getPlate_text_ar() + "]");
+        System.out.println("PLATE EN     = [" + info.getPlate_text_en() + "]");
         // 3. Validate OCR
         carValidator.validateOcr(info);
 
