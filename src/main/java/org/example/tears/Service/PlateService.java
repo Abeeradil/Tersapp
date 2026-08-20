@@ -110,6 +110,59 @@ public class PlateService {
 
         return sb.toString();
     }
+    public String convertNumbersToArabic(String value) {
+
+        if (value == null) {
+            return null;
+        }
+
+        return value
+                .replace('0', '٠')
+                .replace('1', '١')
+                .replace('2', '٢')
+                .replace('3', '٣')
+                .replace('4', '٤')
+                .replace('5', '٥')
+                .replace('6', '٦')
+                .replace('7', '٧')
+                .replace('8', '٨')
+                .replace('9', '٩');
+    }
+
+    public String buildArabicPlate(String letters, String number) {
+
+        if (letters == null || letters.isBlank()) {
+            return convertNumbersToArabic(number);
+        }
+
+        if (number == null || number.isBlank()) {
+            return letters.trim();
+        }
+
+        String cleanLetters = letters
+                .trim()
+                .replaceAll("\\s+", "");
+
+        String cleanNumber = number
+                .trim()
+                .replaceAll("\\s+", "");
+
+        StringBuilder separatedLetters = new StringBuilder();
+
+        for (char c : cleanLetters.toCharArray()) {
+
+            if (separatedLetters.length() > 0) {
+                separatedLetters.append(" ");
+            }
+
+            separatedLetters.append(c);
+        }
+
+        String arabicNumber =
+                convertNumbersToArabic(cleanNumber);
+
+        return separatedLetters + " " + arabicNumber;
+    }
 
     // ================= VALIDATE AR =================
 

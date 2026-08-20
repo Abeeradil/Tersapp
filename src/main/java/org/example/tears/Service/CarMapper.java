@@ -79,78 +79,45 @@ public class CarMapper {
         Car car = new Car();
 
         car.setCustomer(user.getCustomer());
-
         car.setBrand(brand);
-
         car.setModel(model);
-
         car.setMileage(mileage);
 
-
         // ================= PLATE =================
 
-        // ================= PLATE =================
+        String lettersAr = info.getPlate_text_ar();
+        String lettersEn = info.getPlate_text_en();
+        String number = info.getPlate_number();
 
-        String ar = info.getPlate_text_ar();
-        String en = info.getPlate_text_en();
-        String plateNumber = info.getPlate_number();
+        String ar = plateService.buildArabicPlate(
+                lettersAr,
+                number
+        );
 
-// إذا plate_text_ar أو plate_text_en ناقصين،
-// استخدم plate_number كمصدر للوحة الكاملة.
+        String en = null;
 
-        if (plateNumber != null && !plateNumber.isBlank()) {
+        if (lettersEn != null && !lettersEn.isBlank()
+                && number != null && !number.isBlank()) {
 
-            plateNumber = plateService.normalizePlate(plateNumber);
+            en = number.trim() + " " + lettersEn.trim();
 
-            // إذا كانت plate_number تحتوي على أرقام وحروف إنجليزية
-            // نستخدمها كأساس للوحة الإنجليزية.
-            if (plateNumber.matches(".*[A-Z].*")) {
-                en = plateNumber;
-            }
-        }
+        } else if (lettersEn != null && !lettersEn.isBlank()) {
 
-// إذا الإنجليزية موجودة، نحاول تحويلها للعربي
-        if (en != null && !en.isBlank()) {
-            en = plateService.normalizePlate(en);
+            en = lettersEn.trim();
 
-            String convertedAr =
-                    plateService.convertPlateToArabic(en);
+        } else if (number != null && !number.isBlank()) {
 
-            if (convertedAr != null && !convertedAr.isBlank()) {
-                ar = convertedAr;
-            }
-        }
-
-// إذا العربي موجود والإنجليزي غير موجود
-        if ((en == null || en.isBlank())
-                && ar != null
-                && !ar.isBlank()) {
-
-            en = plateService.convertPlateToEnglish(ar);
-        }
-
-        if (ar == null || ar.isBlank()) {
-            throw new RuntimeException(
-                    "Arabic plate could not be detected"
-            );
-        }
-
-        if (en == null || en.isBlank()) {
-            throw new RuntimeException(
-                    "English plate could not be detected"
-            );
+            en = number.trim();
         }
 
         car.setPlateNumberArabic(ar);
         car.setPlateNumberEnglish(en);
-
 
         // ================= YEAR =================
 
         car.setCarYear(
                 parseYear(info.getModel_year())
         );
-
 
         // ================= IMAGE =================
 
