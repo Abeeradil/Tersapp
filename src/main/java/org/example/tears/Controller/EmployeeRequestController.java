@@ -33,9 +33,15 @@ import java.util.List;
 
     @GetMapping("/my/requests")
     public List<EmployeeRequestResponseDto> myRequests(
-            @AuthenticationPrincipal User user
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) StaffRequestStatus status,
+            @RequestParam(required = false, defaultValue = "ALL") String type
     ) {
-        return requestQueryService.getMyRequests(user.getEmployee());
+        return requestQueryService.getMyRequests(
+                user.getEmployee(),
+                status,
+                type
+        );
     }
 
     @GetMapping("/details/{id}")
@@ -97,20 +103,6 @@ import java.util.List;
                 plateEnglish
         );
     }
-
-    @GetMapping("/my/status/requests")
-    public List<EmployeeRequestResponseDto> myRequests(
-            @AuthenticationPrincipal User user,
-            @RequestParam(required = false) StaffRequestStatus status
-    ) {
-
-        if (status == null) {
-            return requestQueryService.getMyRequests(user.getEmployee());
-        }
-
-        return requestQueryService.getMyRequestsByStatus(user.getEmployee(), status);
-    }
-
 
 
 

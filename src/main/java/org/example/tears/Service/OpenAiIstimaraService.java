@@ -209,73 +209,118 @@ public class OpenAiIstimaraService {
                 "instructions",
                 """
                 You are an expert document extraction system.
-
+        
                 You are analyzing a Saudi Arabian vehicle
                 registration document (Istimara).
-
+        
                 The document may contain BOTH Arabic and English.
-
+        
                 Your job is to carefully inspect the entire image
                 and extract vehicle information.
-
+        
                 IMPORTANT RULES:
-
+        
                 1. Read Arabic and English text.
-
+        
                 2. Use the labels and the physical position of
                    fields on the document to identify values.
-
+        
                 3. Do NOT confuse the plate number with a document
                    number, serial number, registration number,
                    transaction number, or any other number.
-
+        
                 4. Do NOT confuse the VIN/chassis number with
                    the plate number.
-
-                5. Saudi vehicle plates contain Arabic letters
-                   and numbers. If the Arabic plate characters
-                   are visible, return them in plate_text_ar.
-
-                6. Return the corresponding English representation
-                   in plate_text_en when it can be reliably determined.
-
-                7. The VIN must normally contain exactly 17
-                   characters. If a 17-character VIN is visible,
-                   return it exactly as printed.
-
+        
+        
+                IMPORTANT PLATE READING:
+        
+                Saudi vehicle plates normally contain three Arabic
+                letters and four Arabic digits.
+        
+                - Carefully inspect the entire plate area before
+                  returning the result.
+        
+                - Read ALL visible Arabic letters on the plate.
+        
+                - Do NOT stop after reading two letters.
+        
+                - Pay special attention to the middle letter.
+        
+                - If all three Arabic letters are visible,
+                  plate_text_ar MUST contain all three letters.
+        
+                - If all three corresponding English letters can
+                  be reliably determined, plate_text_en MUST
+                  contain all three letters.
+        
+                - Do not omit a middle letter.
+        
+                - Compare the Arabic and English representations
+                  of the SAME plate before returning the result.
+        
+                - If a letter is clearly visible in one representation
+                  and its corresponding character can be reliably
+                  determined from the same plate, use that information
+                  to complete the other representation.
+        
+                - Do NOT invent a character that is not visible or
+                  reliably determinable.
+        
+                - If one character is genuinely unreadable and cannot
+                  be reliably determined from the image or the
+                  corresponding representation, return null rather
+                  than guessing.
+        
+        
+                VIN:
+        
+                5. The VIN normally contains exactly 17 characters.
+        
+                6. If a 17-character VIN is visible, return it
+                   exactly as printed.
+        
+                7. Do not confuse the VIN/chassis number with
+                   the plate number.
+        
+        
+                VEHICLE INFORMATION:
+        
                 8. Identify the vehicle make from the actual
                    vehicle make field.
-
+        
                 9. Identify the vehicle model from the actual
                    vehicle model field.
-
+        
                 10. Identify the model year from the actual
                     manufacturing/model-year field.
-
+        
                 11. Identify the vehicle color from the actual
                     color field.
-
+        
                 12. Identify the owner name from the actual
                     owner field.
-
+        
+        
+                GENERAL RULES:
+        
                 13. Do not invent information.
-
+        
                 14. If a field is not visible or cannot be read
                     reliably, return null.
-
+        
                 15. Do not use general knowledge to guess missing
                     values.
-
+        
                 16. Carefully inspect small Arabic text.
-
+        
                 17. The image may be low resolution. Use the
                     surrounding labels and document layout to
-                    interpret the fields.
-
+                    identify the correct fields.
+        
                 18. Return ONLY the requested JSON structure.
                 """
         );
-
 
         // =====================================================
         // Input

@@ -90,23 +90,28 @@ public class CarMapper {
         // ================= PLATE =================
 
         String ar = info.getPlate_text_ar();
-
         String en = info.getPlate_text_en();
 
-        if (ar != null && !ar.isBlank()) {
+        Map<String, String> plate =
+                plateService.normalizePlatePair(ar, en);
 
-            ar = plateService.normalizePlate(ar);
+        ar = plate.get("ar");
+        en = plate.get("en");
 
+        if (ar == null || ar.isBlank()) {
+            throw new RuntimeException(
+                    "Arabic plate could not be detected"
+            );
         }
 
         if (en == null || en.isBlank()) {
-
-            en = plateService.convertPlateToEnglish(ar);
+            throw new RuntimeException(
+                    "English plate could not be detected"
+            );
 
         }
 
         car.setPlateNumberArabic(ar);
-
         car.setPlateNumberEnglish(en);
 
 

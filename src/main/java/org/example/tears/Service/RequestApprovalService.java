@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
     private final WarrantyService warrantyService;
     private final AppointmentService appointmentService;
     private final RequestNoteRepository noteRepo;
-
+    private final RequestQueryService requestQueryService;
 
 
     public ResponseEntity<byte[]> downloadCustomerReport(
@@ -898,13 +898,13 @@ import java.util.stream.Collectors;
             socketService.send(
                     "/topic/warranty/" +
                             customer.getUser().getId(),
-                    warrantyService.toResponseDto(warranty)
+                    warrantyService.toWarrantyResponseDto(warranty)
             );
 
             socketService.send(
                     "/topic/warranty-details/" +
                             warranty.getId(),
-                    warrantyService.toDetailsDto(warranty)
+                    warrantyService.toWarrantyDetailsDto(warranty)
             );
 
             socketService.send(
@@ -917,6 +917,45 @@ import java.util.stream.Collectors;
                             customer.getUser().getId(),
                     carServiceRequestService.toCurrentDto(request)
             );
+
+// ==========================================
+// EMPLOYEE - LIST
+// ==========================================
+
+            Employee assignedTechnician =
+                    warranty.getAssignedTechnician();
+
+            if (assignedTechnician != null &&
+                    assignedTechnician.getUser() != null) {
+
+                socketService.send(
+                        "/topic/employee-requests/" +
+                                assignedTechnician.getUser().getId(),
+
+                        requestQueryService.getMyRequests(
+                                assignedTechnician,
+                                null,
+                                "ALL"
+                        )
+                );
+
+
+                // ======================================
+                // EMPLOYEE - WARRANTY DETAILS
+                // ======================================
+
+                socketService.send(
+                        "/topic/employee-warranty-details/" +
+                                warranty.getId(),
+
+                        requestMapper.toEmployeeWarrantyDetailsDto(
+                                warranty,
+                                requestQueryService.getWarrantyTimeline(
+                                        warranty.getId()
+                                )
+                        )
+                );
+            }
 
 
         }
@@ -953,13 +992,13 @@ import java.util.stream.Collectors;
             socketService.send(
                     "/topic/warranty/" +
                             customer.getUser().getId(),
-                    warrantyService.toResponseDto(warranty)
+                    warrantyService.toWarrantyResponseDto(warranty)
             );
 
             socketService.send(
                     "/topic/warranty-details/" +
                             warranty.getId(),
-                    warrantyService.toDetailsDto(warranty)
+                    warrantyService.toWarrantyDetailsDto(warranty)
             );
 
             socketService.send(
@@ -971,6 +1010,45 @@ import java.util.stream.Collectors;
                     "/topic/current-orders/" +
                             customer.getUser().getId(),
                     carServiceRequestService.toCurrentDto(request)
+            );
+        }
+
+// ==========================================
+// EMPLOYEE - LIST
+// ==========================================
+
+        Employee assignedTechnician =
+                warranty.getAssignedTechnician();
+
+        if (assignedTechnician != null &&
+                assignedTechnician.getUser() != null) {
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            assignedTechnician.getUser().getId(),
+
+                    requestQueryService.getMyRequests(
+                            assignedTechnician,
+                            null,
+                            "ALL"
+                    )
+            );
+
+
+            // ======================================
+            // EMPLOYEE - WARRANTY DETAILS
+            // ======================================
+
+            socketService.send(
+                    "/topic/employee-warranty-details/" +
+                            warranty.getId(),
+
+                    requestMapper.toEmployeeWarrantyDetailsDto(
+                            warranty,
+                            requestQueryService.getWarrantyTimeline(
+                                    warranty.getId()
+                            )
+                    )
             );
         }
 
@@ -1036,40 +1114,62 @@ import java.util.stream.Collectors;
                             request.getId(),
                     carServiceRequestService.toDetailsDto(request)
             );
-        }
 
-        // ===========================
-        // Notification
-        // ===========================
+// ==========================================
+// EMPLOYEE - LIST
+// ==========================================
 
-        if (request.getCurrentEmployee() != null) {
+            assignedTechnician = warranty.getAssignedTechnician();
 
-            String body =
-                    isWarrantyReceiving
-                            ? "قام العميل بحجز موعد استلام سيارة الضمان للطلب #"
-                            + request.getOrderNumber()
-                            : isWarrantyDelivery
-                            ? "قام العميل بحجز موعد تسليم سيارة الضمان للطلب #"
-                            + request.getOrderNumber()
-                            : "قام العميل بحجز موعد تسليم السيارة للطلب #"
-                            + request.getOrderNumber();
+            if (assignedTechnician != null &&
+                    assignedTechnician.getUser() != null) {
 
-            notificationService.send(
-                    request.getCurrentEmployee().getUser(),
+                socketService.send(
+                        "/topic/employee-requests/" +
+                                assignedTechnician.getUser().getId(),
 
-                    NotificationType.APPOINTMENT_CONFIRMED,
-                    NotificationCategory.APPOINTMENT,
+                        requestQueryService.getMyRequests(
+                                assignedTechnician,
+                                null,
+                                "ALL"
+                        )
+                );
 
-                    "تم حجز موعد",
+            }
 
-                    body,
+            // ===========================
+            // Notification
+            // ===========================
 
-                    NotificationActionType.OPEN_ENTITY,
-                    NotificationEntityType.REQUEST,
-                    request.getId().toString(),
-                    NotificationSection.REQUESTS
-            );
+            if (request.getCurrentEmployee() != null) {
 
+                String body =
+                        isWarrantyReceiving
+                                ? "قام العميل بحجز موعد استلام سيارة الضمان للطلب #"
+                                + request.getOrderNumber()
+                                : isWarrantyDelivery
+                                ? "قام العميل بحجز موعد تسليم سيارة الضمان للطلب #"
+                                + request.getOrderNumber()
+                                : "قام العميل بحجز موعد تسليم السيارة للطلب #"
+                                + request.getOrderNumber();
+
+                notificationService.send(
+                        request.getCurrentEmployee().getUser(),
+
+                        NotificationType.APPOINTMENT_CONFIRMED,
+                        NotificationCategory.APPOINTMENT,
+
+                        "تم حجز موعد",
+
+                        body,
+
+                        NotificationActionType.OPEN_ENTITY,
+                        NotificationEntityType.REQUEST,
+                        request.getId().toString(),
+                        NotificationSection.REQUESTS
+                );
+
+            }
         }
     }
 

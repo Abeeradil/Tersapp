@@ -2,7 +2,10 @@ package org.example.tears.DTO;
 
 import lombok.Data;
 import org.example.tears.Enums.WarrantyStatus;
+import org.example.tears.InpDTO.LocationDto;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 @Data
 public class EmployeeWarrantyDetailsDto {
@@ -30,6 +33,14 @@ public class EmployeeWarrantyDetailsDto {
     private String plateNumberArabic;
 
     private String plateNumberEnglish;
+
+    private LocationDto receivingLocation;
+    private LocalDate receivingDate;
+    private LocalTime receivingTime;
+
+    private LocationDto deliveryLocation;
+    private LocalDate deliveryDate;
+    private LocalTime deliveryTime;
 
     private List<WarrantyImageResponseDto> images;
 

@@ -48,6 +48,7 @@ public class DataInitializer implements CommandLineRunner {
         CarBrand byd = createBrand("BYD", "بي واي دي", "/brands/byd.png");
 
 
+
 // ================== Toyota ==================
         createModel("Camry", "كامري", toyota);
         createModel("Corolla", "كورولا", toyota);

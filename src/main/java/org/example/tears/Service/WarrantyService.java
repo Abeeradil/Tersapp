@@ -30,6 +30,7 @@ public class WarrantyService {
     private final RequestMapper requestMapper;
     private final WarrantyStatusHistoryRepository warrantyHistoryRepos;
     private final CarServiceRequestService carServiceRequestService;
+    private final RequestQueryService requestQueryService;
 
 
     @Transactional
@@ -131,13 +132,13 @@ public class WarrantyService {
         socketService.send(
                 "/topic/warranty/" +
                         customer.getUser().getId(),
-                toResponseDto(warranty)
+                toWarrantyResponseDto(warranty)
         );
 
         socketService.send(
                 "/topic/warranty-details/" +
                         warranty.getId(),
-                toDetailsDto(warranty)
+                toWarrantyDetailsDto(warranty)
         );
 
         socketService.send(
@@ -145,6 +146,45 @@ public class WarrantyService {
                         customer.getUser().getId(),
                 carServiceRequestService.toCurrentDto(request)
         );
+
+// ==========================================
+// EMPLOYEE - LIST
+// ==========================================
+
+        Employee assignedTechnician =
+                warranty.getAssignedTechnician();
+
+        if (assignedTechnician != null &&
+                assignedTechnician.getUser() != null) {
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            assignedTechnician.getUser().getId(),
+
+                    requestQueryService.getMyRequests(
+                            assignedTechnician,
+                            null,
+                            "WARRANTY"
+                    )
+            );
+
+
+            // ======================================
+            // EMPLOYEE - WARRANTY DETAILS
+            // ======================================
+
+            socketService.send(
+                    "/topic/employee-warranty-details/" +
+                            warranty.getId(),
+
+                    requestMapper.toEmployeeWarrantyDetailsDto(
+                            warranty,
+                            requestQueryService.getWarrantyTimeline(
+                                    warranty.getId()
+                            )
+                    )
+            );
+        }
 
 // ============================
 // Notifications
@@ -657,7 +697,7 @@ public class WarrantyService {
         // ============================
 
         warranty.setStatus(WarrantyStatus.APPROVED);
-        warranty.setCustomerStatus(WarrantyCustomerStatus.WARRANTY_APPROVED);
+        warranty.setCustomerStatus(WarrantyCustomerStatus.WAITING_FOR_PICKUP_INFO);
         warranty.setWarrantyEligibility(WarrantyEligibilityStatus.COVERED);
 
         warranty.setApprovedBy(employee);
@@ -734,13 +774,22 @@ public class WarrantyService {
                         request.getCustomer()
                                 .getUser()
                                 .getId(),
-                toResponseDto(warranty)
+                toWarrantyResponseDto(warranty)
         );
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            employee.getUser().getId(),
+                    requestMapper.toEmployeeCardDto(
+                            warranty.getRequest()
+                    )
+            );
+
 
         socketService.send(
                 "/topic/warranty-details/" +
                         warranty.getId(),
-                toDetailsDto(warranty)
+                toWarrantyDetailsDto(warranty)
         );
 
         socketService.send(
@@ -750,6 +799,46 @@ public class WarrantyService {
                                 .getId(),
                 carServiceRequestService.toCurrentDto(request)
         );
+
+
+// ==========================================
+// EMPLOYEE - LIST
+// ==========================================
+
+        Employee assignedTechnician =
+                warranty.getAssignedTechnician();
+
+        if (assignedTechnician != null &&
+                assignedTechnician.getUser() != null) {
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            assignedTechnician.getUser().getId(),
+
+                    requestQueryService.getMyRequests(
+                            assignedTechnician,
+                            null,
+                            "WARRANTY"
+                    )
+            );
+
+
+            // ======================================
+            // EMPLOYEE - WARRANTY DETAILS
+            // ======================================
+
+            socketService.send(
+                    "/topic/employee-warranty-details/" +
+                            warranty.getId(),
+
+                    requestMapper.toEmployeeWarrantyDetailsDto(
+                            warranty,
+                            requestQueryService.getWarrantyTimeline(
+                                    warranty.getId()
+                            )
+                    )
+            );
+        }
 
         // ============================
         // إشعار الفني
@@ -855,13 +944,13 @@ public class WarrantyService {
                         warranty.getCustomer()
                                 .getUser()
                                 .getId(),
-                toResponseDto(warranty)
+                toWarrantyResponseDto(warranty)
         );
 
         socketService.send(
                 "/topic/warranty-details/" +
                         warranty.getId(),
-                toDetailsDto(warranty)
+                toWarrantyDetailsDto(warranty)
         );
 
         socketService.send(
@@ -873,6 +962,51 @@ public class WarrantyService {
                         warranty.getRequest()
                 )
         );
+
+        socketService.send(
+                "/topic/past-orders/" + warranty.getRequest().getCustomer().getUser().getId(),
+                carServiceRequestService.toHistoryDto(warranty.getRequest())
+        );
+
+
+// ==========================================
+// EMPLOYEE - LIST
+// ==========================================
+
+        Employee assignedTechnician =
+                warranty.getAssignedTechnician();
+
+        if (assignedTechnician != null &&
+                assignedTechnician.getUser() != null) {
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            assignedTechnician.getUser().getId(),
+
+                    requestQueryService.getMyRequests(
+                            assignedTechnician,
+                            null,
+                            "ALL"
+                    )
+            );
+
+
+            // ======================================
+            // EMPLOYEE - WARRANTY DETAILS
+            // ======================================
+
+            socketService.send(
+                    "/topic/employee-warranty-details/" +
+                            warranty.getId(),
+
+                    requestMapper.toEmployeeWarrantyDetailsDto(
+                            warranty,
+                            requestQueryService.getWarrantyTimeline(
+                                    warranty.getId()
+                            )
+                    )
+            );
+        }
 
         notificationService.send(
                 warranty.getRequest().getCustomer().getUser(),
@@ -959,7 +1093,7 @@ public class WarrantyService {
                 .toList();
     }
 
-    public WarrantyDetailsDto toDetailsDto(
+    public WarrantyDetailsDto toWarrantyDetailsDto(
             WarrantyRequest warranty
     ) {
 
@@ -1079,7 +1213,7 @@ public class WarrantyService {
         return dto;
     }
 
-    public WarrantyResponseDto toResponseDto(
+    public WarrantyResponseDto toWarrantyResponseDto(
             WarrantyRequest warranty
     ) {
 

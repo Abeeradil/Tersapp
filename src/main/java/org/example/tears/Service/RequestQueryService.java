@@ -17,6 +17,7 @@ import org.example.tears.Repository.WarrantyRepository;
 import org.example.tears.Repository.WarrantyStatusHistoryRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -48,15 +49,64 @@ public class RequestQueryService {
                 .toList();
     }
 
-    public List<EmployeeRequestResponseDto> getMyRequests(Employee employee) {
+    public List<EmployeeRequestResponseDto> getMyRequests(
+            Employee employee,
+            StaffRequestStatus status,
+            String type
+    ) {
 
-        return requestRepo
-                .findByAssignedTechnicianOrAssignedPricingEmployee(
-                        employee,
-                        employee
-                )
-                .stream()
+        List<CarServiceRequest> requests;
+
+        if (status == null) {
+
+            requests =
+                    requestRepo
+                            .findByAssignedTechnicianOrAssignedPricingEmployee(
+                                    employee,
+                                    employee
+                            );
+
+        } else {
+
+            requests =
+                    requestRepo
+                            .findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(
+                                    employee,
+                                    employee,
+                                    status
+                            );
+        }
+
+        return requests.stream()
                 .map(requestMapper::toEmployeeCardDto)
+                .filter(dto -> {
+
+                    if ("WARRANTY".equalsIgnoreCase(type)) {
+                        return Boolean.TRUE.equals(
+                                dto.getWarrantyRequest()
+                        );
+                    }
+
+                    if ("NORMAL".equalsIgnoreCase(type)) {
+                        return !Boolean.TRUE.equals(
+                                dto.getWarrantyRequest()
+                        );
+                    }
+
+                    return true;
+                })
+                .sorted(
+                        Comparator
+                                .comparing(
+                                        (EmployeeRequestResponseDto dto) ->
+                                                Boolean.TRUE.equals(dto.getWarrantyRequest()),
+                                        Comparator.reverseOrder()
+                                )
+                                .thenComparing(
+                                        EmployeeRequestResponseDto::getCreatedAt,
+                                        Comparator.nullsLast(Comparator.reverseOrder())
+                                )
+                )
                 .toList();
     }
 
@@ -76,21 +126,6 @@ public class RequestQueryService {
         );
     }
 
-    public List<EmployeeRequestResponseDto> getMyRequestsByStatus(
-            Employee employee,
-            StaffRequestStatus status
-    ) {
-
-        return requestRepo
-                .findByAssignedTechnicianOrAssignedPricingEmployeeAndStaffStatus(
-                        employee,
-                        employee,
-                        status
-                )
-                .stream()
-                .map(requestMapper::toEmployeeCardDto)
-                .toList();
-    }
 
     public EmployeeRequestDetailsDto getRequestDetails(
             Integer requestId,

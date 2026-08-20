@@ -64,7 +64,7 @@ public class OcrService {
             }
 
             Map<String, String> result = new LinkedHashMap<>();
-            result.put("plateNumberArabic", textOrNull(data, "plate_number"));
+            result.put("plateNumberArabic", textOrNull(data, "plate_text_ar"));
             result.put("plateTextAr", textOrNull(data, "plate_text_ar"));
             result.put("plateNumberEnglish", textOrNull(data, "plate_text_en"));
             result.put("brandName", textOrNull(data, "vehicle_make"));

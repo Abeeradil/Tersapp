@@ -9,6 +9,7 @@ import org.example.tears.Repository.RequestApprovalRepository;
 import org.example.tears.Repository.RequestNoteRepository;
 import org.example.tears.Repository.RequestReportRepository;
 import org.example.tears.Repository.WarrantyRepository;
+import org.example.tears.Service.CarServiceRequestService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -26,7 +27,7 @@ public class RequestMapper {
     private final RequestApprovalRepository approvalRepo;
     private final WarrantyRepository warrantyRepo;
     private final RequestNoteRepository noteRepo;
-
+    private final CarServiceRequestService carServiceRequestService;
 
 
     public RequestSummaryDto toSummaryDto(CarServiceRequest req) {
@@ -76,6 +77,10 @@ public class RequestMapper {
         EmployeeRequestResponseDto dto =
                 new EmployeeRequestResponseDto();
 
+        // ===========================
+        // Request
+        // ===========================
+
         dto.setId(r.getId());
         dto.setOrderNumber(r.getOrderNumber());
 
@@ -85,9 +90,17 @@ public class RequestMapper {
             );
         }
 
+        dto.setRequestState(
+                mapRequestState(r)
+        );
+
+        dto.setCreatedAt(
+                r.getCreatedAt()
+        );
+
         // ===========================
-        // Warranty
-        // ===========================
+// Warranty
+// ===========================
 
         dto.setWarrantyEligible(
                 isWarrantyEligible(r)
@@ -100,28 +113,41 @@ public class RequestMapper {
                 warranty.isPresent()
         );
 
+        dto.setWarrantyRequestId(
+                warranty.map(WarrantyRequest::getId)
+                        .orElse(null)
+        );
+
+        dto.setWarrantyRequestId(
+                warranty.map(WarrantyRequest::getId)
+                        .orElse(null)
+        );
+
+        dto.setRequestType(
+                warranty.isPresent()
+                        ? "WARRANTY"
+                        : "NORMAL"
+        );
+
         dto.setWarrantyDescription(
-                warranty.map(
-                        WarrantyRequest::getDescription
-                ).orElse(null)
+                warranty.map(WarrantyRequest::getDescription)
+                        .orElse(null)
         );
 
         dto.setWarrantyStatus(
-                String.valueOf(warranty.map(
-                        WarrantyRequest::getStatus
-                ).orElse(null))
+                warranty.map(WarrantyRequest::getStatus)
+                        .map(Enum::name)
+                        .orElse(null)
         );
 
         // ===========================
         // Problem
         // ===========================
 
-        // ملاحظة العميل الأصلية
         dto.setProblemDescription(
                 r.getProblemDescription()
         );
 
-        // كل الملاحظات الإضافية
         dto.setNotes(
                 getRequestNotes(r)
         );
@@ -184,20 +210,9 @@ public class RequestMapper {
             );
         }
 
-        // ===========================
-        // Request State
-        // ===========================
-
-        dto.setRequestState(
-                mapRequestState(r)
-        );
-
-        dto.setCreatedAt(
-                r.getCreatedAt()
-        );
-
         return dto;
     }
+
 
     public String mapRequestState(
             CarServiceRequest req
@@ -627,68 +642,174 @@ public class RequestMapper {
                 .toList();
     }
 
-//        public CustomerRequestStatus toCustomer(WorkflowStage stage) {
-//
-//            return switch (stage) {
-//
-//                case NEW_REQUEST -> CustomerRequestStatus.REQUEST_CREATED;
-//
-//                case ASSIGNED, RECEIVED ->
-//                        CustomerRequestStatus.CAR_RECEIVED;
-//
-//                case INSPECTION_IN_PROGRESS,
-//                     TESTING,
-//                     REPORT_WRITING,
-//                     PARTS_REGISTERING,
-//                     PRICING ->
-//                        CustomerRequestStatus.CAR_INSPECTION;
-//
-//                case WAITING_APPROVAL ->
-//                        CustomerRequestStatus.WAITING_APPROVAL;
-//
-//                case REPAIRING ->
-//                        CustomerRequestStatus.UNDER_REPAIR;
-//
-//                case READY ->
-//                        CustomerRequestStatus.READY_FOR_DELIVERY;
-//
-//                case DELIVERED ->
-//                        CustomerRequestStatus.DELIVERED;
-//
-//                case CANCELLED ->
-//                        CustomerRequestStatus.CANCELED;
-//            };
-//        }
-//
-//        public StaffRequestStatus toStaff(WorkflowStage stage) {
-//
-//            return switch (stage) {
-//
-//                case NEW_REQUEST -> StaffRequestStatus.NEW;
-//
-//                case ASSIGNED -> StaffRequestStatus.NEW;
-//
-//                case RECEIVED -> StaffRequestStatus.RECEIVED;
-//
-//                case INSPECTION_IN_PROGRESS -> StaffRequestStatus.INSPECTION_IN_PROGRESS;
-//
-//                case TESTING -> StaffRequestStatus.TESTING;
-//
-//                case REPORT_WRITING -> StaffRequestStatus.REPORT_WRITING;
-//
-//                case PARTS_REGISTERING -> StaffRequestStatus.PARTS_REGISTERING;
-//
-//                case PRICING -> StaffRequestStatus.PRICING;
-//
-//                case REPAIRING -> StaffRequestStatus.REPAIRING;
-//
-//                case READY -> StaffRequestStatus.REPAIRING;
-//
-//                case DELIVERED -> StaffRequestStatus.DELIVERED;
-//
-//                case WAITING_APPROVAL -> StaffRequestStatus.PRICING;
-//
-//                case CANCELLED -> StaffRequestStatus.DELIVERED; // أو CANCELLED إذا أضفتها
-//            };
-//        }
+    public EmployeeWarrantyDetailsDto toEmployeeWarrantyDetailsDto(
+            WarrantyRequest warranty,
+            List<EmployeeWarrantyStatusHistoryDto> timeline
+    ) {
+
+        EmployeeWarrantyDetailsDto dto =
+                new EmployeeWarrantyDetailsDto();
+
+        CarServiceRequest request =
+                warranty.getRequest();
+
+        // =========================
+        // Warranty
+        // =========================
+
+        dto.setWarrantyId(
+                warranty.getId()
+        );
+
+        dto.setRequestId(
+                request != null
+                        ? request.getId()
+                        : null
+        );
+
+        dto.setOrderNumber(
+                request != null
+                        ? request.getOrderNumber()
+                        : null
+        );
+
+        dto.setStatus(
+                warranty.getStatus()
+        );
+
+        dto.setDescription(
+                warranty.getDescription()
+        );
+
+        // =========================
+        // Customer
+        // =========================
+
+        if (warranty.getCustomer() != null &&
+                warranty.getCustomer().getUser() != null) {
+
+            dto.setCustomerName(
+                    warranty.getCustomer()
+                            .getUser()
+                            .getFullName()
+            );
+
+            dto.setCustomerPhone(
+                    warranty.getCustomer()
+                            .getUser()
+                            .getPhoneNumber()
+            );
+        }
+
+        // =========================
+        // Car
+        // =========================
+
+        if (request != null &&
+                request.getCar() != null &&
+                request.getCar().getModel() != null) {
+
+            dto.setCarModelName(
+                    request.getCar()
+                            .getModel()
+                            .getName()
+            );
+
+            dto.setCarModelNameAr(
+                    request.getCar()
+                            .getModel()
+                            .getNameAr()
+            );
+
+            if (request.getServiceOption() != null) {
+                dto.setServiceOption(
+                        request.getServiceOption().name()
+                );
+            }
+
+            dto.setPlateNumberArabic(
+                    formatArabicPlate(
+                            request.getCar()
+                                    .getPlateNumberArabic()
+                    )
+            );
+
+            dto.setPlateNumberEnglish(
+                    formatEnglishPlate(
+                            request.getCar()
+                                    .getPlateNumberEnglish()
+                    )
+            );
+        }
+
+        // ===========================
+        // Warranty Receiving Appointment
+        // ===========================
+
+        dto.setReceivingDate(
+                warranty.getReceivingDate()
+        );
+
+        dto.setReceivingTime(
+                warranty.getReceivingTime()
+        );
+
+        if (warranty.getReceivingLocation() != null) {
+            dto.setReceivingLocation(
+                    carServiceRequestService.mapLocation(warranty.getReceivingLocation())
+            );
+        }
+
+
+        // ===========================
+        // Warranty Delivery Appointment
+        // ===========================
+
+        dto.setDeliveryDate(
+                warranty.getDeliveryDate()
+        );
+
+        dto.setDeliveryTime(
+                warranty.getDeliveryTime()
+        );
+
+        if (warranty.getDeliveryLocation() != null) {
+            dto.setDeliveryLocation(
+                    carServiceRequestService.mapLocation(warranty.getDeliveryLocation())
+            );
+        }
+        // =========================
+        // Images
+        // =========================
+
+        dto.setImages(
+                warranty.getImages()
+                        .stream()
+                        .map(img -> {
+
+                            WarrantyImageResponseDto imageDto =
+                                    new WarrantyImageResponseDto();
+
+                            imageDto.setId(img.getId());
+                            imageDto.setImageUrl(img.getImageUrl());
+
+                            if (img.getType() != null) {
+                                imageDto.setType(
+                                        img.getType().name()
+                                );
+                            }
+
+                            return imageDto;
+                        })
+                        .toList()
+        );
+
+        // =========================
+        // Timeline
+        // =========================
+
+        dto.setTimeline(timeline);
+
+        return dto;
+    }
 }
