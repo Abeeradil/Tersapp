@@ -274,15 +274,23 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void createModel(String nameEn, String nameAr, CarBrand brand) {
-        modelRepo.findByNameIgnoreCaseAndBrandId(nameAr, brand.getId())
+        modelRepo.findByNameIgnoreCaseAndBrandId(nameEn, brand.getId())
                 .orElseGet(() -> {
                     CarModel m = new CarModel();
                     m.setName(nameEn);
                     m.setNameAr(nameAr);
-                    m.setImagePath("/carimage/" + brand.getName().toLowerCase() + "_" + nameEn.toLowerCase() + ".png");
+                    m.setImagePath(
+                            "/carimage/" +
+                                    brand.getName().toLowerCase() +
+                                    "_" +
+                                    nameEn.toLowerCase() +
+                                    ".png"
+                    );
+
                     String slug = nameEn.toLowerCase().replace(" ", "-");
                     m.setSlug(slug);
                     m.setBrand(brand);
+
                     return modelRepo.save(m);
                 });
     }
