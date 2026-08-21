@@ -741,6 +741,14 @@ public class RequestMapper {
             );
         }
 
+        if (request.getLocation() != null) {
+
+            dto.setAddress(
+                    request.getLocation().getAddress()
+            );
+        }
+
+
         // ===========================
         // Warranty Receiving Appointment
         // ===========================
@@ -776,6 +784,10 @@ public class RequestMapper {
                     mapLocation(warranty.getDeliveryLocation())
             );
         }
+
+        dto.setCreatedAt(
+                warranty.getCreatedAt()
+        );
         // =========================
         // Images
         // =========================

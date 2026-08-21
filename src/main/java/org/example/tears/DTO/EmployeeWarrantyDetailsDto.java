@@ -5,6 +5,7 @@ import org.example.tears.Enums.WarrantyStatus;
 import org.example.tears.InpDTO.LocationDto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 @Data
@@ -23,16 +24,17 @@ public class EmployeeWarrantyDetailsDto {
     private String customerName;
     private String customerPhone;
 
+    private String address;
 
     private String carModelName;
-
     private String carModelNameAr;
 
     private String serviceOption;
 
     private String plateNumberArabic;
-
     private String plateNumberEnglish;
+
+    private LocalDateTime createdAt;
 
     private LocationDto receivingLocation;
     private LocalDate receivingDate;
