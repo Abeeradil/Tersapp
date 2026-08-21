@@ -17,10 +17,6 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
-        if (brandRepo.count() > 0) {
-            return;
-        }
-
 // ================== Brands ==================
         CarBrand toyota = createBrand("Toyota", "تويوتا", "/brands/toyota.png");
         CarBrand hyundai = createBrand("Hyundai", "هونداي", "/brands/hyundai.png");
@@ -46,6 +42,63 @@ public class DataInitializer implements CommandLineRunner {
         CarBrand bentley = createBrand("Bentley", "بنتلي", "/brands/bentley.png");
         CarBrand genesis = createBrand("Genesis", "جينيسس", "/brands/genesis.png");
         CarBrand byd = createBrand("BYD", "بي واي دي", "/brands/byd.png");
+
+        // ================== Additional Saudi Brands ==================
+        CarBrand mazda =
+                createBrand("Mazda", "مازدا", "/brands/mazda.png");
+        CarBrand kia =
+                createBrand("Kia", "كيا", "/brands/kia.png");
+        CarBrand nissan =
+                createBrand("Nissan", "نيسان", "/brands/nissan.png");
+        CarBrand mitsubishi =
+                createBrand("Mitsubishi", "ميتسوبيشي", "/brands/mitsubishi.png");
+        CarBrand suzuki =
+                createBrand("Suzuki", "سوزوكي", "/brands/suzuki.png");
+        CarBrand isuzu =
+                createBrand("Isuzu", "إيسوزو", "/brands/isuzu.png");
+        CarBrand chevrolet =
+                createBrand("Chevrolet", "شفروليه", "/brands/chevrolet.png");
+        CarBrand dodge =
+                createBrand("Dodge", "دودج", "/brands/dodge.png");
+        CarBrand chrysler =
+                createBrand("Chrysler", "كرايسلر", "/brands/chrysler.png");
+        CarBrand volkswagen =
+                createBrand("Volkswagen", "فولكس واجن", "/brands/volkswagen.png");
+        CarBrand audi =
+                createBrand("Audi", "أودي", "/brands/audi.png");
+        CarBrand skoda =
+                createBrand("Skoda", "سكودا", "/brands/skoda.png");
+        CarBrand renault =
+                createBrand("Renault", "رينو", "/brands/renault.png");
+        CarBrand peugeot =
+                createBrand("Peugeot", "بيجو", "/brands/peugeot.png");
+        CarBrand citroen =
+                createBrand("Citroen", "سيتروين", "/brands/citroen.png");
+        CarBrand subaru =
+                createBrand("Subaru", "سوبارو", "/brands/subaru.png");
+
+// ================== Chinese Brands ==================
+
+        CarBrand changan =
+                createBrand("Changan", "شانجان", "/brands/changan.png");
+        CarBrand geely =
+                createBrand("Geely", "جيلي", "/brands/geely.png");
+        CarBrand chery =
+                createBrand("Chery", "شيري", "/brands/chery.png");
+        CarBrand jetour =
+                createBrand("Jetour", "جيتور", "/brands/jetour.png");
+        CarBrand gac =
+                createBrand("GAC", "جي إيه سي", "/brands/gac.png");
+        CarBrand hongqi =
+                createBrand("Hongqi", "هونشي", "/brands/hongqi.png");
+        CarBrand jac =
+                createBrand("JAC", "جاك", "/brands/jac.png");
+        CarBrand foton =
+                createBrand("Foton", "فوتون", "/brands/foton.png");
+        CarBrand faw =
+                createBrand("FAW", "فاو", "/brands/faw.png");
+        CarBrand jmc =
+                createBrand("JMC", "جي إم سي موتورز", "/brands/jmc.png");
 
 
 
@@ -232,6 +285,27 @@ public class DataInitializer implements CommandLineRunner {
                     m.setBrand(brand);
                     return modelRepo.save(m);
                 });
+    }
+    private String getModelImagePath(
+            String nameEn,
+            CarBrand brand
+    ) {
+
+        String fileName =
+                brand.getName().toLowerCase()
+                        .replace(" ", "_")
+                        + "_"
+                        + nameEn.toLowerCase()
+                        .replace(" ", "_")
+                        + ".png";
+
+        String path = "/carimage/" + fileName;
+
+        if (getClass().getResource("/static" + path) != null) {
+            return path;
+        }
+
+        return "/carimage/default-car.png";
     }
 
 
