@@ -641,17 +641,17 @@ public class PaymentIntentService {
                 .orElseThrow(() ->
                         new ApiException("PaymentIntent not found"));
 
+        if (intent.getPaymentStatus() != PaymentStatus.INITIATED) {
+            if (intent.getPaymentStatus() == PaymentStatus.PAID
+                    && intent.getPaymentId() != null
+                    && intent.getPaymentId().equals(paymentId)) {
 
-        if (intent.getPaymentStatus() == PaymentStatus.PAID) {
-
-            if (intent.getPaymentId() != null
-                    && !intent.getPaymentId().equals(paymentId)) {
-                throw new ApiException("Payment already completed with another transaction");
+                return carServiceRequestService.toResponseDto(
+                        intent.getServiceRequest()
+                );
             }
 
-            return carServiceRequestService.toResponseDto(
-                    intent.getServiceRequest()
-            );
+            throw new ApiException("Payment is not valid for completion");
         }
 
         CarServiceRequest request = intent.getServiceRequest();
@@ -867,11 +867,13 @@ public class PaymentIntentService {
             ConfirmMobilePaymentRequest dto
     ) {
 
+
         PaymentIntent intent =
                 paymentIntentRepository
                         .findById(dto.getPaymentAttemptId())
                         .orElseThrow(() ->
                                 new ApiException("Payment attempt not found"));
+
 
         HttpHeaders headers = new HttpHeaders();
         headers.setBasicAuth(secretKey, "");
@@ -885,6 +887,7 @@ public class PaymentIntentService {
                 );
 
         Map<String, Object> payment = response.getBody();
+        log.info("MOYASAR PAYMENT RESPONSE: {}", payment);
 
         if (payment == null)
             throw new ApiException("Payment not found");
