@@ -72,23 +72,31 @@ public class WalletService {
         return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(wallet.getId());
     }
 
-    public void payFromWallet(User user, Integer amount, String ref) {
-        Wallet wallet = getOrCreate(user);
+    @Transactional
+    public void payFromWallet(User user, Integer amountHalalah, String ref) {
 
-        if (amount == null || amount <= 0) {
+        if (amountHalalah == null || amountHalalah <= 0) {
             throw new ApiException("المبلغ غير صحيح");
         }
 
-        if (wallet.getBalance() == null || wallet.getBalance() < amount) {
+        Wallet wallet = walletRepository.findByUserIdForUpdate(user.getId())
+                .orElseThrow(() ->
+                        new ApiException("المحفظة غير موجودة"));
+
+        if (wallet.getBalance() == null) {
+            throw new ApiException("رصيد المحفظة غير موجود");
+        }
+
+        if (wallet.getBalance() < amountHalalah) {
             throw new ApiException("رصيد المحفظة غير كافي");
         }
 
-        wallet.setBalance(wallet.getBalance() - amount);
+        wallet.setBalance(wallet.getBalance() - amountHalalah);
         walletRepository.save(wallet);
 
         WalletTransaction tx = new WalletTransaction();
         tx.setWallet(wallet);
-        tx.setAmount(amount);
+        tx.setAmount(amountHalalah);
         tx.setType(TransactionType.PAYMENT);
         tx.setPaymentMethod(PaymentMethod.WALLET);
         tx.setReferenceNumber(ref);

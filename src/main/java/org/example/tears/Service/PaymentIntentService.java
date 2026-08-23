@@ -148,16 +148,22 @@ public class PaymentIntentService {
                 amountHalalah
         );
     }
- //الدفع عن طريق المحفظه لانشاء الطلب
+
+    //الدفع عن طريق المحفظه لانشاء الطلب
     @Transactional
     public RequestResponseDto payRequestWithWallet(
             HttpServletRequest request,
             CreateRequestStepDto dto
     ) {
+
         User user = authService.getAuthenticatedUser(request);
 
         CarServiceRequest req =
                 carServiceRequestService.buildValidatedRequest(user, dto);
+
+        if (req.getEstimatedPrice() == null || req.getEstimatedPrice() <= 0) {
+            throw new ApiException("لا يوجد مبلغ للدفع");
+        }
 
         int amountHalalah =
                 (int) Math.round(req.getEstimatedPrice() * 100);
@@ -168,14 +174,13 @@ public class PaymentIntentService {
                 "REQ-" + UUID.randomUUID().toString().substring(0, 8)
         );
 
+        // من هنا فقط نعتبر الدفع ناجح
         req.setPaymentMethod(PaymentMethod.WALLET);
         req.setInitialPaid(true);
         req.setInitialPaymentMethod(PaymentMethod.WALLET);
         req.setInitialPaymentStatus(PaymentStatus.PAID);
         req.setInitialPaymentAmount(req.getEstimatedPrice());
-        req.setInitialPaymentAmountHalalah(
-                (int) Math.round(req.getEstimatedPrice() * 100)
-        );
+        req.setInitialPaymentAmountHalalah(amountHalalah);
         req.setRemainingAmount(0.0);
 
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
@@ -185,17 +190,21 @@ public class PaymentIntentService {
         req.setLastUpdated(LocalDateTime.now());
         req.setCreatedAt(LocalDateTime.now());
 
-        CarServiceRequest savedRequest = requestRepository.save(req);
+        CarServiceRequest savedRequest =
+                requestRepository.save(req);
 
         savedRequest.setOrderNumber(
                 String.format("ORD-%06d", savedRequest.getId())
         );
 
         requestRepository.save(savedRequest);
+
         socketService.send(
-                "/topic/current-orders/" + req.getCustomer().getUser().getId(),
+                "/topic/current-orders/" +
+                        req.getCustomer().getUser().getId(),
                 carServiceRequestService.toCurrentDto(req)
         );
+
         socketService.send(
                 "/topic/availability",
                 appointmentService.getAllAvailability()
@@ -238,9 +247,12 @@ public class PaymentIntentService {
             throw new ApiException("لا يوجد مبلغ للدفع");
         }
 
+        int amountHalalah =
+                (int) Math.round(request.getFinalPrice() * 100);
+
         walletService.payFromWallet(
                 user,
-                request.getFinalPrice() * 100,
+                amountHalalah,
                 "FINAL-" + request.getOrderNumber()
         );
 
