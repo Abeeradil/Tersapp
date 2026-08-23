@@ -960,8 +960,10 @@ public class CarServiceRequestService {
         reviewRepository.save(review);
     }
 
-
-    public CarServiceRequest buildValidatedRequest(User user, CreateRequestStepDto dto) {
+    public CarServiceRequest buildValidatedRequest(
+            User user,
+            CreateRequestStepDto dto
+    ) {
         boolean ownsCar = carRepository.findByCustomerId(user.getCustomer().getId())
                 .stream()
                 .anyMatch(c -> c.getId().equals(dto.getCarId()));
@@ -970,41 +972,53 @@ public class CarServiceRequestService {
             throw new ApiException("السيارة لا تنتمي للمستخدم");
         }
 
-        if (dto.getProblemDescription() == null || dto.getProblemDescription().isBlank()) {
+        if (dto.getProblemDescription() == null ||
+                dto.getProblemDescription().isBlank()) {
             throw new ApiException("وصف المشكلة إلزامي");
         }
 
-        ServiceOption option = ServiceOption.valueOf(dto.getServiceOption().toUpperCase());
+        ServiceOption option =
+                ServiceOption.valueOf(
+                        dto.getServiceOption().toUpperCase()
+                );
 
-        Location location = locationService.resolveLocation(dto, user);
+        Location location =
+                locationService.resolveLocation(dto, user);
 
         appointmentService.validateAppointment(
                 dto.getAppointmentDate(),
                 dto.getAppointmentTime()
         );
 
-        PricingResponse pricing = pricingCalculationService.calculateFinal(
-                dto.getServiceOption(),
-                dto.isHydraulicTruck(),
-                dto.getCouponCode(),
-                user.getCustomer()
-        );
+        PricingResponse pricing =
+                pricingCalculationService.calculateFinal(
+                        dto.getServiceOption(),
+                        dto.isHydraulicTruck(),
+                        dto.getCouponCode(),
+                        user.getCustomer()
+                );
 
-        PaymentMethod method = PaymentMethod.valueOf(dto.getPaymentMethod().toUpperCase());
+        PaymentMethod method =
+                PaymentMethod.valueOf(
+                        dto.getPaymentMethod().toUpperCase()
+                );
 
-        CarServiceRequest req = new CarServiceRequest();
+        CarServiceRequest req =
+                new CarServiceRequest();
 
-        Car car = carRepository.findById(dto.getCarId())
-                .orElseThrow(() -> new ApiException("السيارة غير موجودة"));
+        Car car =
+                carRepository.findById(dto.getCarId())
+                        .orElseThrow(() ->
+                                new ApiException("السيارة غير موجودة"));
 
         req.setCar(car);
-
         req.setCustomer(user.getCustomer());
         req.setServiceOption(option);
         req.setProblemDescription(dto.getProblemDescription());
         req.setHydraulicTruck(dto.isHydraulicTruck());
         req.setAppointmentDate(dto.getAppointmentDate());
         req.setAppointmentTime(dto.getAppointmentTime());
+
         req.setEstimatedPrice(
                 pricing.finalPrice
         );
@@ -1028,6 +1042,7 @@ public class CarServiceRequestService {
         req.setPricingMessage(
                 pricing.message
         );
+
         req.setPaymentMethod(method);
         req.setLocation(location);
 
@@ -1039,16 +1054,6 @@ public class CarServiceRequestService {
                 LocalDateTime.now()
         );
 
-        CarServiceRequest saved =
-                requestRepository.save(req);
-
-        saved.setOrderNumber(
-                String.format("ORD-%06d", saved.getId())
-        );
-
-        requestRepository.save(saved);
-
-        return saved;
+        return req;
     }
-
 }
