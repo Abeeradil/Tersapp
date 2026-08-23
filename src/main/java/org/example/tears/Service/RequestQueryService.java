@@ -6,6 +6,7 @@ import org.example.tears.DTO.*;
 import org.example.tears.Enums.EmployeeRole;
 import org.example.tears.Enums.PricingStatus;
 import org.example.tears.Enums.StaffRequestStatus;
+import org.example.tears.Enums.WarrantyStatus;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
@@ -59,12 +60,23 @@ public class RequestQueryService {
 
         if (status == null) {
 
-            requests =
-                    requestRepo
-                            .findByAssignedTechnicianOrAssignedPricingEmployee(
-                                    employee,
-                                    employee
-                            );
+            requests = requestRepo.findMyNewRequests(
+                    employee,
+                    StaffRequestStatus.NEW,
+                    List.of(
+                            WarrantyStatus.REQUEST_SENT,
+                            WarrantyStatus.PENDING_REVIEW,
+                            WarrantyStatus.REJECTED
+                    )
+            );
+
+        } else if (status == StaffRequestStatus.DELIVERED) {
+
+            requests = requestRepo.findDeliveredRequests(
+                    employee,
+                    StaffRequestStatus.DELIVERED,
+                    List.of(WarrantyStatus.REJECTED)
+            );
 
         } else {
 
@@ -82,14 +94,25 @@ public class RequestQueryService {
                 .filter(dto -> {
 
                     if ("WARRANTY".equalsIgnoreCase(type)) {
-                        return Boolean.TRUE.equals(
-                                dto.getWarrantyRequest()
-                        );
+                        return dto.getWarrantyRequest()
+                                && dto.getWarrantyStatus() != null
+                                && !List.of(
+                                WarrantyStatus.PENDING_REVIEW.name(),
+                                WarrantyStatus.REQUEST_SENT.name(),
+                                WarrantyStatus.REJECTED.name()
+                        ).contains(dto.getWarrantyStatus());
                     }
 
                     if ("NORMAL".equalsIgnoreCase(type)) {
-                        return !Boolean.TRUE.equals(
-                                dto.getWarrantyRequest()
+
+                        return !(
+                                Boolean.TRUE.equals(dto.getWarrantyRequest())
+                                        && dto.getWarrantyStatus() != null
+                                        && !List.of(
+                                        WarrantyStatus.PENDING_REVIEW.name(),
+                                        WarrantyStatus.REQUEST_SENT.name(),
+                                        WarrantyStatus.REJECTED.name()
+                                ).contains(dto.getWarrantyStatus())
                         );
                     }
 
@@ -99,12 +122,16 @@ public class RequestQueryService {
                         Comparator
                                 .comparing(
                                         (EmployeeRequestResponseDto dto) ->
-                                                Boolean.TRUE.equals(dto.getWarrantyRequest()),
+                                                Boolean.TRUE.equals(
+                                                        dto.getWarrantyRequest()
+                                                ),
                                         Comparator.reverseOrder()
                                 )
                                 .thenComparing(
                                         EmployeeRequestResponseDto::getCreatedAt,
-                                        Comparator.nullsLast(Comparator.reverseOrder())
+                                        Comparator.nullsLast(
+                                                Comparator.reverseOrder()
+                                        )
                                 )
                 )
                 .toList();
@@ -120,12 +147,12 @@ public class RequestQueryService {
             );
         }
 
-        return requestRepo.countByAssignedTechnician_IdAndStaffStatus(
+        return requestRepo.countMyNewRequests(
                 employee.getId(),
-                StaffRequestStatus.NEW
+                StaffRequestStatus.NEW,
+                WarrantyStatus.APPROVED
         );
     }
-
 
     public EmployeeRequestDetailsDto getRequestDetails(
             Integer requestId,
