@@ -510,6 +510,8 @@ public class TicketService {
 
         dto.setProblemType(ticket.getProblemType());
 
+        dto.setDescription(ticket.getDescription());
+
         dto.setPriority(ticket.getPriority());
 
         dto.setStatus(ticket.getStatus());
@@ -530,6 +532,34 @@ public class TicketService {
         }
 
         return dto;
+    }
+
+    public TicketSupportCountDto getSupportTicketCount(
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if (user.getEmployee() == null ||
+                user.getEmployee().getEmployeeRole() != EmployeeRole.SUPPORT) {
+
+            throw new ApiException("غير مصرح");
+        }
+
+        long active =
+                ticketRepository.countByStatus(TicketStatus.ACTIVE);
+
+        long inProgress =
+                ticketRepository.countByStatus(TicketStatus.IN_PROGRESS);
+
+        long solved =
+                ticketRepository.countByStatus(TicketStatus.SOLVED);
+
+        return new TicketSupportCountDto(
+                active,
+                inProgress,
+                solved
+        );
     }
 
 

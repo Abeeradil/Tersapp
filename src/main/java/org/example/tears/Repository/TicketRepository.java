@@ -8,10 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Integer> {
-
 
     Optional<Ticket> findById(Integer id);
 
@@ -27,4 +25,6 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
     Optional<Ticket> findByWarrantyRequest_Id(Integer warrantyId);
 
     List<Ticket> findByRequest_OrderNumberContainingIgnoreCase(String orderNumber);
+
+    long countByStatus(TicketStatus status);
 }

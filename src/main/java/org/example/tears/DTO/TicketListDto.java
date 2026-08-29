@@ -24,6 +24,8 @@ public class TicketListDto {
 
     private TicketProblemType problemType;
 
+    private String description;
+
     private TicketPriority priority;
 
     private TicketStatus status;

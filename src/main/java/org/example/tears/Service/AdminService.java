@@ -93,9 +93,17 @@ public class AdminService {
                 savedUser
         );
 
+        employee.setCity(dto.getCity());
+
         employee.setJobTitle(
                 dto.getJobTitle()
         );
+
+
+        employee.setEmployeeCode(
+                String.format("EM-%06d", employee.getId())
+        );
+
 
         employee.setEmployeeRole(
                 dto.getEmployeeRole()

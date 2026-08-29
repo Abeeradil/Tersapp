@@ -151,5 +151,17 @@ public class TicketController {
         );
     }
 
+    @GetMapping("/support/count")
+    public ApiResponse getSupportTicketCount(
+            HttpServletRequest request
+    ) {
+
+        return new ApiResponse(
+                true,
+                "تم جلب عدادات التذاكر",
+                ticketService.getSupportTicketCount(request)
+        );
+    }
+
 
 }
