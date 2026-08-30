@@ -5,14 +5,17 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.Enums.TicketStatus;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.UpdateEmployeeProfileDTO;
 import org.example.tears.InpDTO.UpdateProfileDTO;
 import org.example.tears.Model.Customer;
+import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
 import org.example.tears.Repository.CarRepository;
 import org.example.tears.Repository.CustomerRepository;
+import org.example.tears.Repository.TicketRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.stereotype.Service;
 
@@ -23,109 +26,155 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private final TicketRepository ticketRepository;
 
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final CarRepository carRepository;
     private final AuthService authService;
 
-        // ================= Get Profile =================
-        public ApiResponse getEmProfile(
-                HttpServletRequest request
+    // ================= Get Customer Service Employee Profile =================
+    public ApiResponse getEmProfile(
+            HttpServletRequest request
+    ) {
+
+        User user =
+                authService.getAuthenticatedUser(request);
+
+        if (
+                user.getRole() != UserRole.EMPLOYEE
+                        &&
+                        user.getRole() != UserRole.ADMIN
         ) {
 
-            User user =
-                    authService.getAuthenticatedUser(
-                            request
-                    );
-
-            if (
-                    user.getRole() != UserRole.EMPLOYEE
-                            &&
-                            user.getRole() != UserRole.ADMIN
-            ) {
-
-                throw new ApiException(
-                        "Unauthorized access"
-                );
-            }
-
-            String fullName =
-                    user.getFullName() != null
-                            ? user.getFullName().trim()
-                            : "";
-
-            String[] parts =
-                    fullName.split("\\s+");
-
-            String firstName =
-                    parts.length > 0
-                            ? parts[0]
-                            : "";
-
-            String middleName =
-                    parts.length > 1
-                            ? parts[1]
-                            : "";
-
-            String lastName =
-                    parts.length > 2
-                            ? String.join(
-                            " ",
-                            Arrays.copyOfRange(
-                                    parts,
-                                    2,
-                                    parts.length
-                            )
-                    )
-                            : "";
-
-            Map<String,Object> data =
-                    new HashMap<>();
-
-            data.put(
-                    "firstName",
-                    firstName
-            );
-
-            data.put(
-                    "middleName",
-                    middleName
-            );
-
-            data.put(
-                    "lastName",
-                    lastName
-            );
-
-            data.put(
-                    "email",
-                    user.getEmail()
-            );
-
-            data.put(
-                    "userID",
-                    user.getId()
-            );
-
-            data.put(
-                    "empID",
-                    user.getEmployee().getId()
-            );
-
-            data.put(
-                    "jobTitle",
-                    user.getEmployee() != null
-                            ? user.getEmployee()
-                            .getJobTitle()
-                            : null
-            );
-
-            return new ApiResponse(
-                    true,
-                    data
+            throw new ApiException(
+                    "Unauthorized access"
             );
         }
+
+        if (user.getEmployee() == null) {
+
+            throw new ApiException(
+                    "Employee profile not found"
+            );
+        }
+
+        Employee employee = user.getEmployee();
+
+        String fullName =
+                user.getFullName() != null
+                        ? user.getFullName().trim()
+                        : "";
+
+        String[] parts =
+                fullName.split("\\s+");
+
+        String firstName =
+                parts.length > 0
+                        ? parts[0]
+                        : "";
+
+        String middleName =
+                parts.length > 1
+                        ? parts[1]
+                        : "";
+
+        String lastName =
+                parts.length > 2
+                        ? String.join(
+                        " ",
+                        Arrays.copyOfRange(
+                                parts,
+                                2,
+                                parts.length
+                        )
+                )
+                        : "";
+
+        // ================= Support Statistics =================
+
+        long totalTickets =
+                ticketRepository.countByAssignedSupportEmployee_Id(
+                        employee.getId()
+                );
+
+        long solvedTickets =
+                ticketRepository.countByAssignedSupportEmployee_IdAndStatus(
+                        employee.getId(),
+                        TicketStatus.SOLVED
+                );
+
+        // ================= Response =================
+
+        Map<String, Object> data =
+                new HashMap<>();
+
+        data.put(
+                "firstName",
+                firstName
+        );
+
+        data.put(
+                "middleName",
+                middleName
+        );
+
+        data.put(
+                "lastName",
+                lastName
+        );
+
+        data.put(
+                "email",
+                user.getEmail()
+        );
+
+        data.put(
+                "phone",
+                user.getPhoneNumber()
+        );
+
+        data.put(
+                "userID",
+                user.getId()
+        );
+
+        data.put(
+                "empID",
+                employee.getId()
+        );
+
+        data.put(
+                "employeeCode",
+                employee.getEmployeeCode()
+        );
+
+        data.put(
+                "jobTitle",
+                employee.getJobTitle()
+        );
+
+        data.put(
+                "city",
+                employee.getCity()
+        );
+
+        data.put(
+                "totalTickets",
+                totalTickets
+        );
+
+        data.put(
+                "solvedTickets",
+                solvedTickets
+        );
+
+        return new ApiResponse(
+                true,
+                data
+        );
+    }
+
     public ApiResponse updateEmployeeProfile(
             HttpServletRequest request,
             UpdateEmployeeProfileDTO dto

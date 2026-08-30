@@ -27,4 +27,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
     List<Ticket> findByRequest_OrderNumberContainingIgnoreCase(String orderNumber);
 
     long countByStatus(TicketStatus status);
+
+    long countByAssignedSupportEmployee_Id(Integer employeeId);
+
+    long countByAssignedSupportEmployee_IdAndStatus(
+            Integer employeeId,
+            TicketStatus status
+    );
 }
