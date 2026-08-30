@@ -6,12 +6,15 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.CreateTicketDto;
 import org.example.tears.DTO.RejectWarrantyDto;
+import org.example.tears.DTO.TicketListDto;
 import org.example.tears.DTO.UpdateTicketStatusDto;
 import org.example.tears.Model.User;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.TicketService;
 import org.example.tears.Service.WarrantyService;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tears/ticket")
@@ -160,6 +163,51 @@ public class TicketController {
                 true,
                 "تم جلب عدادات التذاكر",
                 ticketService.getSupportTicketCount(request)
+        );
+    }
+
+    @GetMapping("/support/employees")
+    public ApiResponse getSupportEmployees(
+            HttpServletRequest request
+    ) {
+
+        return new ApiResponse(
+                true,
+                "تم جلب الموظفين",
+                ticketService.getSupportEmployees(request)
+        );
+    }
+
+
+    @GetMapping("/support/employees/search")
+    public ApiResponse searchSupportEmployees(
+            @RequestParam String q,
+            HttpServletRequest request
+    ) {
+
+        return new ApiResponse(
+                true,
+                "تم جلب الموظفين",
+                ticketService.searchSupportEmployees(
+                        request,
+                        q
+                )
+        );
+    }
+
+    @GetMapping("/support/tickets/search")
+    public ApiResponse search(
+            @RequestParam String q,
+            HttpServletRequest request
+    ){
+
+        return new ApiResponse(
+                true,
+                "تم جلب النتائج",
+                ticketService.searchSupportTickets(
+                        request,
+                        q
+                )
         );
     }
 

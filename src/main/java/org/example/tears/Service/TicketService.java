@@ -7,10 +7,7 @@ import org.example.tears.Api.ApiException;
 import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
 import org.example.tears.Model.*;
-import org.example.tears.Repository.CarServiceRequestRepository;
-import org.example.tears.Repository.ChatMessageRepository;
-import org.example.tears.Repository.TicketRepository;
-import org.example.tears.Repository.UserRepository;
+import org.example.tears.Repository.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -27,7 +24,7 @@ public class TicketService {
     private final ChatMessageRepository chatMessageRepository;
 
     private final UserRepository userRepo;
-
+    private final EmployeeRepository employeeRepository;
 
     private final AuthService authService;
     private final ChatService chatService;
@@ -560,6 +557,179 @@ public class TicketService {
                 inProgress,
                 solved
         );
+    }
+
+    public List<EmployeeSupportListDto> getSupportEmployees(
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if (user.getEmployee() == null ||
+                user.getEmployee().getEmployeeRole() != EmployeeRole.SUPPORT) {
+
+            throw new ApiException("غير مصرح");
+        }
+
+        return employeeRepository.findAll()
+                .stream()
+                .map(this::toSupportEmployeeDto)
+                .toList();
+    }
+
+
+    public List<EmployeeSupportListDto> searchSupportEmployees(
+            HttpServletRequest request,
+            String q
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if (user.getEmployee() == null ||
+                user.getEmployee().getEmployeeRole() != EmployeeRole.SUPPORT) {
+
+            throw new ApiException("غير مصرح");
+        }
+
+        String search = q == null ? "" : q.trim().toLowerCase();
+
+        return employeeRepository.findAll()
+                .stream()
+                .filter(employee -> {
+
+                    User employeeUser = employee.getUser();
+
+                    String fullName =
+                            employeeUser.getFullName() != null
+                                    ? employeeUser.getFullName().toLowerCase()
+                                    : "";
+
+                    String employeeCode =
+                            employee.getEmployeeCode() != null
+                                    ? employee.getEmployeeCode().toLowerCase()
+                                    : "";
+
+                    String email =
+                            employeeUser.getEmail() != null
+                                    ? employeeUser.getEmail().toLowerCase()
+                                    : "";
+
+                    String phone =
+                            employeeUser.getPhoneNumber() != null
+                                    ? employeeUser.getPhoneNumber().toLowerCase()
+                                    : "";
+
+                    String city =
+                            employee.getCity() != null
+                                    ? employee.getCity().name().toLowerCase()
+                                    : "";
+
+                    String jobTitle =
+                            employee.getJobTitle() != null
+                                    ? employee.getJobTitle().toLowerCase()
+                                    : "";
+
+                    return fullName.contains(search)
+                            || employeeCode.contains(search)
+                            || email.contains(search)
+                            || phone.contains(search)
+                            || city.contains(search)
+                            || jobTitle.contains(search);
+                })
+                .map(this::toSupportEmployeeDto)
+                .toList();
+    }
+
+
+    private EmployeeSupportListDto toSupportEmployeeDto(
+            Employee employee
+    ) {
+
+        EmployeeSupportListDto dto =
+                new EmployeeSupportListDto();
+
+        dto.setId(employee.getId());
+
+        dto.setFullName(
+                employee.getUser().getFullName()
+        );
+
+        dto.setEmployeeCode(
+                employee.getEmployeeCode()
+        );
+
+        dto.setEmail(
+                employee.getUser().getEmail()
+        );
+
+        dto.setPhone(
+                employee.getUser().getPhoneNumber()
+        );
+
+        dto.setCity(
+                employee.getCity() != null
+                        ? employee.getCity().name()
+                        : null
+        );
+
+        dto.setJobTitle(
+                employee.getJobTitle()
+        );
+
+        return dto;
+    }
+
+    public List<TicketListDto> searchSupportTickets(
+            HttpServletRequest request,
+            String q
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        if (user.getEmployee() == null ||
+                user.getEmployee().getEmployeeRole() != EmployeeRole.SUPPORT) {
+
+            throw new ApiException("غير مصرح");
+        }
+
+        String search = q == null ? "" : q.trim().toLowerCase();
+
+        return ticketRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .filter(ticket -> {
+
+                    String ticketNumber =
+                            ticket.getTicketNumber() != null
+                                    ? ticket.getTicketNumber().toLowerCase()
+                                    : "";
+
+                    String orderNumber =
+                            ticket.getRequest() != null &&
+                                    ticket.getRequest().getOrderNumber() != null
+                                    ? ticket.getRequest().getOrderNumber().toLowerCase()
+                                    : "";
+
+                    String customerName =
+                            ticket.getCustomer() != null &&
+                                    ticket.getCustomer().getUser() != null &&
+                                    ticket.getCustomer().getUser().getFullName() != null
+                                    ? ticket.getCustomer().getUser().getFullName().toLowerCase()
+                                    : "";
+
+                    String customerPhone =
+                            ticket.getCustomer() != null &&
+                                    ticket.getCustomer().getUser() != null &&
+                                    ticket.getCustomer().getUser().getPhoneNumber() != null
+                                    ? ticket.getCustomer().getUser().getPhoneNumber().toLowerCase()
+                                    : "";
+
+                    return ticketNumber.contains(search)
+                            || orderNumber.contains(search)
+                            || customerName.contains(search)
+                            || customerPhone.contains(search);
+                })
+                .map(this::toListDto)
+                .toList();
     }
 
 

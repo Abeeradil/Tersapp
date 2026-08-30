@@ -833,4 +833,39 @@ public class RequestMapper {
         dto.setAddress(loc.getAddress());
         return dto;
     }
+
+    public EmployeeSupportListDto toEmployeeSupportDto(Employee employee) {
+
+        EmployeeSupportListDto dto = new EmployeeSupportListDto();
+
+        dto.setId(employee.getId());
+
+        dto.setFullName(
+                employee.getUser().getFullName()
+        );
+
+        dto.setEmployeeCode(
+                employee.getEmployeeCode()
+        );
+
+        dto.setEmail(
+                employee.getUser().getEmail()
+        );
+
+        dto.setPhone(
+                employee.getUser().getPhoneNumber()
+        );
+
+        dto.setCity(
+                employee.getCity() != null
+                        ? employee.getCity().name()
+                        : null
+        );
+
+        dto.setJobTitle(
+                employee.getJobTitle()
+        );
+
+        return dto;
+    }
 }
