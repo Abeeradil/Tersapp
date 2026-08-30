@@ -164,7 +164,7 @@ public class WarrantyService {
                     requestQueryService.getMyRequests(
                             assignedTechnician,
                             null,
-                            "WARRANTY"
+                            "ALL"
                     )
             );
 
@@ -818,7 +818,7 @@ public class WarrantyService {
                     requestQueryService.getMyRequests(
                             assignedTechnician,
                             null,
-                            "WARRANTY"
+                            "ALL"
                     )
             );
 

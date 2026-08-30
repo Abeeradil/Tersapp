@@ -993,7 +993,7 @@ public class RequestWorkflowService {
                     requestQueryService.getMyRequests(
                             assignedTechnician,
                             null,
-                            "WARRANTY"
+                            "ALL"
                     )
             );
 
