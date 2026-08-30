@@ -20,6 +20,7 @@ public class AssignmentService {
     private final NotificationService notificationService;
     private final SocketService socketService;
     private final CarServiceRequestService carServiceRequestService;
+    private final RequestQueryService requestQueryService;
 
 
     @Transactional
@@ -54,6 +55,23 @@ public class AssignmentService {
                         request.getCustomer().getUser().getId(),
                 carServiceRequestService.toCurrentDto(request)
         );
+        Employee assignedTechnician =
+                request.getAssignedTechnician();
+
+        if (assignedTechnician != null &&
+                assignedTechnician.getUser() != null) {
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            assignedTechnician.getUser().getId(),
+
+                    requestQueryService.getMyRequests(
+                            assignedTechnician,
+                            null,
+                            "ALL"
+                    )
+            );
+        }
 
         notificationService.send(
                 user,
