@@ -46,15 +46,28 @@ public class TicketService {
                         .orElseThrow(() ->
                                 new ApiException("الطلب غير موجود"));
 
+        Employee employee = user.getEmployee();
+
+        // التحقق أن الموظف معيّن على الطلب
+        boolean isAssignedEmployee =
+                employee.equals(request.getAssignedTechnician())
+                        || employee.equals(request.getAssignedPricingEmployee())
+                        || employee.equals(request.getAssignedSupportEmployee());
+
+        if (!isAssignedEmployee) {
+            throw new ApiException("غير مصرح لك بإنشاء تذكرة لهذا الطلب");
+        }
+
         Optional<Ticket> activeTicket =
-                ticketRepository.findByRequest_IdAndCreatedByEmployee_IdAndStatusIn(
-                        request.getId(),
-                        user.getEmployee().getId(),
-                        List.of(
-                                TicketStatus.ACTIVE,
-                                TicketStatus.IN_PROGRESS
-                        )
-                );
+                ticketRepository
+                        .findByRequest_IdAndCreatedByEmployee_IdAndStatusIn(
+                                request.getId(),
+                                employee.getId(),
+                                List.of(
+                                        TicketStatus.ACTIVE,
+                                        TicketStatus.IN_PROGRESS
+                                )
+                        );
 
         if (activeTicket.isPresent()) {
             throw new ApiException("لديك تذكرة مفتوحة لهذا الطلب");
