@@ -649,6 +649,16 @@ public class TicketService {
             );
         }
 
+        if (ticket.getCreatedByEmployee() != null &&
+                ticket.getCreatedByEmployee().getUser() != null) {
+
+            dto.setCreatedByEmployeeName(
+                    ticket.getCreatedByEmployee()
+                            .getUser()
+                            .getFullName()
+            );
+        }
+
         return dto;
     }
 

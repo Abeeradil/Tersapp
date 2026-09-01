@@ -17,10 +17,8 @@ import java.time.LocalDateTime;
 public class ChatRoom {
 
     @Id
-
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
 
     @Enumerated(EnumType.STRING)
     private ChatStatus status;
@@ -28,12 +26,20 @@ public class ChatRoom {
     @Enumerated(EnumType.STRING)
     private ReadStatus readStatus = ReadStatus.SENT;
 
+    // Ticket chat
     @OneToOne
     @JoinColumn(name = "ticket_id", unique = true)
     private Ticket ticket;
 
+    // Direct chat
+    @ManyToOne
+    @JoinColumn(name = "user_one_id")
+    private User userOne;
+
+    @ManyToOne
+    @JoinColumn(name = "user_two_id")
+    private User userTwo;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
-
-
 }

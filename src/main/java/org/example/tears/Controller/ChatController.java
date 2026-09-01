@@ -24,30 +24,43 @@ public class ChatController {
     private final ChatService chatService;
     private final AuthService authService;
 
-    @PostMapping("/chat/test-send")
-    public void testSend(
+    @PostMapping("/send")
+    public ApiResponse sendMessage(
             @RequestBody SendMessageDto dto,
-            HttpServletRequest request
-    ) {
-        chatService.sendMessage(dto, authService.getAuthenticatedUser(request).getPhoneNumber());
-    }
-
-    @GetMapping("/{ticketId}/room")
-    public ApiResponse room(
-            @PathVariable Integer ticketId,
             HttpServletRequest request
     ) {
 
         User user = authService.getAuthenticatedUser(request);
 
-        ChatRoom room = chatService.getRoom(ticketId, user);
+        chatService.sendMessage(
+                dto,
+                user.getPhoneNumber()
+        );
+
+        return new ApiResponse(
+                true,
+                "تم إرسال الرسالة"
+        );
+    }
+
+    @GetMapping("/{roomId}/room")
+    public ApiResponse room(
+            @PathVariable Integer roomId,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        ChatRoom room = chatService.getRoom(roomId, user);
 
         return new ApiResponse(
                 true,
                 "success",
                 new ChatRoomResponse(
                         room.getId(),
-                        room.getTicket().getId(),
+                        room.getTicket() != null
+                                ? room.getTicket().getId()
+                                : null,
                         room.getStatus()
                 )
         );
@@ -74,9 +87,9 @@ public class ChatController {
         );
     }
 
-    @GetMapping("/{ticketId}/messages")
+    @GetMapping("/{roomId}/messages")
     public ApiResponse getMessages(
-            @PathVariable Integer ticketId,
+            @PathVariable Integer roomId,
             HttpServletRequest request
     ) {
 
@@ -85,19 +98,25 @@ public class ChatController {
         return new ApiResponse(
                 true,
                 "تم جلب الرسائل",
-                chatService.getMessages(ticketId, user)
+                chatService.getMessages(
+                        roomId,
+                        user
+                )
         );
     }
 
-    @PutMapping("/{ticketId}/read")
+    @PutMapping("/{roomId}/read")
     public ApiResponse markAsRead(
-            @PathVariable Integer ticketId,
+            @PathVariable Integer roomId,
             HttpServletRequest request
     ) {
 
         User user = authService.getAuthenticatedUser(request);
 
-        chatService.markAsRead(ticketId, user);
+        chatService.markAsRead(
+                roomId,
+                user
+        );
 
         return new ApiResponse(
                 true,
@@ -105,9 +124,9 @@ public class ChatController {
         );
     }
 
-    @GetMapping("/{ticketId}/online")
+    @GetMapping("/{roomId}/online")
     public ApiResponse isOnline(
-            @PathVariable Integer ticketId,
+            @PathVariable Integer roomId,
             HttpServletRequest request
     ) {
 
@@ -117,8 +136,34 @@ public class ChatController {
                 true,
                 "success",
                 chatService.isOtherUserOnline(
-                        ticketId,
+                        roomId,
                         user
+                )
+        );
+    }
+
+
+    @PostMapping("/direct/{employeeId}")
+    public ApiResponse createDirectRoom(
+            @PathVariable Integer employeeId,
+            HttpServletRequest request
+    ) {
+
+        User user = authService.getAuthenticatedUser(request);
+
+        ChatRoom room =
+                chatService.createDirectRoom(
+                        user,
+                        employeeId
+                );
+
+        return new ApiResponse(
+                true,
+                "تم فتح المحادثة",
+                new ChatRoomResponse(
+                        room.getId(),
+                        null,
+                        room.getStatus()
                 )
         );
     }

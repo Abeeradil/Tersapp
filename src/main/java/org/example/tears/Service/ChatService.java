@@ -35,6 +35,7 @@ public class ChatService {
 
     private final UserRepository userRepo;
     private final PresenceService presenceService;
+    private final EmployeeRepository employeeRepository;
 
 
     @Transactional
@@ -59,26 +60,20 @@ public class ChatService {
     }
 
 
-    public ChatRoom getRoom(Integer ticketId, User user) {
+    public ChatRoom getRoom(Integer roomId, User user) {
 
-        Ticket ticket = ticketRepository.findById(ticketId)
+        ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() ->
-                        new ApiException("التذكرة غير موجودة"));
+                        new ApiException("المحادثة غير موجودة"));
 
-        validateUserAccess(ticket, user);
+        validateDirectRoomAccess(room, user);
 
-        return chatRoomRepository
-                .findByTicket(ticket)
-                .orElseThrow(() ->
-                        new ApiException("لا توجد محادثة"));
+        return room;
     }
 
-    public List<ChatMessageResponse> getMessages(
-            Integer ticketId,
-            User user
-    ) {
+    public List<ChatMessageResponse> getMessages(Integer roomId, User user) {
 
-        ChatRoom room = getRoom(ticketId, user);
+        ChatRoom room = getRoom(roomId, user);
 
         return chatMessageRepository
                 .findByChatRoomOrderByCreatedAtAsc(room)
@@ -87,14 +82,36 @@ public class ChatService {
                 .toList();
     }
 
+    private void validateDirectRoomAccess(
+            ChatRoom room,
+            User user
+    ) {
+
+        if (user.getRole() == UserRole.ADMIN) {
+            return;
+        }
+
+        if (room.getUserOne() != null &&
+                room.getUserOne().getId().equals(user.getId())) {
+            return;
+        }
+
+        if (room.getUserTwo() != null &&
+                room.getUserTwo().getId().equals(user.getId())) {
+            return;
+        }
+
+        throw new ApiException("غير مصرح لك بالدخول لهذه المحادثة");
+    }
+
 
     public Page<ChatMessage> getMessagesPage(
-            Integer ticketId,
+            Integer roomId,
             User user,
             Pageable pageable
-    ){
+    ) {
 
-        ChatRoom room = getRoom(ticketId,user);
+        ChatRoom room = getRoom(roomId, user);
 
         return chatMessageRepository
                 .findByChatRoomOrderByCreatedAtDesc(
@@ -147,35 +164,15 @@ public class ChatService {
             String phone
     ) {
 
-        long totalStart = System.currentTimeMillis();
-
-        System.out.println("========== SEND MESSAGE ==========");
-        System.out.println("Phone = " + phone);
-        System.out.println("TicketId = " + dto.getTicketId());
-        System.out.println("Type = " + dto.getType());
-        System.out.println("Message = " + dto.getMessage());
-
-        long start = System.currentTimeMillis();
-
         User sender = userRepo
                 .findByPhoneNumber(phone)
                 .orElseThrow(() ->
                         new ApiException("المستخدم غير موجود"));
 
-        System.out.println("✔ findByPhoneNumber = "
-                + (System.currentTimeMillis() - start) + " ms");
-
-        start = System.currentTimeMillis();
-
         ChatRoom room = getRoom(
-                dto.getTicketId(),
+                dto.getRoomId(),
                 sender
         );
-
-        System.out.println("✔ getRoom = "
-                + (System.currentTimeMillis() - start) + " ms");
-
-        start = System.currentTimeMillis();
 
         ChatMessage message = new ChatMessage();
 
@@ -190,37 +187,15 @@ public class ChatService {
         message.setVoiceDuration(dto.getVoiceDuration());
         message.setCreatedAt(LocalDateTime.now());
 
-        System.out.println("✔ build message = "
-                + (System.currentTimeMillis() - start) + " ms");
-
-        start = System.currentTimeMillis();
-
         chatMessageRepository.save(message);
-
-        System.out.println("✔ save message = "
-                + (System.currentTimeMillis() - start) + " ms");
-
-        start = System.currentTimeMillis();
 
         ChatMessageResponse response =
                 mapToResponse(message, sender);
-
-        System.out.println("✔ mapToResponse = "
-                + (System.currentTimeMillis() - start) + " ms");
-
-        start = System.currentTimeMillis();
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + room.getId(),
                 response
         );
-
-        System.out.println("✔ websocket broadcast = "
-                + (System.currentTimeMillis() - start) + " ms");
-
-        System.out.println("========== TOTAL TIME = "
-                + (System.currentTimeMillis() - totalStart)
-                + " ms ==========");
     }
 
     private ChatMessageResponse mapToResponse(
@@ -257,32 +232,33 @@ public class ChatService {
     }
 
     public void markAsRead(
-            Integer ticketId,
+            Integer roomId,
             User currentUser
-    ){
+    ) {
 
-        ChatRoom room =
-                getRoom(ticketId,currentUser);
+        ChatRoom room = getRoom(roomId, currentUser);
 
         List<ChatMessage> messages =
                 chatMessageRepository
                         .findByChatRoomOrderByCreatedAtAsc(room);
 
-        for(ChatMessage message : messages){
+        for (ChatMessage message : messages) {
 
-            if(message.getSender().getId()
-                    .equals(currentUser.getId()))
+            if (message.getSender().getId()
+                    .equals(currentUser.getId())) {
                 continue;
+            }
 
-            if(message.getReadStatus()==ReadStatus.READ)
+            if (message.getReadStatus() == ReadStatus.READ) {
                 continue;
+            }
 
             message.setReadStatus(ReadStatus.READ);
 
             chatMessageRepository.save(message);
 
             messagingTemplate.convertAndSend(
-                    "/topic/chat/"+room.getId()+"/read",
+                    "/topic/chat/" + room.getId() + "/read",
                     message.getId()
             );
         }
@@ -290,38 +266,22 @@ public class ChatService {
 
 
     public Boolean isOtherUserOnline(
-            Integer ticketId,
+            Integer roomId,
             User currentUser
-    ){
+    ) {
 
-        Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() ->
-                        new ApiException("التذكرة غير موجودة"));
+        ChatRoom room = getRoom(roomId, currentUser);
 
-        validateUserAccess(ticket,currentUser);
+        User otherUser;
 
-        User other;
-
-        if(currentUser.getCustomer()!=null){
-
-            other = ticket.getAssignedSupportEmployee().getUser();
-
-        }else{
-
-            if(ticket.getCreatedByEmployee()
-                    .getId()
-                    .equals(currentUser.getEmployee().getId())){
-
-                other = ticket.getAssignedSupportEmployee().getUser();
-
-            }else{
-
-                other = ticket.getCreatedByEmployee().getUser();
-            }
+        if (room.getUserOne().getId().equals(currentUser.getId())) {
+            otherUser = room.getUserTwo();
+        } else {
+            otherUser = room.getUserOne();
         }
 
         return presenceService.isOnline(
-                other.getPhoneNumber()
+                otherUser.getPhoneNumber()
         );
     }
 
@@ -358,15 +318,20 @@ public class ChatService {
                 mapToResponse(message, admin)
         );
     }
+
     public void sendTyping(
             TypingDto dto,
             String phone
     ) {
 
         User sender = userRepo.findByPhoneNumber(phone)
-                .orElseThrow(() -> new ApiException("المستخدم غير موجود"));
+                .orElseThrow(() ->
+                        new ApiException("المستخدم غير موجود"));
 
-        ChatRoom room = getRoom(dto.getTicketId(), sender);
+        ChatRoom room = getRoom(
+                dto.getRoomId(),
+                sender
+        );
 
         messagingTemplate.convertAndSend(
                 "/topic/chat/" + room.getId() + "/typing",
@@ -406,6 +371,41 @@ public class ChatService {
                         "messageId", message.getId()
                 )
         );
+    }
+
+    @Transactional
+    public ChatRoom createDirectRoom(
+            User currentUser,
+            Integer employeeId
+    ) {
+
+        Employee employee = employeeRepository
+                .findById(employeeId)
+                .orElseThrow(() ->
+                        new ApiException("الموظف غير موجود"));
+
+        User otherUser = employee.getUser();
+
+        if (currentUser.getId().equals(otherUser.getId())) {
+            throw new ApiException("لا يمكنك مراسلة نفسك");
+        }
+
+        return chatRoomRepository
+                .findDirectRoom(
+                        currentUser.getId(),
+                        otherUser.getId()
+                )
+                .orElseGet(() -> {
+
+                    ChatRoom room = new ChatRoom();
+
+                    room.setUserOne(currentUser);
+                    room.setUserTwo(otherUser);
+                    room.setStatus(ChatStatus.OPEN);
+                    room.setReadStatus(ReadStatus.SENT);
+
+                    return chatRoomRepository.save(room);
+                });
     }
 
 }

@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class TypingDto {
 
-    private Integer ticketId;
+    private Integer roomId;
+
     private Boolean typing;
 }
