@@ -81,6 +81,12 @@ public class AssignmentService {
             );
         }
 
+        socketService.send(
+                "/topic/employee-request-count/" +
+                        employee.getUser().getId(),
+                requestQueryService.getMyNewRequestsCount(employee)
+        );
+
         notificationService.send(
                 user,
                 NotificationType.REQUEST_ASSIGNED,

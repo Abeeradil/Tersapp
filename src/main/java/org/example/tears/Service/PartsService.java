@@ -28,6 +28,7 @@ public class PartsService {
     private final RequestMapper requestMapper;
     private final SocketService socketService;
     private final PricingRequestMapper pricingRequestMapper;
+    private final RequestQueryService requestQueryService;
 
 
     // إضافة قطعة
@@ -100,6 +101,11 @@ public class PartsService {
                     getMyPricingRequests(
                             pricingEmployee
                     )
+            );
+            socketService.send(
+                    "/topic/employee-request-count/" +
+                            pricingEmployee.getUser().getId(),
+                    requestQueryService.getMyNewRequestsCount(pricingEmployee)
             );
 
             notificationService.send(

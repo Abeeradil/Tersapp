@@ -28,6 +28,7 @@ public class TicketService {
 
     private final AuthService authService;
     private final ChatService chatService;
+    private final SocketService socketService;
 
     @Transactional
     public TicketResponseDto createTicket(
@@ -101,6 +102,37 @@ public class TicketService {
 
         // حفظ رقم التذكرة
         ticket = ticketRepository.save(ticket);
+        socketService.send(
+                "/topic/employee-tickets/" +
+                        ticket.getCreatedByEmployee().getUser().getId(),
+                mapToResponse(ticket)
+        );
+
+        socketService.send(
+                "/topic/support-tickets",
+                toListDto(ticket)
+        );
+
+        long active =
+                ticketRepository.countByStatus(TicketStatus.ACTIVE);
+
+        long inProgress =
+                ticketRepository.countByStatus(TicketStatus.IN_PROGRESS);
+
+        long solved =
+                ticketRepository.countByStatus(TicketStatus.SOLVED);
+
+        TicketSupportCountDto countDto =
+                new TicketSupportCountDto(
+                        active,
+                        inProgress,
+                        solved
+                );
+
+        socketService.send(
+                "/topic/support-ticket-count",
+                countDto
+        );
 
         return mapToResponse(ticket);
     }
@@ -404,6 +436,43 @@ public class TicketService {
             requestRepository.save(serviceRequest);
             ticketRepository.save(ticket);
 
+            socketService.send(
+                    "/topic/employee-tickets/" +
+                            ticket.getCreatedByEmployee().getUser().getId(),
+                    mapToResponse(ticket)
+            );
+
+            socketService.send(
+                    "/topic/ticket-details/" +
+                            ticket.getId(),
+                    getTicketDetails(ticket.getId())
+            );
+
+            socketService.send(
+                    "/topic/support-tickets",
+                    toListDto(ticket)
+            );
+            long active =
+                    ticketRepository.countByStatus(TicketStatus.ACTIVE);
+
+            long inProgress =
+                    ticketRepository.countByStatus(TicketStatus.IN_PROGRESS);
+
+            long solved =
+                    ticketRepository.countByStatus(TicketStatus.SOLVED);
+
+            TicketSupportCountDto countDto =
+                    new TicketSupportCountDto(
+                            active,
+                            inProgress,
+                            solved
+                    );
+
+            socketService.send(
+                    "/topic/support-ticket-count",
+                    countDto
+            );
+
 // إشعار بدء المحادثة
             notificationService.send(
                     ticket.getCustomer().getUser(),
@@ -441,6 +510,44 @@ public class TicketService {
 
             requestRepository.save(serviceRequest);
             ticketRepository.save(ticket);
+
+            long active =
+                    ticketRepository.countByStatus(TicketStatus.ACTIVE);
+
+            long inProgress =
+                    ticketRepository.countByStatus(TicketStatus.IN_PROGRESS);
+
+            long solved =
+                    ticketRepository.countByStatus(TicketStatus.SOLVED);
+
+            TicketSupportCountDto countDto =
+                    new TicketSupportCountDto(
+                            active,
+                            inProgress,
+                            solved
+                    );
+
+            socketService.send(
+                    "/topic/support-ticket-count",
+                    countDto
+            );
+
+            socketService.send(
+                    "/topic/employee-tickets/" +
+                            ticket.getCreatedByEmployee().getUser().getId(),
+                    mapToResponse(ticket)
+            );
+
+            socketService.send(
+                    "/topic/ticket-details/" +
+                            ticket.getId(),
+                    getTicketDetails(ticket.getId())
+            );
+
+            socketService.send(
+                    "/topic/support-tickets",
+                    toListDto(ticket)
+            );
 
             notificationService.send(
                     ticket.getCreatedByEmployee().getUser(),
