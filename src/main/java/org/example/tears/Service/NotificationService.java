@@ -2,10 +2,7 @@ package org.example.tears.Service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.NotificationActionDto;
-import org.example.tears.DTO.NotificationDto;
-import org.example.tears.DTO.NotificationListResponse;
-import org.example.tears.DTO.RegisterDeviceDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Model.Notification;
 import org.example.tears.Model.User;
 import org.example.tears.Model.UserDevice;
@@ -227,5 +224,22 @@ public class NotificationService {
         device.setUpdatedAt(LocalDateTime.now());
 
         userDeviceRepository.save(device);
+    }
+
+    public List<AdminDeviceDto> getAllDevicesForAdmin() {
+
+        return userDeviceRepository.findAllByOrderByUpdatedAtDesc()
+                .stream()
+                .map(device -> new AdminDeviceDto(
+                        device.getId(),
+                        device.getUser().getId(),
+                        device.getUser().getFullName(),
+                        device.getUser().getPhoneNumber(),
+                        device.getFcmToken(),
+                        device.getDeviceType(),
+                        device.getActive(),
+                        device.getLastSeen()
+                ))
+                .toList();
     }
 }

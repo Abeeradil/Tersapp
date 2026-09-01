@@ -2,10 +2,12 @@ package org.example.tears.Controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.NotificationListResponse;
 import org.example.tears.DTO.RegisterDeviceDto;
 import org.example.tears.DTO.UnregisterDeviceDto;
+import org.example.tears.Enums.UserRole;
 import org.example.tears.Model.User;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.NotificationService;
@@ -59,7 +61,7 @@ public class NotificationController {
                 "تم تحديث جميع الإشعارات"
         );
     }
-    
+
     @PostMapping("/device")
     public ApiResponse registerDevice(
             @AuthenticationPrincipal User user,
@@ -93,6 +95,22 @@ public class NotificationController {
                         "Device unregistered successfully",
                         null
                 )
+        );
+    }
+
+    @GetMapping("/admin/devices")
+    public ApiResponse getAllDevicesForAdmin(
+            @AuthenticationPrincipal User user
+    ) {
+
+        if (user == null || user.getRole() != UserRole.ADMIN) {
+            throw new ApiException("Access denied");
+        }
+
+        return new ApiResponse(
+                true,
+                "تم جلب الأجهزة المسجلة",
+                notificationService.getAllDevicesForAdmin()
         );
     }
 
