@@ -184,10 +184,7 @@ public class NotificationService {
         repo.saveAll(notifications);
     }
 
-    public void registerDevice(
-            User user,
-            RegisterDeviceDto dto
-    ) {
+    public String registerDevice(User user, RegisterDeviceDto dto) {
 
         UserDevice device =
                 userDeviceRepository
@@ -206,6 +203,8 @@ public class NotificationService {
         }
 
         userDeviceRepository.save(device);
+
+        return device.getFcmToken();
     }
 
     @Transactional

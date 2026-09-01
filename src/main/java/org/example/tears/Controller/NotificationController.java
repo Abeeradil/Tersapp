@@ -59,20 +59,18 @@ public class NotificationController {
                 "تم تحديث جميع الإشعارات"
         );
     }
+    
     @PostMapping("/device")
     public ApiResponse registerDevice(
             @AuthenticationPrincipal User user,
             @RequestBody RegisterDeviceDto dto
     ) {
-
-        notificationService.registerDevice(
-                user,
-                dto
-        );
+        String fcmToken = notificationService.registerDevice(user, dto);
 
         return new ApiResponse(
                 true,
-                "تم تسجيل الجهاز"
+                "تم تسجيل الجهاز",
+                fcmToken
         );
     }
 
