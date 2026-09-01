@@ -3,11 +3,9 @@ package org.example.tears.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
-import org.example.tears.DTO.AddPartsDto;
-import org.example.tears.DTO.PartDto;
-import org.example.tears.DTO.PartReportDto;
-import org.example.tears.DTO.PartsDetailsDto;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.PricingRequestMapper;
 import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
@@ -28,6 +26,8 @@ public class PartsService {
     private final NotificationService notificationService;
     private final RequestWorkflowService workflowService;
     private final RequestMapper requestMapper;
+    private final SocketService socketService;
+    private final PricingRequestMapper pricingRequestMapper;
 
 
     // إضافة قطعة
@@ -81,6 +81,7 @@ public class PartsService {
 
                 partRepo.save(part);
             }
+
             Employee pricingEmployee =
                     workflowService.getLeastBusyPricingEmployee();
 
@@ -91,6 +92,15 @@ public class PartsService {
             req.setPricingStatus(PricingStatus.NEW);
 
             requestRepo.save(req);
+
+            socketService.send(
+                    "/topic/pricing-requests/" +
+                            pricingEmployee.getUser().getId(),
+
+                    getMyPricingRequests(
+                            pricingEmployee
+                    )
+            );
 
             notificationService.send(
                     pricingEmployee.getUser(),
@@ -105,6 +115,15 @@ public class PartsService {
             );
         }
 
+    public List<PricingRequestCardDto> getMyPricingRequests(
+            Employee employee
+    ) {
+        return requestRepo
+                .findByAssignedPricingEmployee(employee)
+                .stream()
+                .map(pricingRequestMapper::toPricingCardDto)
+                .toList();
+    }
 
 
         // عرض القطع

@@ -34,4 +34,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Integer> {
             Integer employeeId,
             TicketStatus status
     );
+    Optional<Ticket> findByRequest_IdAndCreatedByEmployee_IdAndStatusIn(
+            Integer requestId,
+            Integer employeeId,
+            List<TicketStatus> statuses
+    );
 }

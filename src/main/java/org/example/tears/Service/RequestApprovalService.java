@@ -938,6 +938,12 @@ import java.util.stream.Collectors;
                                 "ALL"
                         )
                 );
+                socketService.send(
+                        "/topic/employee-request-details/" +
+                                request.getId(),
+
+                        requestMapper.toEmployeeDetailsDto(request)
+                );
 
 
                 // ======================================
@@ -1032,6 +1038,13 @@ import java.util.stream.Collectors;
                             null,
                             "ALL"
                     )
+            );
+
+            socketService.send(
+                    "/topic/employee-request-details/" +
+                            request.getId(),
+
+                    requestMapper.toEmployeeDetailsDto(request)
             );
 
 
@@ -1133,6 +1146,13 @@ import java.util.stream.Collectors;
                                 null,
                                 "ALL"
                         )
+                );
+
+                socketService.send(
+                        "/topic/employee-request-details/" +
+                                request.getId(),
+
+                        requestMapper.toEmployeeDetailsDto(request)
                 );
 
             }

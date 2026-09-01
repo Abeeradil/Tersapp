@@ -1,6 +1,7 @@
 package org.example.tears.Service;
 
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.PricingRequestMapper;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
@@ -35,6 +36,7 @@ public class RequestPricingService {
     private final RequestApprovalRepository approvalRepo;
     private final SocketService socketService;
     private final CarServiceRequestService carServiceRequestService;
+    private final PricingRequestMapper pricingRequestMapper;
 
     @Transactional
     public void startPricing(Integer requestId, Employee employee){
@@ -51,6 +53,13 @@ public class RequestPricingService {
         request.setPricingAt(LocalDateTime.now());
 
         requestRepo.save(request);
+
+        socketService.send(
+                "/topic/pricing-request-details/" +
+                        request.getId(),
+
+                pricingRequestMapper.toPricingDetailsDto(request)
+        );
     }
 
     @Transactional
@@ -99,6 +108,12 @@ public class RequestPricingService {
         request.setLastUpdated(LocalDateTime.now());
 
         requestRepo.save(request);
+        socketService.send(
+                "/topic/pricing-request-details/" +
+                        request.getId(),
+
+                pricingRequestMapper.toPricingDetailsDto(request)
+        );
     }
 
     @Transactional
@@ -388,6 +403,12 @@ public class RequestPricingService {
                 "/topic/request/" +
                         request.getId(),
                 carServiceRequestService.toDetailsDto(request)
+        );
+        socketService.send(
+                "/topic/pricing-request-details/" +
+                        request.getId(),
+
+                pricingRequestMapper.toPricingDetailsDto(request)
         );
 
         /*

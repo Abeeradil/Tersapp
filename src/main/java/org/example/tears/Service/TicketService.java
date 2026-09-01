@@ -47,8 +47,9 @@ public class TicketService {
                                 new ApiException("الطلب غير موجود"));
 
         Optional<Ticket> activeTicket =
-                ticketRepository.findByRequest_IdAndStatusIn(
+                ticketRepository.findByRequest_IdAndCreatedByEmployee_IdAndStatusIn(
                         request.getId(),
+                        user.getEmployee().getId(),
                         List.of(
                                 TicketStatus.ACTIVE,
                                 TicketStatus.IN_PROGRESS
@@ -56,7 +57,7 @@ public class TicketService {
                 );
 
         if (activeTicket.isPresent()) {
-            throw new ApiException("يوجد تذكرة مفتوحة لهذا الطلب");
+            throw new ApiException("لديك تذكرة مفتوحة لهذا الطلب");
         }
 
         Ticket ticket = new Ticket();

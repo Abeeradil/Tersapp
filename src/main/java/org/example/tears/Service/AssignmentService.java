@@ -3,6 +3,7 @@ package org.example.tears.Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Enums.*;
+import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.User;
@@ -21,6 +22,7 @@ public class AssignmentService {
     private final SocketService socketService;
     private final CarServiceRequestService carServiceRequestService;
     private final RequestQueryService requestQueryService;
+    private final RequestMapper requestMapper;
 
 
     @Transactional
@@ -70,6 +72,12 @@ public class AssignmentService {
                             null,
                             "ALL"
                     )
+            );
+            socketService.send(
+                    "/topic/employee-request-details/" +
+                            request.getId(),
+
+                    requestMapper.toEmployeeDetailsDto(request)
             );
         }
 

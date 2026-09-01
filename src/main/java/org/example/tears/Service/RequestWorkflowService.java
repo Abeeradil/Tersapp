@@ -128,6 +128,13 @@ public class RequestWorkflowService {
                     "/topic/past-orders/" + req.getCustomer().getUser().getId(),
                     carServiceRequestService.toHistoryDto(req)
             );
+
+            socketService.send(
+                    "/topic/employee-request-details/" +
+                            req.getId(),
+
+                    requestMapper.toEmployeeDetailsDto(req)
+            );
             notificationService.send(
                     req.getCustomer().getUser(),
 
@@ -169,6 +176,31 @@ public class RequestWorkflowService {
         socketService.send(
                 "/topic/request/" + req.getId(),
                 carServiceRequestService.toDetailsDto(req)
+        );
+
+        Employee assignedTechnician =
+                req.getAssignedTechnician();
+
+        if (assignedTechnician != null &&
+                assignedTechnician.getUser() != null) {
+
+            socketService.send(
+                    "/topic/employee-requests/" +
+                            assignedTechnician.getUser().getId(),
+
+                    requestQueryService.getMyRequests(
+                            assignedTechnician,
+                            null,
+                            "ALL"
+                    )
+            );
+        }
+
+        socketService.send(
+                "/topic/employee-request-details/" +
+                        req.getId(),
+
+                requestMapper.toEmployeeDetailsDto(req)
         );
 
 
@@ -996,6 +1028,7 @@ public class RequestWorkflowService {
                             "ALL"
                     )
             );
+
 
 
             // ======================================
