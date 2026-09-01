@@ -11,7 +11,6 @@ import org.example.tears.Repository.UserDeviceRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -24,17 +23,22 @@ public class FcmService {
             Notification notification
     ) {
 
-        List<UserDevice> devices =
+        List<String> tokens =
                 userDeviceRepository
-                        .findByUserIdAndActiveTrue(user.getId());
+                        .findByUserIdAndActiveTrue(user.getId())
+                        .stream()
+                        .map(UserDevice::getFcmToken)
+                        .filter(token -> token != null && !token.isBlank())
+                        .distinct()
+                        .toList();
 
         log.info(
                 "FCM devices found: userId={}, count={}",
                 user.getId(),
-                devices.size()
+                tokens.size()
         );
 
-        for (UserDevice device : devices) {
+        for (String token : tokens) {
 
             try {
 
@@ -44,11 +48,28 @@ public class FcmService {
                                 .setNotification(
                                         com.google.firebase.messaging.Notification
                                                 .builder()
-                                                .setTitle(
-                                                        notification.getTitle()
+                                                .setTitle(notification.getTitle())
+                                                .setBody(notification.getBody())
+                                                .build()
+                                )
+
+                                .setAndroidConfig(
+                                        com.google.firebase.messaging.AndroidConfig.builder()
+                                                .setNotification(
+                                                        com.google.firebase.messaging.AndroidNotification.builder()
+                                                                .setChannelId("ters_employee_alerts_v2")
+                                                                .setSound("mixkit_keys_moving")
+                                                                .build()
                                                 )
-                                                .setBody(
-                                                        notification.getBody()
+                                                .build()
+                                )
+
+                                .setApnsConfig(
+                                        com.google.firebase.messaging.ApnsConfig.builder()
+                                                .setAps(
+                                                        com.google.firebase.messaging.Aps.builder()
+                                                                .setSound("mixkit-keys-moving.wav")
+                                                                .build()
                                                 )
                                                 .build()
                                 )
@@ -88,16 +109,13 @@ public class FcmService {
                                         notification.getSection().name()
                                 )
 
-                                .setToken(
-                                        device.getFcmToken()
-                                )
+                                .setToken(token)
 
                                 .build();
 
                 log.info(
-                        "Attempting FCM send: userId={}, deviceId={}",
-                        user.getId(),
-                        device.getId()
+                        "Attempting FCM send: userId={}",
+                        user.getId()
                 );
 
                 String messageId =
@@ -106,18 +124,16 @@ public class FcmService {
                                 .send(message);
 
                 log.info(
-                        "FCM sent successfully: userId={}, deviceId={}, messageId={}",
+                        "FCM sent successfully: userId={}, messageId={}",
                         user.getId(),
-                        device.getId(),
                         messageId
                 );
 
             } catch (Exception e) {
 
                 log.error(
-                        "FCM send failed: userId={}, deviceId={}",
+                        "FCM send failed: userId={}",
                         user.getId(),
-                        device.getId(),
                         e
                 );
             }

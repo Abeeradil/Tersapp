@@ -1310,7 +1310,6 @@ public class RequestWorkflowService {
                 NotificationCategory.WARRANTY,
 
                 "تم استلام السيارة",
-
                 "تم استلام السيارة لطلب الضمان وبدأت مرحلة الفحص يمكنك رؤيه السيارة.",
 
                 NotificationActionType.OPEN_ENTITY,

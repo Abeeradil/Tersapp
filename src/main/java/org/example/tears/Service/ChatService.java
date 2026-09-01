@@ -59,14 +59,17 @@ public class ChatService {
                 });
     }
 
-
     public ChatRoom getRoom(Integer roomId, User user) {
 
         ChatRoom room = chatRoomRepository.findById(roomId)
                 .orElseThrow(() ->
                         new ApiException("المحادثة غير موجودة"));
 
-        validateDirectRoomAccess(room, user);
+        if (room.getTicket() != null) {
+            validateUserAccess(room.getTicket(), user);
+        } else {
+            validateDirectRoomAccess(room, user);
+        }
 
         return room;
     }

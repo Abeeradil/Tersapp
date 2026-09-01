@@ -88,7 +88,7 @@ public class AssignmentService {
         );
 
         notificationService.send(
-                user,
+                assignedTechnician.getUser(),
                 NotificationType.REQUEST_ASSIGNED,
                 NotificationCategory.REQUEST,
                 "تم إسناد طلب جديد لك",

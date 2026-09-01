@@ -434,7 +434,6 @@ import java.util.stream.Collectors;
                 NotificationCategory.QUOTATION,
 
                 "تم رفض تقرير التسعير",
-
                 "رفض العميل تقرير التسعير وحدد موعد استلام السيارة للطلب #"
                         + request.getOrderNumber(),
 
