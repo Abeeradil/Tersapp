@@ -114,6 +114,12 @@ public class AdminService {
         employeeRepository.save(
                 employee
         );
+        employee.setEmployeeCode(
+                String.format("EM-%06d", employee.getId())
+        );
+        employeeRepository.save(
+                employee
+        );
 
         return new EmployeeLoginInfo(
                 email,
