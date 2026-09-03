@@ -78,7 +78,7 @@ public class AdminService {
         );
 
         user.setStatus(
-                UserStatus.PENDING_VERIFICATION
+                UserStatus.ACTIVE
         );
 
         User savedUser =

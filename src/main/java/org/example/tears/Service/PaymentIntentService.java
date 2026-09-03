@@ -373,11 +373,16 @@ public class PaymentIntentService {
         req.setVatAmount(intent.getVatAmount());
         req.setCouponValid(intent.getCouponValid());
         req.setPricingMessage(intent.getPricingMessage());
+        User customerUser = req.getCustomer().getUser();
 
+        if (customerUser.getTestTechnician() != null) {
+
+            req.setAssignedTechnician(
+                    customerUser.getTestTechnician()
+            );
+        }
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
-
         req.setStaffStatus(StaffRequestStatus.NEW);
-
         req.setStage(WorkflowStage.NEW_REQUEST);
 
         req.setLastUpdated(LocalDateTime.now());
@@ -698,6 +703,14 @@ public class PaymentIntentService {
             request.setStage(
                     WorkflowStage.REPAIRING
             );
+            User customerUser = request.getCustomer().getUser();
+
+            if (customerUser.getTestTechnician() != null) {
+
+                request.setAssignedTechnician(
+                        customerUser.getTestTechnician()
+                );
+            }
 
             request.setRepairAt(LocalDateTime.now());
             request.setLastUpdated(LocalDateTime.now());

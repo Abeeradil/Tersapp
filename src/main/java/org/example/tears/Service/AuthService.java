@@ -32,6 +32,7 @@ public class AuthService {
    // private final TwilioConfig twilioConfig;
     private final JwtUtil jwtUtil;
     private final EmployeeRepository employeeRepo;
+    private final WalletService walletService;
 
     // =========================================================
     // 1️⃣ تسجيل العميل
@@ -39,13 +40,13 @@ public class AuthService {
     public ApiResponse registerCustomer(CustomerRegisterDTO dto) {
 
         if (userRepo.existsByPhoneNumber(dto.getPhoneNumber()))
-            throw new ApiException("Phone already used");
+            throw new ApiException("رقم الجوال مستخدم مسبقا");
 
         User user = new User();
         user.setFullName(dto.getFullName());
         user.setPhoneNumber(dto.getPhoneNumber());
         user.setRole(UserRole.CUSTOMER);
-        user.setStatus(UserStatus.PENDING_VERIFICATION);
+        user.setStatus(UserStatus.ACTIVE);
         user.setPassword(encoder.encode("TEMP@1234"));
 
         Customer customer = new Customer();
@@ -54,7 +55,10 @@ public class AuthService {
 
         user.setCustomer(customer);
 
-        userRepo.save(user);
+        User savedUser = userRepo.save(user);
+
+        // إنشاء محفظة للعميل مباشرة
+        walletService.getOrCreate(savedUser);
 
         // ================= DEV =================
         System.out.println("OTP = 123456");
@@ -70,7 +74,10 @@ public class AuthService {
         //     throw new ApiException("Failed to send OTP");
         // }
 
-        return new ApiResponse(true, "OTP sent to " + dto.getPhoneNumber());
+        return new ApiResponse(
+                true,
+                "OTP sent to " + dto.getPhoneNumber()
+        );
     }
 
 
