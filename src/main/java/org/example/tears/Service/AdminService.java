@@ -98,11 +98,7 @@ public class AdminService {
         employee.setJobTitle(
                 dto.getJobTitle()
         );
-
-
-        employee.setEmployeeCode(
-                String.format("EM-%06d", employee.getId())
-        );
+        
 
 
         employee.setEmployeeRole(
