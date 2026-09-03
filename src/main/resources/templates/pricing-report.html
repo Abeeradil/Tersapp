@@ -1,71 +1,300 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 
 <head>
-    <meta charset="UTF-8"/>
+    <meta charset="UTF-8">
 
     <style>
 
-        @font-face {
-            font-family: 'Cairo';
-            src: url("fonts/Cairo-Regular.ttf");
-            font-weight: normal;
-            font-style: normal;
+        @page {
+            size: A4;
+            margin: 20px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        :root {
+            --navy: #1e2a4a;
+            --navy-soft: #33406a;
+            --coral: #f5453d;
+            --ink: #1f2430;
+            --muted: #7b8496;
+            --line: #d9dde5;
+            --fill: #f4f6f9;
+            --fill-strong: #eef1f6;
+            --page: #ffffff;
+            --bg: #eceef3;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
         }
 
         body {
-            font-family: 'Cairo', sans-serif;
+            font-family: "Cairo", Arial, sans-serif;
+            color: var(--ink);
             direction: rtl;
-            unicode-bidi: embed;
+            font-size: 12px;
+            line-height: 1.6;
         }
 
-        h1 {
-            text-align: center;
-            margin-bottom: 25px;
+        .page {
+            width: 100%;
+            max-width: 820px;
+            margin: 0 auto;
+            background: var(--page);
+            border: 1px solid var(--line);
         }
 
-        .info {
-            margin-bottom: 20px;
-            line-height: 1.8;
+        /* ================= HEADER ================= */
+
+        .header {
+            background: var(--navy);
+            color: white;
+            padding: 22px 28px;
+            display: table;
+            width: 100%;
         }
 
-        .info p {
-            margin: 4px 0;
+        .header-left,
+        .header-right {
+            display: table-cell;
+            vertical-align: middle;
         }
 
-        table {
+        .header-right {
+            text-align: right;
+            width: 65%;
+        }
+
+        .header-left {
+            text-align: left;
+            width: 35%;
+        }
+
+        .logo {
+            width: 90px;
+            height: auto;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .subtitle {
+            font-size: 11px;
+            color: #d8deed;
+            margin-top: 3px;
+        }
+
+        /* ================= CONTENT ================= */
+
+        .content {
+            padding: 24px 28px;
+        }
+
+        .section {
+            margin-bottom: 22px;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: bold;
+            color: var(--navy);
+            padding-bottom: 7px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid var(--coral);
+        }
+
+        /* ================= PROBLEM ================= */
+
+        .problem-box {
+            background: var(--fill);
+            border: 1px solid var(--line);
+            padding: 13px 15px;
+            min-height: 55px;
+        }
+
+        /* ================= INFO ================= */
+
+        .info-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
-        th {
-            background: #f2f2f2;
+        .info-table td {
+            border: 1px solid var(--line);
+            padding: 9px 10px;
         }
 
-        td, th {
-            border: 1px solid #000;
-            padding: 8px;
-            text-align: center;
+        .info-label {
+            background: var(--fill-strong);
+            color: var(--muted);
+            font-weight: bold;
+            width: 18%;
         }
 
-        .summary {
-            width: 40%;
-            margin-left: auto;
-            margin-top: 25px;
-        }
-
-        .summary td {
-            text-align: left;
-        }
-
-        .grand-total {
-            font-size: 16px;
+        .info-value {
+            width: 32%;
             font-weight: bold;
         }
 
+        /* ================= PARTS TABLE ================= */
+
+        .parts-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+            font-size: 10px;
+        }
+
+        .parts-table th {
+            background: var(--navy);
+            color: white;
+            padding: 8px 5px;
+            border: 1px solid var(--navy);
+            font-weight: bold;
+        }
+
+        .parts-table td {
+            border: 1px solid var(--line);
+            padding: 8px 5px;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .parts-table tbody tr:nth-child(even) {
+            background: var(--fill);
+        }
+
+        .col-idx {
+            width: 5%;
+        }
+
+        .col-name {
+            width: 17%;
+        }
+
+        .col-type {
+            width: 11%;
+        }
+
+        .col-qty {
+            width: 7%;
+        }
+
+        .col-notes {
+            width: 23%;
+        }
+
+        .col-price {
+            width: 12%;
+        }
+
+        .col-labor {
+            width: 12%;
+        }
+
+        .col-total {
+            width: 13%;
+        }
+
+        /* ================= SUMMARY ================= */
+
+        .summary {
+            width: 100%;
+            margin-top: 15px;
+            border-collapse: collapse;
+        }
+
+        .summary td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-weight: bold;
+        }
+
+        .summary-value {
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .discount {
+            color: var(--coral);
+        }
+
+        .grand-total td {
+            background: var(--navy);
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            padding: 11px 10px;
+        }
+
+        /* ================= NOTES ================= */
+
+        .notes-box {
+            background: var(--fill);
+            border: 1px solid var(--line);
+            padding: 14px;
+            min-height: 75px;
+        }
+
+        /* ================= FOOTER ================= */
+
         .footer {
-            margin-top: 35px;
+            border-top: 1px solid var(--line);
+            padding: 14px 28px;
+            color: var(--muted);
+            font-size: 9px;
+            display: table;
+            width: 100%;
+        }
+
+        .footer-right,
+        .footer-left {
+            display: table-cell;
+            width: 50%;
+        }
+
+        .footer-left {
+            text-align: left;
+            direction: ltr;
+        }
+
+        /* ================= ENGLISH ================= */
+
+        [lang="en"] {
+            direction: ltr;
+        }
+
+        .ltr {
+            direction: ltr;
+            text-align: left;
+        }
+
+        /* ================= PRINT ================= */
+
+        @media print {
+
+            html,
+            body {
+                background: white;
+            }
+
+            .page {
+                border: none;
+            }
         }
 
     </style>
@@ -73,115 +302,330 @@
 
 <body>
 
-<h1>Pricing Report</h1>
+<div class="page">
 
-<div class="info">
+    <!-- ================= HEADER ================= -->
 
-    <p>
-        <b>Report Number:</b>
-        ${reportNumber}
-    </p>
+    <div class="header">
 
-    <p>
-        <b>Order Number:</b>
-        ${orderNumber}
-    </p>
+        <div class="header-right">
 
-    <p>
-        <b>Customer Name:</b>
-        ${customerName}
-    </p>
+            <div class="title">
+                تقرير التسعير
+            </div>
 
-    <p>
-        <b>Phone:</b>
-        ${phone}
-    </p>
+            <div class="subtitle">
+                Pricing Report
+            </div>
 
-    <p>
-        <b>Vehicle:</b>
-        ${carModel}
-    </p>
+        </div>
 
-    <p>
-        <b>Service:</b>
-        ${serviceOption}
-    </p>
+        <div class="header-left">
 
-    <p>
-        <b>Problem Description:</b>
-    </p>
+            <!-- إذا عندك اللوقو الحالي بالـ Base64 حطيه هنا -->
+            <img
+                    class="logo"
+                    src="data:image/png;base64,${logoBase64}"
+                    alt="TERS"
+            >
 
-    <p>
-        ${problem}
-    </p>
+        </div>
 
-</div>
+    </div>
 
-<table>
+    <!-- ================= CONTENT ================= -->
 
-    <tr>
-        <th>Part Name</th>
-        <th>Type</th>
-        <th>Qty</th>
-        <th>Description</th>
-        <th>Unit Price</th>
-        <th>Labor Cost</th>
-        <th>Total</th>
-    </tr>
+    <div class="content">
 
-    ${rows}
+        <!-- ================= PROBLEM ================= -->
 
-</table>
+        <div class="section">
 
-<table class="summary">
+            <div class="section-title">
+                وصف المشكلة
+            </div>
 
-    <tr>
-        <td><b>Parts Total</b></td>
-        <td>${partsTotal} SAR</td>
-    </tr>
+            <div class="problem-box">
+                ${problem}
+            </div>
 
-    <tr>
-        <td><b>Labor Total</b></td>
-        <td>${laborTotal} SAR</td>
-    </tr>
+        </div>
 
-    <tr>
-        <td><b>Subtotal</b></td>
-        <td>${subtotal} SAR</td>
-    </tr>
 
-    <tr>
-        <td><b>Discount</b></td>
-        <td>${discount} SAR</td>
-    </tr>
+        <!-- ================= ORDER INFO ================= -->
 
-    <tr>
-        <td><b>Amount After Discount</b></td>
-        <td>${afterDiscount} SAR</td>
-    </tr>
+        <div class="section">
 
-    <tr>
-        <td><b>VAT (15%)</b></td>
-        <td>${vat} SAR</td>
-    </tr>
+            <div class="section-title">
+                بيانات الطلب
+            </div>
 
-    <tr class="grand-total">
-        <td><b>Grand Total</b></td>
-        <td><b>${grandTotal} SAR</b></td>
-    </tr>
+            <table class="info-table">
 
-</table>
+                <tr>
 
-<div class="footer">
+                    <td class="info-label">
+                        رقم الطلب
+                    </td>
 
-    <b>Technician Notes</b>
+                    <td class="info-value ltr">
+                        ${orderNumber}
+                    </td>
 
-    <p>
-        ${technicianNotes}
-    </p>
+                    <td class="info-label">
+                        رقم التقرير
+                    </td>
+
+                    <td class="info-value ltr">
+                        ${reportNumber}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="info-label">
+                        العميل
+                    </td>
+
+                    <td class="info-value">
+                        ${customerName}
+                    </td>
+
+                    <td class="info-label">
+                        رقم الجوال
+                    </td>
+
+                    <td class="info-value ltr">
+                        ${phone}
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="info-label">
+                        السيارة
+                    </td>
+
+                    <td class="info-value">
+                        ${carModel}
+                    </td>
+
+                    <td class="info-label">
+                        نوع الخدمة
+                    </td>
+
+                    <td class="info-value">
+                        ${serviceOption}
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </div>
+
+
+        <!-- ================= PARTS ================= -->
+
+        <div class="section">
+
+            <div class="section-title">
+                القطع وأجور العمل
+            </div>
+
+            <table class="parts-table">
+
+                <thead>
+
+                <tr>
+
+                    <th class="col-idx">
+                        م
+                    </th>
+
+                    <th class="col-name">
+                        اسم القطعة
+                    </th>
+
+                    <th class="col-type">
+                        النوع
+                    </th>
+
+                    <th class="col-qty">
+                        الكمية
+                    </th>
+
+                    <th class="col-notes">
+                        الوصف
+                    </th>
+
+                    <th class="col-price">
+                        سعر القطعة
+                        <br>
+                        (ر.س)
+                    </th>
+
+                    <th class="col-labor">
+                        أجرة العمل
+                        <br>
+                        (ر.س)
+                    </th>
+
+                    <th class="col-total">
+                        الإجمالي
+                        <br>
+                        (ر.س)
+                    </th>
+
+                </tr>
+
+                </thead>
+
+                <tbody>
+
+                ${rows}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- ================= SUMMARY ================= -->
+
+        <div class="section">
+
+            <div class="section-title">
+                ملخص التكلفة
+            </div>
+
+            <table class="summary">
+
+                <tr>
+
+                    <td class="summary-label">
+                        إجمالي القطع
+                    </td>
+
+                    <td class="summary-value ltr">
+                        ${partsTotal} SAR
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="summary-label">
+                        إجمالي أجور العمل
+                    </td>
+
+                    <td class="summary-value ltr">
+                        ${laborTotal} SAR
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="summary-label">
+                        المجموع قبل الخصم
+                    </td>
+
+                    <td class="summary-value ltr">
+                        ${subtotal} SAR
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="summary-label discount">
+                        الخصم
+                    </td>
+
+                    <td class="summary-value discount ltr">
+                        - ${discount} SAR
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="summary-label">
+                        المجموع بعد الخصم
+                    </td>
+
+                    <td class="summary-value ltr">
+                        ${afterDiscount} SAR
+                    </td>
+
+                </tr>
+
+                <tr>
+
+                    <td class="summary-label">
+                        ضريبة القيمة المضافة
+                        (15%)
+                    </td>
+
+                    <td class="summary-value ltr">
+                        ${vat} SAR
+                    </td>
+
+                </tr>
+
+                <tr class="grand-total">
+
+                    <td>
+                        الإجمالي النهائي
+                    </td>
+
+                    <td class="summary-value ltr">
+                        ${grandTotal} SAR
+                    </td>
+
+                </tr>
+
+            </table>
+
+        </div>
+
+
+        <!-- ================= TECHNICIAN NOTES ================= -->
+
+        <div class="section">
+
+            <div class="section-title">
+                ملاحظات الفني
+            </div>
+
+            <div class="notes-box">
+                ${technicianNotes}
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ================= FOOTER ================= -->
+
+    <div class="footer">
+
+        <div class="footer-right">
+            TERS - تقرير التسعير
+        </div>
+
+        <div class="footer-left">
+            Pricing Report
+        </div>
+
+    </div>
 
 </div>
 
 </body>
-
 </html>

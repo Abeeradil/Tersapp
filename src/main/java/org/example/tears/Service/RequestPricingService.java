@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -480,8 +481,7 @@ public class RequestPricingService {
             RequestReport report
     ) throws Exception {
 
-        CarServiceRequest request =
-                report.getRequest();
+        CarServiceRequest request = report.getRequest();
 
         List<RequestPart> parts =
                 partRepo.findByReport_Id(report.getId());
@@ -493,10 +493,7 @@ public class RequestPricingService {
 
         int totalPartsPrice = 0;
         int totalLabor = 0;
-
-        // ==========================================
-        // Parts
-        // ==========================================
+        int index = 1;
 
         for (RequestPart part : parts) {
 
@@ -510,92 +507,145 @@ public class RequestPricingService {
                             ? 0
                             : part.getQuantity();
 
-            int partsCost =
-                    partPrice * quantity;
-
             int labor =
                     part.getLaborCost() == null
                             ? 0
                             : part.getLaborCost();
 
-            int total =
-                    partsCost + labor;
+            int partsCost = partPrice * quantity;
+
+            int total = partsCost + labor;
 
             totalPartsPrice += partsCost;
             totalLabor += labor;
 
             rows.append("""
-                <tr>
-                    <td>%s</td>
-                    <td>%s</td>
-                    <td>%d</td>
-                    <td>%s</td>
-                    <td>%d SAR</td>
-                    <td>%d SAR</td>
-                    <td>%d SAR</td>
-                </tr>
-                """.formatted(
+            <tr>
+
+                <td class="col-idx">
+                    %d
+                </td>
+
+                <td>
+                    %s
+                </td>
+
+                <td>
+                    %s
+                </td>
+
+                <td>
+                    %d
+                </td>
+
+                <td>
+                    %s
+                </td>
+
+                <td class="ltr">
+                    %s SAR
+                </td>
+
+                <td class="ltr">
+                    %s SAR
+                </td>
+
+                <td class="ltr">
+                    %s SAR
+                </td>
+
+            </tr>
+            """.formatted(
+                    index++,
+
                     escapeHtml(part.getName()),
+
                     escapeHtml(
                             part.getType() == null
                                     ? "-"
                                     : part.getType()
                     ),
+
                     quantity,
+
                     escapeHtml(
                             part.getNotes() == null
                                     ? "-"
                                     : part.getNotes()
                     ),
-                    partPrice,
-                    labor,
-                    total
+
+                    formatMoney(partPrice),
+
+                    formatMoney(labor),
+
+                    formatMoney(total)
             ));
         }
 
-        // ==========================================
-        // Financial Calculation
-        // ==========================================
+        /*
+         * إذا ما فيه قطع، نخلي الجدول يظهر بشكل واضح
+         */
+        if (parts.isEmpty()) {
+
+            rows.append("""
+            <tr>
+                <td colspan="8">
+                    لا توجد قطع مسجلة
+                </td>
+            </tr>
+            """);
+        }
+
+
+        // =========================
+        // TOTALS
+        // =========================
 
         double subtotal =
                 totalPartsPrice + totalLabor;
 
-        // نفس الخصم المحفوظ على الطلب
         double discount =
                 request.getDiscount() == null
                         ? 0
                         : request.getDiscount();
 
-        // منع الخصم من النزول تحت الصفر
+        discount =
+                Math.min(discount, subtotal);
+
         double afterDiscount =
                 Math.max(
                         subtotal - discount,
                         0
                 );
 
-        // VAT = 15% بعد الخصم
+        /*
+         * استخدم القيمة المحفوظة من الطلب
+         * حتى يكون التقرير مطابقاً للسعر النهائي
+         */
         double vat =
-                afterDiscount * 0.15;
+                request.getVatAmount() == null
+                        ? afterDiscount * 0.15
+                        : request.getVatAmount();
 
-        // المبلغ النهائي
         double grandTotal =
-                afterDiscount + vat;
+                request.getFinalPrice() == null
+                        ? afterDiscount + vat
+                        : request.getFinalPrice();
 
-        // ==========================================
-        // Technician Notes
-        // ==========================================
+
+        // =========================
+        // TECHNICIAN NOTES
+        // =========================
 
         String technicianNotes =
                 notes.isEmpty()
                         ? "-"
                         : notes.get(0).getNote();
 
-        String reportNumber =
-                report.getReportNumber();
 
-        // ==========================================
-        // Load HTML Template
-        // ==========================================
+        // =========================
+        // LOAD HTML TEMPLATE
+        // =========================
 
         ClassPathResource resource =
                 new ClassPathResource(
@@ -608,9 +658,10 @@ public class RequestPricingService {
                         StandardCharsets.UTF_8
                 );
 
-        // ==========================================
-        // Replace Data
-        // ==========================================
+
+        // =========================
+        // REPLACE DATA
+        // =========================
 
         html = html.replace(
                 "${customerName}",
@@ -630,7 +681,9 @@ public class RequestPricingService {
 
         html = html.replace(
                 "${reportNumber}",
-                escapeHtml(reportNumber)
+                escapeHtml(
+                        report.getReportNumber()
+                )
         );
 
         html = html.replace(
@@ -645,7 +698,9 @@ public class RequestPricingService {
         html = html.replace(
                 "${serviceOption}",
                 escapeHtml(
-                        request.getServiceOption().name()
+                        request.getServiceOption() == null
+                                ? "-"
+                                : request.getServiceOption().name()
                 )
         );
 
@@ -667,7 +722,9 @@ public class RequestPricingService {
 
         html = html.replace(
                 "${technicianNotes}",
-                escapeHtml(technicianNotes)
+                escapeHtml(
+                        technicianNotes
+                )
         );
 
         html = html.replace(
@@ -675,9 +732,10 @@ public class RequestPricingService {
                 rows.toString()
         );
 
-        // ==========================================
-        // Financial Values
-        // ==========================================
+
+        // =========================
+        // TOTALS
+        // =========================
 
         html = html.replace(
                 "${partsTotal}",
@@ -714,9 +772,10 @@ public class RequestPricingService {
                 formatMoney(grandTotal)
         );
 
-        // ==========================================
-        // Generate PDF
-        // ==========================================
+
+        // =========================
+        // PDF
+        // =========================
 
         ByteArrayOutputStream output =
                 new ByteArrayOutputStream();
@@ -724,15 +783,10 @@ public class RequestPricingService {
         PdfRendererBuilder builder =
                 new PdfRendererBuilder();
 
-        // Base URL للـ CSS والـ fonts
-        String baseUrl =
-                new ClassPathResource("")
-                        .getURL()
-                        .toExternalForm();
 
-        // ==========================================
-        // Arabic Font
-        // ==========================================
+        // =========================
+        // CAIRO ARABIC FONT
+        // =========================
 
         ClassPathResource font =
                 new ClassPathResource(
@@ -741,9 +795,12 @@ public class RequestPricingService {
 
         builder.useFont(
                 () -> {
+
                     try {
                         return font.getInputStream();
+
                     } catch (IOException e) {
+
                         throw new RuntimeException(e);
                     }
                 },
@@ -753,29 +810,33 @@ public class RequestPricingService {
                 true
         );
 
-        // ==========================================
+
+        // =========================
         // HTML
-        // ==========================================
+        // =========================
 
         builder.withHtmlContent(
                 html,
-                baseUrl
+                new ClassPathResource("")
+                        .getURL()
+                        .toExternalForm()
         );
 
         builder.toStream(output);
 
         builder.run();
 
-        // ==========================================
-        // Response
-        // ==========================================
+
+        // =========================
+        // RESPONSE
+        // =========================
 
         return ResponseEntity.ok()
                 .header(
                         HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=pricing-report-"
-                                + report.getReportNumber()
-                                + ".pdf"
+                        "attachment; filename=pricing-report-" +
+                                report.getReportNumber() +
+                                ".pdf"
                 )
                 .contentType(
                         MediaType.APPLICATION_PDF
@@ -786,8 +847,8 @@ public class RequestPricingService {
     }
 
     private String formatMoney(double value) {
-
         return String.format(
+                Locale.US,
                 "%.2f",
                 value
         );
