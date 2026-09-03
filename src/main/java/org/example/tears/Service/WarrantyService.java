@@ -433,6 +433,10 @@ public class WarrantyService {
 
         dto.setId(warranty.getId());
 
+        dto.setRequestId(
+                warranty.getRequest().getId()
+        );
+
         dto.setOrderNumber(
                 warranty.getRequest()
                         .getOrderNumber()

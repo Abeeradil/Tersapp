@@ -14,6 +14,7 @@ import java.util.List;
 public class WarrantyDetailsDto {
 
     private Integer id;
+    private Integer requestId;
 
     private String orderNumber;
 
