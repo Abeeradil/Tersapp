@@ -123,7 +123,7 @@ public class ChatService {
                 );
     }
 
-    private void validateUserAccess(
+    public void validateUserAccess(
             Ticket ticket,
             User user
     ) {

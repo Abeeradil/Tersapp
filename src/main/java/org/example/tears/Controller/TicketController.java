@@ -4,10 +4,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.CreateTicketDto;
-import org.example.tears.DTO.RejectWarrantyDto;
-import org.example.tears.DTO.TicketListDto;
-import org.example.tears.DTO.UpdateTicketStatusDto;
+import org.example.tears.DTO.*;
+import org.example.tears.Model.ChatRoom;
 import org.example.tears.Model.User;
 import org.example.tears.Service.AuthService;
 import org.example.tears.Service.TicketService;
@@ -38,6 +36,26 @@ public class TicketController {
         );
     }
 
+    @GetMapping("/ticket/{ticketId}/room")
+    public ApiResponse getTicketRoom(
+            @PathVariable Integer ticketId,
+            HttpServletRequest request
+    ) {
+        User user = authService.getAuthenticatedUser(request);
+
+        ChatRoom room = ticketService.getRoomByTicket(ticketId, user);
+
+        return new ApiResponse(
+                true,
+                "تم جلب المحادثة",
+                new ChatRoomResponse(
+                        room.getId(),
+                        ticketId,
+                        room.getStatus()
+                )
+        );
+    }
+
     @GetMapping("/my")
     public ApiResponse myTickets(
             HttpServletRequest request
@@ -50,6 +68,7 @@ public class TicketController {
         );
 
     }
+
 
     @GetMapping("/details/{ticketId}")
     public ApiResponse getTicketDetails(

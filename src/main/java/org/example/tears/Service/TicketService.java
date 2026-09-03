@@ -29,6 +29,7 @@ public class TicketService {
     private final AuthService authService;
     private final ChatService chatService;
     private final SocketService socketService;
+    private final ChatRoomRepository chatRoomRepository;
 
     @Transactional
     public TicketResponseDto createTicket(
@@ -135,6 +136,18 @@ public class TicketService {
         );
 
         return mapToResponse(ticket);
+    }
+
+    public ChatRoom getRoomByTicket(Integer ticketId, User user) {
+
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ApiException("التذكرة غير موجودة"));
+
+        chatService.validateUserAccess(ticket, user);
+
+        return chatRoomRepository
+                .findByTicket(ticket)
+                .orElseThrow(() -> new ApiException("لا توجد محادثة"));
     }
 
     public TicketResponseDto mapToResponse(Ticket ticket) {
