@@ -33,7 +33,7 @@ public class TempEmailGenerator {
             // رقم عشوائي للتفادي التكرار
             int num = random.nextInt(9000) + 1000;
 
-            return base.toLowerCase() + "." + num + "@tears.local";
+            return base.toLowerCase() + "." + num + "@ters.com";
         }
 
         // تبسيط الأحرف (لو فيها تشكيل أو رموز)
