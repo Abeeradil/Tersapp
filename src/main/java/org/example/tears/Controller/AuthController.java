@@ -129,16 +129,13 @@ public class AuthController {
     // تغيير كلمة المرور بعد تسجيل الدخول
 
     @PutMapping("/change-password")
-    @PreAuthorize("hasRole('EMPLOYEE')")
     public ApiResponse changePassword(
-            @AuthenticationPrincipal User user,
-            @RequestBody @Valid ChangePasswordDTO dto
-    ){
+            @RequestBody ChangePasswordDTO dto,
+            HttpServletRequest request
+    ) {
+        User user = authService.getAuthenticatedUser(request);
 
-        authService.changePassword(
-                user.getEmployee(),
-                dto
-        );
+        authService.changePassword(user, dto);
 
         return new ApiResponse(
                 true,

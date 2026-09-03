@@ -5,14 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiResponse;
 import org.example.tears.DTO.EmployeeListDto;
 import org.example.tears.DTO.RequestSummaryDto;
+import org.example.tears.DTO.ResetAdminPasswordDto;
 import org.example.tears.InpDTO.AdminCreateEmployeeDTO;
 import org.example.tears.Model.Appointment;
 import org.example.tears.Model.Employee;
 import org.example.tears.OutDTO.EmployeeLoginInfo;
-import org.example.tears.Service.AdminService;
-import org.example.tears.Service.AppointmentService;
-import org.example.tears.Service.AssignmentService;
-import org.example.tears.Service.RequestQueryService;
+import org.example.tears.Service.*;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -30,6 +28,19 @@ public class AdminController {
     private final AdminService adminService;
     private final AssignmentService assignmentService;
     private final RequestQueryService requestQueryService;
+    private final AuthService authService;
+
+    @PutMapping("/admin/reset-password")
+    public ApiResponse resetAdminPassword(
+            @RequestBody ResetAdminPasswordDto dto
+    ) {
+        authService.resetAdminPassword(dto);
+
+        return new ApiResponse(
+                true,
+                "تم تغيير كلمة مرور الأدمن"
+        );
+    }
 
     @GetMapping("/all/requests")
     public List<RequestSummaryDto> getAll() {

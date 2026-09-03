@@ -5,10 +5,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
-import org.example.tears.DTO.ResetPasswordDto;
-import org.example.tears.DTO.SendOtpDto;
-import org.example.tears.DTO.VerifyOtpDTO;
-import org.example.tears.DTO.VerifyOtpResponse;
+import org.example.tears.DTO.*;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
 import org.example.tears.InpDTO.ChangePasswordDTO;
@@ -35,7 +32,6 @@ public class AuthService {
    // private final TwilioConfig twilioConfig;
     private final JwtUtil jwtUtil;
     private final EmployeeRepository employeeRepo;
-    //private final PasswordEncoder passwordEncoder;
 
     // =========================================================
     // 1️⃣ تسجيل العميل
@@ -170,15 +166,12 @@ public class AuthService {
     public ApiResponse loginEmployee(LoginDTO dto) {
 
         User user = userRepo
-                .findByEmailOrPhoneNumber(
-                        dto.getEmailOrPhone(),
-                        dto.getEmailOrPhone()
-                )
+                .findByEmail(
+                        dto.getEmail())
                 .orElseThrow(() ->
                         new ApiException("بيانات الدخول غير صحيحة")
                 );
-        System.out.println("INPUT = " + dto.getEmailOrPhone());
-        System.out.println("USER FOUND = " + user.getEmail());
+
 
         System.out.println("PASSWORD MATCH = "
                 + encoder.matches(
@@ -313,27 +306,26 @@ public class AuthService {
     // =========================================================
     @Transactional
     public void changePassword(
-            Employee employee,
+            User user,
             ChangePasswordDTO dto
     ) {
-        if (employee == null) {
-            throw new ApiException("هذه الخدمة خاصة بالموظفين");
-        }
 
+        if (user == null) {
+            throw new ApiException("المستخدم غير موجود");
+        }
 
         if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
             throw new ApiException("كلمتا المرور غير متطابقتين");
         }
 
-        User user = employee.getUser();
-
         user.setPassword(
                 encoder.encode(dto.getNewPassword())
         );
 
-        employee.setMustChangePassword(false);
-
-        employeeRepo.save(employee);
+        if (user.getEmployee() != null) {
+            user.getEmployee().setMustChangePassword(false);
+            employeeRepo.save(user.getEmployee());
+        }
 
         userRepo.save(user);
     }
@@ -470,5 +462,30 @@ public class AuthService {
                     )
             );
         }
+    }
+
+
+    @Transactional
+    public void resetAdminPassword(ResetAdminPasswordDto dto) {
+
+        User admin = userRepo.findByEmail(dto.getEmail())
+                .orElseThrow(() ->
+                        new ApiException("الأدمن غير موجود"));
+
+        if (admin.getRole() != UserRole.ADMIN) {
+            throw new ApiException("هذا المستخدم ليس Admin");
+        }
+
+        if (!dto.getNewPassword().equals(dto.getConfirmPassword())) {
+            throw new ApiException("كلمتا المرور غير متطابقتين");
+        }
+
+        admin.setPassword(
+                encoder.encode(dto.getNewPassword())
+        );
+
+        admin.setStatus(UserStatus.ACTIVE);
+
+        userRepo.save(admin);
     }
 }

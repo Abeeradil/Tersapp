@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.example.tears.Api.ApiException;
 import org.example.tears.Api.ApiResponse;
+import org.example.tears.DTO.ResetAdminPasswordDto;
 import org.example.tears.Enums.TicketStatus;
 import org.example.tears.Enums.UserRole;
 import org.example.tears.Enums.UserStatus;
@@ -425,4 +426,5 @@ public class UserService {
 
         return new ApiResponse(true, "User promoted to ADMIN");
     }
+
 }
