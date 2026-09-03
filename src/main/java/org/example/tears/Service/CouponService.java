@@ -95,7 +95,7 @@ public class CouponService {
         Coupon coupon =
                 couponRepository.findByCodeIgnoreCase(code)
                         .orElseThrow(() ->
-                                new ApiException("Coupon not found")
+                                new ApiException("الكوبون غير موجود")
                         );
 
         // =========================
@@ -103,7 +103,7 @@ public class CouponService {
         // =========================
 
         if (!coupon.isActive()) {
-            throw new ApiException("Coupon inactive");
+            throw new ApiException("الكوبون غير متاح");
         }
 
         // =========================
@@ -113,7 +113,7 @@ public class CouponService {
         if (coupon.getExpiryDate() != null &&
                 coupon.getExpiryDate().isBefore(LocalDate.now())) {
 
-            throw new ApiException("Coupon expired");
+            throw new ApiException("الكوبون منتهي");
         }
 
         // =========================
@@ -124,7 +124,7 @@ public class CouponService {
                 coupon.getServiceOption() != option) {
 
             throw new ApiException(
-                    "Coupon not valid for this service"
+                    "الكوبون غير متاح لهاذي الخدمة"
             );
         }
 
@@ -136,7 +136,7 @@ public class CouponService {
                 total < coupon.getMinimumOrderPrice()) {
 
             throw new ApiException(
-                    "Minimum order not met"
+                    "لم يصل الحد الادنى للمبلغ"
             );
         }
 

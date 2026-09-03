@@ -61,4 +61,12 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Employee employee;
 
+    @ManyToOne
+    @JoinColumn(name = "test_technician_id")
+    private Employee testTechnician;
+
+    @ManyToOne
+    @JoinColumn(name = "test_pricing_id")
+    private Employee testPricing;
+
 }

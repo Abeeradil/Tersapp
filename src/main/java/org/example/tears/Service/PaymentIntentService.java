@@ -183,6 +183,14 @@ public class PaymentIntentService {
         req.setInitialPaymentAmountHalalah(amountHalalah);
         req.setRemainingAmount(0.0);
 
+        User customerUser = req.getCustomer().getUser();
+
+        if (customerUser.getTestTechnician() != null) {
+
+            req.setAssignedTechnician(
+                    customerUser.getTestTechnician()
+            );
+        }
         req.setCustomerStatus(CustomerRequestStatus.REQUEST_CREATED);
         req.setStaffStatus(StaffRequestStatus.NEW);
         req.setStage(WorkflowStage.NEW_REQUEST);

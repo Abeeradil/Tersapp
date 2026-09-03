@@ -10,6 +10,7 @@ import org.example.tears.Mapper.RequestMapper;
 import org.example.tears.Model.CarServiceRequest;
 import org.example.tears.Model.Employee;
 import org.example.tears.Model.RequestPart;
+import org.example.tears.Model.User;
 import org.example.tears.Repository.CarServiceRequestRepository;
 import org.example.tears.Repository.RequestPartRepository;
 import org.springframework.stereotype.Service;
@@ -82,9 +83,16 @@ public class PartsService {
 
                 partRepo.save(part);
             }
+            Employee pricingEmployee;
 
-            Employee pricingEmployee =
-                    workflowService.getLeastBusyPricingEmployee();
+            User customerUser = req.getCustomer().getUser();
+
+            if (customerUser.getTestPricing() != null) {
+                pricingEmployee = customerUser.getTestPricing();
+            } else {
+                pricingEmployee =
+                        workflowService.getLeastBusyPricingEmployee();
+            }
 
             req.setAssignedPricingEmployee(pricingEmployee);
             req.setCurrentEmployee(pricingEmployee);
