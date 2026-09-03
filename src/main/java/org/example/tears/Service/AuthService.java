@@ -18,8 +18,11 @@ import org.example.tears.Repository.PasswordResetTokenRepository;
 import org.example.tears.Repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.example.tears.Model.Wallet;
+import org.example.tears.Repository.WalletRepository;
 
 import java.time.LocalDateTime;
+
 import java.util.UUID;
 
 @Service
@@ -32,7 +35,7 @@ public class AuthService {
    // private final TwilioConfig twilioConfig;
     private final JwtUtil jwtUtil;
     private final EmployeeRepository employeeRepo;
-    private final WalletService walletService;
+    private final WalletRepository walletRepository;
 
     // =========================================================
     // 1️⃣ تسجيل العميل
@@ -56,9 +59,13 @@ public class AuthService {
         user.setCustomer(customer);
 
         User savedUser = userRepo.save(user);
+        // إنشاء محفظة للعميل
+        Wallet wallet = new Wallet();
+        wallet.setUser(savedUser);
+        wallet.setBalance(0);
+        wallet.setCreatedAt(LocalDateTime.now());
 
-        // إنشاء محفظة للعميل مباشرة
-        walletService.getOrCreate(savedUser);
+        walletRepository.save(wallet);
 
         // ================= DEV =================
         System.out.println("OTP = 123456");
