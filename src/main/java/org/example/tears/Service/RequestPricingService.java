@@ -15,6 +15,10 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 
+import com.openhtmltopdf.bidi.support.ICUBidiReorderer;
+import com.openhtmltopdf.bidi.support.ICUBidiSplitter;
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -512,25 +516,52 @@ public class RequestPricingService {
                             ? 0
                             : part.getLaborCost();
 
-            int partsCost = partPrice * quantity;
+            int partsCost =
+                    partPrice * quantity;
 
-            int total = partsCost + labor;
+            int total =
+                    partsCost + labor;
 
             totalPartsPrice += partsCost;
             totalLabor += labor;
 
             rows.append("""
-        <tr>
-            <td class="col-idx">%d</td>
-            <td>%s</td>
-            <td>%s</td>
-            <td>%d</td>
-            <td>%s</td>
-            <td class="ltr">%s SAR</td>
-            <td class="ltr">%s SAR</td>
-            <td class="ltr">%s SAR</td>
-        </tr>
-        """.formatted(
+            <tr>
+
+                <td class="col-idx">
+                    %d
+                </td>
+
+                <td>
+                    %s
+                </td>
+
+                <td>
+                    %s
+                </td>
+
+                <td>
+                    %d
+                </td>
+
+                <td>
+                    %s
+                </td>
+
+                <td class="ltr">
+                    %s SAR
+                </td>
+
+                <td class="ltr">
+                    %s SAR
+                </td>
+
+                <td class="ltr">
+                    %s SAR
+                </td>
+
+            </tr>
+            """.formatted(
                     index++,
                     escapeHtml(part.getName()),
                     escapeHtml(
@@ -550,9 +581,6 @@ public class RequestPricingService {
             ));
         }
 
-        /*
-         * إذا ما فيه قطع، نخلي الجدول يظهر بشكل واضح
-         */
         if (parts.isEmpty()) {
 
             rows.append("""
@@ -586,10 +614,6 @@ public class RequestPricingService {
                         0
                 );
 
-        /*
-         * استخدم القيمة المحفوظة من الطلب
-         * حتى يكون التقرير مطابقاً للسعر النهائي
-         */
         double vat =
                 request.getVatAmount() == null
                         ? afterDiscount * 0.15
@@ -602,7 +626,7 @@ public class RequestPricingService {
 
 
         // =========================
-        // TECHNICIAN NOTES
+        // NOTES
         // =========================
 
         String technicianNotes =
@@ -612,7 +636,7 @@ public class RequestPricingService {
 
 
         // =========================
-        // LOAD HTML TEMPLATE
+        // LOAD HTML
         // =========================
 
         ClassPathResource resource =
@@ -700,11 +724,6 @@ public class RequestPricingService {
                 rows.toString()
         );
 
-
-        // =========================
-        // TOTALS
-        // =========================
-
         html = html.replace(
                 "${partsTotal}",
                 formatMoney(totalPartsPrice)
@@ -753,7 +772,24 @@ public class RequestPricingService {
 
 
         // =========================
-        // CAIRO ARABIC FONT
+        // ARABIC / RTL SUPPORT
+        // =========================
+
+        builder.useUnicodeBidiSplitter(
+                new ICUBidiSplitter.ICUBidiSplitterFactory()
+        );
+
+        builder.useUnicodeBidiReorderer(
+                new ICUBidiReorderer()
+        );
+
+        builder.defaultTextDirection(
+                BaseRendererBuilder.TextDirection.RTL
+        );
+
+
+        // =========================
+        // CAIRO FONT
         // =========================
 
         ClassPathResource font =
