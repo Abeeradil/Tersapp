@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8" />
-    <style>
+
+    <style type="text/css">
 
         @page {
             size: A4;
@@ -56,24 +57,22 @@
             background: var(--navy);
             color: white;
             padding: 22px 28px;
-            display: table;
             width: 100%;
+            display: table;
         }
 
-        .header-left,
         .header-right {
             display: table-cell;
             vertical-align: middle;
-        }
-
-        .header-right {
             text-align: right;
-            width: 65%;
+            width: 70%;
         }
 
         .header-left {
+            display: table-cell;
+            vertical-align: middle;
             text-align: left;
-            width: 35%;
+            width: 30%;
         }
 
         .logo {
@@ -145,7 +144,7 @@
             font-weight: bold;
         }
 
-        /* ================= PARTS TABLE ================= */
+        /* ================= PARTS ================= */
 
         .parts-table {
             width: 100%;
@@ -160,6 +159,8 @@
             padding: 8px 5px;
             border: 1px solid var(--navy);
             font-weight: bold;
+            text-align: center;
+            vertical-align: middle;
         }
 
         .parts-table td {
@@ -256,26 +257,24 @@
             padding: 14px 28px;
             color: var(--muted);
             font-size: 9px;
-            display: table;
             width: 100%;
+            display: table;
         }
 
-        .footer-right,
+        .footer-right {
+            display: table-cell;
+            width: 50%;
+            text-align: right;
+        }
+
         .footer-left {
             display: table-cell;
             width: 50%;
-        }
-
-        .footer-left {
             text-align: left;
             direction: ltr;
         }
 
-        /* ================= ENGLISH ================= */
-
-        [lang="en"] {
-            direction: ltr;
-        }
+        /* ================= LTR ================= */
 
         .ltr {
             direction: ltr;
@@ -303,7 +302,7 @@
 
 <div class="page">
 
-    <!-- ================= HEADER ================= -->
+    <!-- HEADER -->
 
     <div class="header">
 
@@ -319,13 +318,28 @@
 
         </div>
 
+        <div class="header-left">
+
+            <!-- إذا عندك Base64 للوجو استخدميه هنا -->
+            <!--
+            <img
+                class="logo"
+                src="data:image/png;base64,${logoBase64}"
+                alt="TERS"
+            />
+            -->
+
+        </div>
+
     </div>
 
-    <!-- ================= CONTENT ================= -->
+
+    <!-- CONTENT -->
 
     <div class="content">
 
-        <!-- ================= PROBLEM ================= -->
+
+        <!-- PROBLEM -->
 
         <div class="section">
 
@@ -340,7 +354,7 @@
         </div>
 
 
-        <!-- ================= ORDER INFO ================= -->
+        <!-- ORDER INFO -->
 
         <div class="section">
 
@@ -415,7 +429,7 @@
         </div>
 
 
-        <!-- ================= PARTS ================= -->
+        <!-- PARTS -->
 
         <div class="section">
 
@@ -451,19 +465,19 @@
 
                     <th class="col-price">
                         سعر القطعة
-                        <br>
+                        <br />
                         (ر.س)
                     </th>
 
                     <th class="col-labor">
                         أجرة العمل
-                        <br>
+                        <br />
                         (ر.س)
                     </th>
 
                     <th class="col-total">
                         الإجمالي
-                        <br>
+                        <br />
                         (ر.س)
                     </th>
 
@@ -482,7 +496,7 @@
         </div>
 
 
-        <!-- ================= SUMMARY ================= -->
+        <!-- SUMMARY -->
 
         <div class="section">
 
@@ -582,7 +596,7 @@
         </div>
 
 
-        <!-- ================= TECHNICIAN NOTES ================= -->
+        <!-- TECHNICIAN NOTES -->
 
         <div class="section">
 
@@ -596,10 +610,11 @@
 
         </div>
 
+
     </div>
 
 
-    <!-- ================= FOOTER ================= -->
+    <!-- FOOTER -->
 
     <div class="footer">
 
@@ -613,7 +628,9 @@
 
     </div>
 
+
 </div>
 
 </body>
+
 </html>

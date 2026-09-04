@@ -520,64 +520,32 @@ public class RequestPricingService {
             totalLabor += labor;
 
             rows.append("""
-            <tr>
-
-                <td class="col-idx">
-                    %d
-                </td>
-
-                <td>
-                    %s
-                </td>
-
-                <td>
-                    %s
-                </td>
-
-                <td>
-                    %d
-                </td>
-
-                <td>
-                    %s
-                </td>
-
-                <td class="ltr">
-                    %s SAR
-                </td>
-
-                <td class="ltr">
-                    %s SAR
-                </td>
-
-                <td class="ltr">
-                    %s SAR
-                </td>
-
-            </tr>
-            """.formatted(
+        <tr>
+            <td class="col-idx">%d</td>
+            <td>%s</td>
+            <td>%s</td>
+            <td>%d</td>
+            <td>%s</td>
+            <td class="ltr">%s SAR</td>
+            <td class="ltr">%s SAR</td>
+            <td class="ltr">%s SAR</td>
+        </tr>
+        """.formatted(
                     index++,
-
                     escapeHtml(part.getName()),
-
                     escapeHtml(
                             part.getType() == null
                                     ? "-"
                                     : part.getType()
                     ),
-
                     quantity,
-
                     escapeHtml(
                             part.getNotes() == null
                                     ? "-"
                                     : part.getNotes()
                     ),
-
                     formatMoney(partPrice),
-
                     formatMoney(labor),
-
                     formatMoney(total)
             ));
         }
@@ -853,7 +821,6 @@ public class RequestPricingService {
                 value
         );
     }
-
     private String escapeHtml(String value) {
 
         if (value == null) {
