@@ -15,6 +15,7 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 
+import java.util.Base64;
 import com.openhtmltopdf.bidi.support.ICUBidiReorderer;
 import com.openhtmltopdf.bidi.support.ICUBidiSplitter;
 import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder;
@@ -485,45 +486,110 @@ public class RequestPricingService {
             RequestReport report
     ) throws Exception {
 
-        CarServiceRequest request = report.getRequest();
+        // =========================================
+        // REQUEST
+        // =========================================
+
+        CarServiceRequest request =
+                report.getRequest();
+
+
+        // =========================================
+        // PARTS
+        // =========================================
 
         List<RequestPart> parts =
-                partRepo.findByReport_Id(report.getId());
+                partRepo.findByReport_Id(
+                        report.getId()
+                );
+
+
+        // =========================================
+        // TECHNICIAN NOTES
+        // =========================================
 
         List<RequestNote> notes =
-                noteRepo.findByRequestOrderByCreatedAtDesc(request);
+                noteRepo.findByRequestOrderByCreatedAtDesc(
+                        request
+                );
 
-        StringBuilder rows = new StringBuilder();
 
-        int totalPartsPrice = 0;
-        int totalLabor = 0;
+        // =========================================
+        // BUILD PARTS ROWS
+        // =========================================
+
+        StringBuilder rows =
+                new StringBuilder();
+
+
+        double totalPartsPrice = 0;
+
+        double totalLabor = 0;
+
         int index = 1;
+
 
         for (RequestPart part : parts) {
 
-            int partPrice =
+
+            // -------------------------
+            // PART PRICE
+            // -------------------------
+
+            double partPrice =
                     part.getFinalPrice() == null
                             ? 0
                             : part.getFinalPrice();
+
+
+            // -------------------------
+            // QUANTITY
+            // -------------------------
 
             int quantity =
                     part.getQuantity() == null
                             ? 0
                             : part.getQuantity();
 
-            int labor =
+
+            // -------------------------
+            // LABOR
+            // -------------------------
+
+            double labor =
                     part.getLaborCost() == null
                             ? 0
                             : part.getLaborCost();
 
-            int partsCost =
+
+            // -------------------------
+            // PARTS COST
+            // -------------------------
+
+            double partsCost =
                     partPrice * quantity;
 
-            int total =
+
+            // -------------------------
+            // ROW TOTAL
+            // -------------------------
+
+            double total =
                     partsCost + labor;
 
+
+            // -------------------------
+            // ACCUMULATE TOTALS
+            // -------------------------
+
             totalPartsPrice += partsCost;
+
             totalLabor += labor;
+
+
+            // -------------------------
+            // ADD ROW
+            // -------------------------
 
             rows.append("""
             <tr>
@@ -544,69 +610,101 @@ public class RequestPricingService {
                     %d
                 </td>
 
-                <td>
-                    %s
-                </td>
-
-                <td class="ltr">
+                <td class="ltr-right">
                     %s SAR
                 </td>
 
-                <td class="ltr">
+                <td class="ltr-right">
                     %s SAR
                 </td>
 
-                <td class="ltr">
+                <td class="ltr-right">
                     %s SAR
                 </td>
 
             </tr>
             """.formatted(
+
                     index++,
-                    escapeHtml(part.getName()),
+
+                    escapeHtml(
+                            part.getName()
+                    ),
+
                     escapeHtml(
                             part.getType() == null
                                     ? "-"
                                     : part.getType()
                     ),
+
                     quantity,
-                    escapeHtml(
-                            part.getNotes() == null
-                                    ? "-"
-                                    : part.getNotes()
+
+                    formatMoney(
+                            partPrice
                     ),
-                    formatMoney(partPrice),
-                    formatMoney(labor),
-                    formatMoney(total)
+
+                    formatMoney(
+                            labor
+                    ),
+
+                    formatMoney(
+                            total
+                    )
+
             ));
+
         }
+
+
+        // =========================================
+        // EMPTY PARTS
+        // =========================================
 
         if (parts.isEmpty()) {
 
             rows.append("""
-            <tr>
-                <td colspan="8">
+            <tr class="empty-row">
+
+                <td colspan="7">
                     لا توجد قطع مسجلة
                 </td>
+
             </tr>
             """);
+
         }
 
 
-        // =========================
+        // =========================================
         // TOTALS
-        // =========================
+        // =========================================
 
         double subtotal =
                 totalPartsPrice + totalLabor;
+
+
+        // =========================================
+        // DISCOUNT
+        // =========================================
 
         double discount =
                 request.getDiscount() == null
                         ? 0
                         : request.getDiscount();
 
+
+        // لا نخلي الخصم أكبر من الإجمالي
+
         discount =
-                Math.min(discount, subtotal);
+                Math.min(
+                        discount,
+                        subtotal
+                );
+
+
+        // =========================================
+        // AFTER DISCOUNT
+        // =========================================
 
         double afterDiscount =
                 Math.max(
@@ -614,49 +712,144 @@ public class RequestPricingService {
                         0
                 );
 
+
+        // =========================================
+        // VAT
+        // =========================================
+
+        /*
+         * نستخدم VAT المخزن إذا كان موجود.
+         *
+         * إذا غير موجود نحسبه 15%.
+         */
+
         double vat =
                 request.getVatAmount() == null
                         ? afterDiscount * 0.15
                         : request.getVatAmount();
 
+
+        // =========================================
+        // GRAND TOTAL
+        // =========================================
+
+        /*
+         * مهم:
+         *
+         * نحسب الإجمالي النهائي من نفس الأرقام
+         * المعروضة في التقرير.
+         *
+         * حتى لا يظهر تقرير فيه:
+         *
+         * subtotal - discount + vat
+         *
+         * ويكون finalPrice مختلف.
+         */
+
         double grandTotal =
-                request.getFinalPrice() == null
-                        ? afterDiscount + vat
-                        : request.getFinalPrice();
+                afterDiscount + vat;
 
 
-        // =========================
-        // NOTES
-        // =========================
+        // =========================================
+        // TECHNICIAN NOTES
+        // =========================================
 
-        String technicianNotes =
-                notes.isEmpty()
-                        ? "-"
-                        : notes.get(0).getNote();
+        String technicianNotesSection =
+                "";
 
 
-        // =========================
-        // LOAD HTML
-        // =========================
+        if (!notes.isEmpty()
+                && notes.get(0).getNote() != null
+                && !notes.get(0)
+                .getNote()
+                .isBlank()) {
+
+
+            technicianNotesSection =
+                    """
+                    <div class="section">
+    
+                        <div class="section-title">
+                            ملاحظات الفني
+                        </div>
+    
+                        <div class="notes-box">
+                            %s
+                        </div>
+    
+                    </div>
+                    """.formatted(
+
+                            escapeHtml(
+                                    notes.get(0)
+                                            .getNote()
+                            )
+
+                    );
+
+        }
+
+
+        // =========================================
+        // LOAD LOGO
+        // =========================================
+
+        ClassPathResource logoResource =
+                new ClassPathResource(
+                        "reports/images/ters-logo.png"
+                );
+
+
+        String logoBase64 =
+                Base64.getEncoder()
+                        .encodeToString(
+
+                                logoResource
+                                        .getInputStream()
+                                        .readAllBytes()
+
+                        );
+
+
+        // =========================================
+        // LOAD HTML TEMPLATE
+        // =========================================
 
         ClassPathResource resource =
                 new ClassPathResource(
                         "templates/pricing-report.html"
                 );
 
+
         String html =
                 new String(
-                        resource.getInputStream().readAllBytes(),
+
+                        resource
+                                .getInputStream()
+                                .readAllBytes(),
+
                         StandardCharsets.UTF_8
+
                 );
 
 
-        // =========================
-        // REPLACE DATA
-        // =========================
+        // =========================================
+        // REPLACE LOGO
+        // =========================================
+
+        html = html.replace(
+                "${logo}",
+                logoBase64
+        );
+
+
+        // =========================================
+        // REPLACE CUSTOMER
+        // =========================================
 
         html = html.replace(
                 "${customerName}",
+
                 escapeHtml(
                         request.getCustomer()
                                 .getUser()
@@ -664,190 +857,338 @@ public class RequestPricingService {
                 )
         );
 
+
+        // =========================================
+        // ORDER NUMBER
+        // =========================================
+
         html = html.replace(
                 "${orderNumber}",
+
                 escapeHtml(
-                        request.getOrderNumber()
+                        request.getOrderNumber() == null
+                                ? "-"
+                                : request.getOrderNumber()
                 )
         );
+
+
+        // =========================================
+        // REPORT NUMBER
+        // =========================================
 
         html = html.replace(
                 "${reportNumber}",
+
                 escapeHtml(
-                        report.getReportNumber()
+                        report.getReportNumber() == null
+                                ? "-"
+                                : report.getReportNumber()
                 )
         );
+
+
+        // =========================================
+        // CAR MODEL
+        // =========================================
 
         html = html.replace(
                 "${carModel}",
+
                 escapeHtml(
-                        request.getCar()
+
+                        request.getCar() == null
+                                || request.getCar()
+                                .getModel() == null
+
+                                ? "-"
+
+                                : request.getCar()
                                 .getModel()
                                 .getName()
+
                 )
         );
+
+
+        // =========================================
+        // SERVICE OPTION
+        // =========================================
 
         html = html.replace(
                 "${serviceOption}",
+
                 escapeHtml(
+
                         request.getServiceOption() == null
+
                                 ? "-"
-                                : request.getServiceOption().name()
+
+                                : request
+                                .getServiceOption()
+                                .name()
+
                 )
         );
+
+
+        // =========================================
+        // PHONE
+        // =========================================
 
         html = html.replace(
                 "${phone}",
+
                 escapeHtml(
-                        request.getCustomer()
+
+                        request.getCustomer() == null
+                                || request.getCustomer()
+                                .getUser() == null
+
+                                ? "-"
+
+                                : request
+                                .getCustomer()
                                 .getUser()
                                 .getPhoneNumber()
+
                 )
         );
+
+
+        // =========================================
+        // PROBLEM
+        // =========================================
 
         html = html.replace(
                 "${problem}",
+
                 escapeHtml(
-                        request.getProblemDescription()
+
+                        request.getProblemDescription() == null
+                                || request
+                                .getProblemDescription()
+                                .isBlank()
+
+                                ? "-"
+
+                                : request
+                                .getProblemDescription()
+
                 )
         );
 
-        html = html.replace(
-                "${technicianNotes}",
-                escapeHtml(
-                        technicianNotes
-                )
-        );
+
+        // =========================================
+        // PARTS ROWS
+        // =========================================
 
         html = html.replace(
                 "${rows}",
                 rows.toString()
         );
 
+
+        // =========================================
+        // TOTALS
+        // =========================================
+
         html = html.replace(
                 "${partsTotal}",
-                formatMoney(totalPartsPrice)
+                formatMoney(
+                        totalPartsPrice
+                )
         );
+
 
         html = html.replace(
                 "${laborTotal}",
-                formatMoney(totalLabor)
+                formatMoney(
+                        totalLabor
+                )
         );
+
 
         html = html.replace(
                 "${subtotal}",
-                formatMoney(subtotal)
+                formatMoney(
+                        subtotal
+                )
         );
+
 
         html = html.replace(
                 "${discount}",
-                formatMoney(discount)
+                formatMoney(
+                        discount
+                )
         );
+
 
         html = html.replace(
                 "${afterDiscount}",
-                formatMoney(afterDiscount)
+                formatMoney(
+                        afterDiscount
+                )
         );
+
 
         html = html.replace(
                 "${vat}",
-                formatMoney(vat)
+                formatMoney(
+                        vat
+                )
         );
+
 
         html = html.replace(
                 "${grandTotal}",
-                formatMoney(grandTotal)
+                formatMoney(
+                        grandTotal
+                )
         );
 
 
-        // =========================
-        // PDF
-        // =========================
+        // =========================================
+        // TECHNICIAN NOTES SECTION
+        // =========================================
+
+        html = html.replace(
+                "${technicianNotesSection}",
+                technicianNotesSection
+        );
+
+
+        // =========================================
+        // PDF OUTPUT
+        // =========================================
 
         ByteArrayOutputStream output =
                 new ByteArrayOutputStream();
+
 
         PdfRendererBuilder builder =
                 new PdfRendererBuilder();
 
 
-        // =========================
-        // ARABIC / RTL SUPPORT
-        // =========================
+        // =========================================
+        // RTL SUPPORT
+        // =========================================
 
         builder.useUnicodeBidiSplitter(
-                new ICUBidiSplitter.ICUBidiSplitterFactory()
+                new ICUBidiSplitter
+                        .ICUBidiSplitterFactory()
         );
+
 
         builder.useUnicodeBidiReorderer(
                 new ICUBidiReorderer()
         );
 
+
         builder.defaultTextDirection(
-                BaseRendererBuilder.TextDirection.RTL
+                BaseRendererBuilder
+                        .TextDirection
+                        .RTL
         );
 
 
-        // =========================
+        // =========================================
         // CAIRO FONT
-        // =========================
+        // =========================================
 
         ClassPathResource font =
                 new ClassPathResource(
                         "fonts/Cairo-Regular.ttf"
                 );
 
+
         builder.useFont(
+
                 () -> {
 
                     try {
-                        return font.getInputStream();
+
+                        return font
+                                .getInputStream();
 
                     } catch (IOException e) {
 
-                        throw new RuntimeException(e);
+                        throw new RuntimeException(
+                                e
+                        );
+
                     }
+
                 },
+
                 "Cairo",
+
                 400,
-                PdfRendererBuilder.FontStyle.NORMAL,
+
+                PdfRendererBuilder
+                        .FontStyle
+                        .NORMAL,
+
                 true
+
         );
 
 
-        // =========================
+        // =========================================
         // HTML
-        // =========================
+        // =========================================
 
         builder.withHtmlContent(
+
                 html,
+
                 new ClassPathResource("")
                         .getURL()
                         .toExternalForm()
+
         );
 
-        builder.toStream(output);
+
+        // =========================================
+        // OUTPUT
+        // =========================================
+
+        builder.toStream(
+                output
+        );
+
 
         builder.run();
 
 
-        // =========================
+        // =========================================
         // RESPONSE
-        // =========================
+        // =========================================
 
-        return ResponseEntity.ok()
+        return ResponseEntity
+                .ok()
+
                 .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=pricing-report-" +
-                                report.getReportNumber() +
-                                ".pdf"
+
+                        HttpHeaders
+                                .CONTENT_DISPOSITION,
+
+                        "attachment; filename=pricing-report-"
+                                + report.getReportNumber()
+                                + ".pdf"
+
                 )
+
                 .contentType(
-                        MediaType.APPLICATION_PDF
+                        MediaType
+                                .APPLICATION_PDF
                 )
+
                 .body(
                         output.toByteArray()
                 );
+
     }
 
     private String formatMoney(double value) {
