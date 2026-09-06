@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl"
+      xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
 
@@ -16,34 +17,50 @@
             margin: 0;
         }
 
+        html {
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+
+            background: #ffffff;
+
+            font-family: "Cairo", Arial, sans-serif;
+
+            font-size: 11px;
+
+            line-height: 1.55;
+
+            color: #1f2430;
+
+            direction: rtl;
+
+            text-align: right;
+        }
+
         * {
             box-sizing: border-box;
         }
 
-        html,
-        body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            background: #ffffff;
-        }
-
-        body {
-            font-family: "Cairo", Arial, sans-serif;
-            color: #1f2430;
-            direction: rtl;
-            font-size: 11px;
-            line-height: 1.55;
-        }
-
 
         /* =========================================
-           MAIN PAGE
+           PAGE
         ========================================= */
 
         .page {
             width: 100%;
+
+            margin: 0;
+
+            padding: 0;
+
             background: #ffffff;
+
+            direction: rtl;
         }
 
 
@@ -53,49 +70,89 @@
 
         .header {
             width: 100%;
+
             background: #1e2a4a;
+
+            padding: 16px 18mm;
+
             color: #ffffff;
-            display: table;
-            table-layout: fixed;
-            padding: 18px 16mm;
         }
 
-        .header-title,
-        .header-logo {
-            display: table-cell;
+
+        .header-table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            table-layout: fixed;
+
+            direction: ltr;
+        }
+
+        .header-table td {
             vertical-align: middle;
         }
 
-        .header-title {
-            width: 75%;
-            text-align: right;
+
+        /* =========================================
+           HEADER TITLE - LEFT
+        ========================================= */
+
+        .header-title-cell {
+            width: 70%;
+
+            text-align: left;
+
+            direction: rtl;
         }
 
-        .header-logo {
-            width: 25%;
+        .title-ar {
+            margin: 0;
+
+            padding: 0;
+
+            font-size: 24px;
+
+            font-weight: 700;
+
+            line-height: 1.3;
+
             text-align: left;
+
+            direction: rtl;
+        }
+
+        .title-en {
+            margin-top: 3px;
+
+            font-size: 10px;
+
+            color: #d8deed;
+
+            direction: ltr;
+
+            text-align: left;
+        }
+
+
+        /* =========================================
+           HEADER LOGO - RIGHT
+        ========================================= */
+
+        .header-logo-cell {
+            width: 30%;
+
+            text-align: right;
+
             direction: ltr;
         }
 
         .logo {
             width: 82px;
+
             height: auto;
+
             display: inline-block;
-        }
-
-        .title {
-            font-size: 23px;
-            font-weight: bold;
-            margin: 0;
-            line-height: 1.3;
-        }
-
-        .subtitle {
-            font-size: 10px;
-            color: #d8deed;
-            margin-top: 3px;
-            direction: ltr;
-            text-align: right;
         }
 
 
@@ -104,11 +161,23 @@
         ========================================= */
 
         .content {
-            padding: 14mm 12mm 10mm;
+            padding: 12mm 12mm 8mm;
+
+            direction: rtl;
+
+            text-align: right;
         }
 
+
+        /* =========================================
+           SECTION
+        ========================================= */
+
         .section {
-            margin-bottom: 18px;
+            margin-bottom: 17px;
+
+            direction: rtl;
+
             page-break-inside: avoid;
         }
 
@@ -119,19 +188,80 @@
 
         /* =========================================
            SECTION TITLE
+           
+           RIGHT:
+           Arabic
+
+           NEXT TO IT:
+           English
+
+           English is smaller and lighter.
         ========================================= */
 
-        .section-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #1e2a4a;
+        .section-title-table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            table-layout: auto;
+
+            direction: rtl;
+
+            margin-bottom: 9px;
+
+            border-bottom: 2px solid #f5453d;
+        }
+
+        .section-title-table td {
+            vertical-align: baseline;
 
             padding-bottom: 6px;
-            margin-bottom: 9px;
+        }
+
+
+        /* =========================================
+           ARABIC - RIGHT
+        ========================================= */
+
+        .section-title-ar-cell {
+            width: auto;
+
+            direction: rtl;
 
             text-align: right;
 
-            border-bottom: 2px solid #f5453d;
+            white-space: nowrap;
+
+            font-size: 14px;
+
+            color: #1e2a4a;
+
+            font-weight: 700;
+
+            padding-left: 7px;
+        }
+
+
+        /* =========================================
+           ENGLISH - NEXT TO ARABIC
+        ========================================= */
+
+        .section-title-en-cell {
+            width: auto;
+
+            direction: ltr;
+
+            text-align: right;
+
+            white-space: nowrap;
+
+            font-size: 9px;
+
+            color: #7b8496;
+
+            font-weight: 400;
+
+            padding-right: 7px;
         }
 
 
@@ -143,45 +273,55 @@
             width: 100%;
 
             background: #f4f6f9;
+
             border: 1px solid #d9dde5;
 
             padding: 10px 12px;
 
-            text-align: right;
             direction: rtl;
+
+            text-align: right;
 
             min-height: 0;
         }
 
 
         /* =========================================
-           ORDER INFO
+           ORDER INFORMATION
         ========================================= */
 
         .info-table {
             width: 100%;
+
             border-collapse: collapse;
+
             table-layout: fixed;
+
             direction: rtl;
         }
 
         .info-table td {
             border: 1px solid #d9dde5;
 
-            padding: 8px 10px;
+            padding: 9px 10px;
+
+            vertical-align: middle;
 
             text-align: right;
-            vertical-align: middle;
         }
 
         .info-label {
+            width: 17%;
+
             background: #eef1f6;
 
             color: #596273;
 
-            font-weight: bold;
+            font-weight: 700;
 
-            width: 17%;
+            direction: rtl;
+
+            text-align: right;
         }
 
         .info-value {
@@ -189,19 +329,21 @@
 
             color: #1f2430;
 
-            font-weight: bold;
+            font-weight: 400;
+
+            direction: rtl;
 
             text-align: right;
         }
 
-        /*
-            للأرقام والأكواد:
-            نخلي اتجاه النص LTR
-            لكن مكانه ومحاذاته من اليمين
-        */
 
-        .ltr-right {
+        /* =========================================
+           NUMBERS / CODES
+        ========================================= */
+
+        .number-value {
             direction: ltr;
+
             text-align: right;
         }
 
@@ -227,11 +369,11 @@
 
             color: #ffffff;
 
-            padding: 8px 4px;
-
             border: 1px solid #1e2a4a;
 
-            font-weight: bold;
+            padding: 8px 4px;
+
+            font-weight: 700;
 
             text-align: center;
 
@@ -255,34 +397,59 @@
         }
 
 
-        /* Columns */
+        /* =========================================
+           PARTS COLUMNS
+        ========================================= */
 
         .col-idx {
             width: 6%;
         }
 
         .col-name {
-            width: 24%;
+            width: 26%;
         }
 
         .col-type {
-            width: 13%;
+            width: 14%;
         }
 
         .col-qty {
-            width: 8%;
+            width: 9%;
         }
 
         .col-price {
-            width: 16%;
+            width: 15%;
         }
 
         .col-labor {
-            width: 16%;
+            width: 15%;
         }
 
         .col-total {
-            width: 17%;
+            width: 15%;
+        }
+
+
+        /* =========================================
+           PART NAME / TYPE
+        ========================================= */
+
+        .parts-table td.part-name,
+        .parts-table td.part-type {
+            text-align: right;
+
+            direction: rtl;
+        }
+
+
+        /* =========================================
+           MONEY
+        ========================================= */
+
+        .money-value {
+            direction: ltr;
+
+            text-align: center;
         }
 
 
@@ -295,11 +462,13 @@
 
             border-collapse: collapse;
 
+            table-layout: fixed;
+
             direction: rtl;
         }
 
         .summary td {
-            padding: 7px 10px;
+            padding: 8px 11px;
 
             border-bottom: 1px solid #d9dde5;
 
@@ -309,24 +478,31 @@
         .summary-label {
             width: 70%;
 
-            text-align: right;
-
             color: #596273;
 
-            font-weight: bold;
+            font-weight: 700;
+
+            text-align: right;
+
+            direction: rtl;
         }
 
         .summary-value {
             width: 30%;
 
+            color: #1f2430;
+
+            font-weight: 700;
+
             text-align: left;
 
             direction: ltr;
-
-            font-weight: bold;
-
-            color: #1f2430;
         }
+
+
+        /* =========================================
+           DISCOUNT
+        ========================================= */
 
         .discount {
             color: #f5453d !important;
@@ -344,25 +520,16 @@
 
             border-bottom: none;
 
+            padding: 11px 12px;
+
             font-size: 14px;
 
-            font-weight: bold;
-
-            padding: 11px 12px;
-        }
-
-        .grand-total .summary-label {
-            text-align: right;
-        }
-
-        .grand-total .summary-value {
-            text-align: left;
-            direction: ltr;
+            font-weight: 700;
         }
 
 
         /* =========================================
-           NOTES
+           TECHNICIAN NOTES
         ========================================= */
 
         .notes-box {
@@ -374,6 +541,8 @@
 
             padding: 11px 12px;
 
+            direction: rtl;
+
             text-align: right;
 
             min-height: 0;
@@ -381,47 +550,7 @@
 
 
         /* =========================================
-           FOOTER
-        ========================================= */
-
-        .footer {
-            margin-top: 6px;
-
-            border-top: 1px solid #d9dde5;
-
-            padding: 8px 12mm 10px;
-
-            color: #7b8496;
-
-            font-size: 8px;
-
-            display: table;
-
-            width: 100%;
-        }
-
-        .footer-right,
-        .footer-left {
-            display: table-cell;
-
-            width: 50%;
-
-            vertical-align: middle;
-        }
-
-        .footer-right {
-            text-align: right;
-        }
-
-        .footer-left {
-            text-align: left;
-
-            direction: ltr;
-        }
-
-
-        /* =========================================
-           EMPTY TABLE
+           EMPTY ROW
         ========================================= */
 
         .empty-row td {
@@ -432,12 +561,70 @@
             color: #7b8496;
         }
 
+
+        /* =========================================
+           FOOTER
+        ========================================= */
+
+        .footer {
+            width: 100%;
+
+            margin-top: 5px;
+
+            padding: 10px 12mm;
+
+            border-top: 1px solid #d9dde5;
+
+            color: #7b8496;
+
+            font-size: 8px;
+        }
+
+
+        .footer-table {
+            width: 100%;
+
+            border-collapse: collapse;
+
+            table-layout: fixed;
+
+            direction: ltr;
+        }
+
+        .footer-table td {
+            width: 50%;
+
+            vertical-align: middle;
+        }
+
+
+        /* =========================================
+           FOOTER LEFT = ENGLISH
+        ========================================= */
+
+        .footer-left {
+            direction: ltr;
+
+            text-align: left;
+        }
+
+
+        /* =========================================
+           FOOTER RIGHT = ARABIC
+        ========================================= */
+
+        .footer-right {
+            direction: rtl;
+
+            text-align: right;
+        }
+
     </style>
 
 </head>
 
 
-<body>
+<body dir="rtl">
 
 <div class="page">
 
@@ -448,32 +635,39 @@
 
     <div class="header">
 
-        <!-- RIGHT -->
+        <table class="header-table">
 
-        <div class="header-title">
+            <tr>
 
-            <div class="title">
-                تقرير التسعير
-            </div>
+                <!-- LEFT : REPORT TITLE -->
 
-            <div class="subtitle">
-                Pricing Report
-            </div>
+                <td class="header-title-cell">
 
-        </div>
+                    <div class="title-ar">
+                        تقرير التسعير
+                    </div>
+
+                    <div class="title-en">
+                        Pricing Report
+                    </div>
+
+                </td>
 
 
-        <!-- LEFT LOGO -->
+                <!-- RIGHT : LOGO -->
 
-        <div class="header-logo">
+                <td class="header-logo-cell">
 
-            <img
-                    class="logo"
-                    src="data:image/png;base64,${logo}"
-                    alt="TERS Logo"
-            />
+                    <img
+                            class="logo"
+                            src="data:image/png;base64,${logo}"
+                            alt="TERS Logo" />
 
-        </div>
+                </td>
+
+            </tr>
+
+        </table>
 
     </div>
 
@@ -491,9 +685,22 @@
 
         <div class="section">
 
-            <div class="section-title">
-                وصف المشكلة
-            </div>
+            <table class="section-title-table">
+
+                <tr>
+
+                    <td class="section-title-ar-cell">
+                        وصف المشكلة
+                    </td>
+
+                    <td class="section-title-en-cell">
+                        Problem Description
+                    </td>
+
+                </tr>
+
+            </table>
+
 
             <div class="problem-box">
                 ${problem}
@@ -503,19 +710,30 @@
 
 
         <!-- =========================================
-             ORDER INFO
+             ORDER INFORMATION
         ========================================= -->
 
         <div class="section">
 
-            <div class="section-title">
-                بيانات الطلب
-            </div>
+            <table class="section-title-table">
+
+                <tr>
+
+                    <td class="section-title-ar-cell">
+                        بيانات الطلب
+                    </td>
+
+                    <td class="section-title-en-cell">
+                        Order Information
+                    </td>
+
+                </tr>
+
+            </table>
 
 
-            <table class="info-table">
-
-                <!-- ROW 1 -->
+            <table class="info-table"
+                   dir="rtl">
 
                 <tr>
 
@@ -523,7 +741,7 @@
                         رقم الطلب
                     </td>
 
-                    <td class="info-value ltr-right">
+                    <td class="info-value number-value">
                         ${orderNumber}
                     </td>
 
@@ -531,14 +749,12 @@
                         رقم التقرير
                     </td>
 
-                    <td class="info-value ltr-right">
+                    <td class="info-value number-value">
                         ${reportNumber}
                     </td>
 
                 </tr>
 
-
-                <!-- ROW 2 -->
 
                 <tr>
 
@@ -554,14 +770,12 @@
                         رقم الجوال
                     </td>
 
-                    <td class="info-value ltr-right">
+                    <td class="info-value number-value">
                         ${phone}
                     </td>
 
                 </tr>
 
-
-                <!-- ROW 3 -->
 
                 <tr>
 
@@ -589,17 +803,30 @@
 
 
         <!-- =========================================
-             PARTS
+             PARTS AND LABOR
         ========================================= -->
 
         <div class="section">
 
-            <div class="section-title">
-                القطع وأجور العمل
-            </div>
+            <table class="section-title-table">
+
+                <tr>
+
+                    <td class="section-title-ar-cell">
+                        القطع وأجور العمل
+                    </td>
+
+                    <td class="section-title-en-cell">
+                        Parts and Labor
+                    </td>
+
+                </tr>
+
+            </table>
 
 
-            <table class="parts-table">
+            <table class="parts-table"
+                   dir="rtl">
 
                 <thead>
 
@@ -656,18 +883,30 @@
 
 
         <!-- =========================================
-             SUMMARY
+             COST SUMMARY
         ========================================= -->
 
         <div class="section">
 
-            <div class="section-title">
-                ملخص التكلفة
-            </div>
+            <table class="section-title-table">
+
+                <tr>
+
+                    <td class="section-title-ar-cell">
+                        ملخص التكلفة
+                    </td>
+
+                    <td class="section-title-en-cell">
+                        Cost Summary
+                    </td>
+
+                </tr>
+
+            </table>
 
 
-            <table class="summary">
-
+            <table class="summary"
+                   dir="rtl">
 
                 <tr>
 
@@ -780,13 +1019,26 @@
 
     <div class="footer">
 
-        <div class="footer-right">
-            TERS - تقرير التسعير
-        </div>
+        <table class="footer-table">
 
-        <div class="footer-left">
-            Pricing Report
-        </div>
+            <tr>
+
+                <!-- LEFT : ENGLISH -->
+
+                <td class="footer-left">
+                    TERS – Maintenance Management System
+                </td>
+
+
+                <!-- RIGHT : ARABIC -->
+
+                <td class="footer-right">
+                    ترس – نظام إدارة الصيانة
+                </td>
+
+            </tr>
+
+        </table>
 
     </div>
 

@@ -531,7 +531,6 @@ public class RequestPricingService {
 
         for (RequestPart part : parts) {
 
-
             // -------------------------
             // PART PRICE
             // -------------------------
@@ -592,43 +591,45 @@ public class RequestPricingService {
             // -------------------------
 
             rows.append("""
-            <tr>
+        <tr>
 
-                <td class="col-idx">
-                    %d
-                </td>
+            <td class="col-idx">
+                %d
+            </td>
 
-                <td>
-                    %s
-                </td>
+            <td class="part-name">
+                %s
+            </td>
 
-                <td>
-                    %s
-                </td>
+            <td class="part-type">
+                %s
+            </td>
 
-                <td>
-                    %d
-                </td>
+            <td>
+                %d
+            </td>
 
-                <td class="ltr-right">
-                    %s SAR
-                </td>
+            <td class="money-value">
+                %s SAR
+            </td>
 
-                <td class="ltr-right">
-                    %s SAR
-                </td>
+            <td class="money-value">
+                %s SAR
+            </td>
 
-                <td class="ltr-right">
-                    %s SAR
-                </td>
+            <td class="money-value">
+                %s SAR
+            </td>
 
-            </tr>
-            """.formatted(
+        </tr>
+        """.formatted(
 
                     index++,
 
                     escapeHtml(
-                            part.getName()
+                            part.getName() == null
+                                    ? "-"
+                                    : part.getName()
                     ),
 
                     escapeHtml(
@@ -639,20 +640,12 @@ public class RequestPricingService {
 
                     quantity,
 
-                    formatMoney(
-                            partPrice
-                    ),
+                    formatMoney(partPrice),
 
-                    formatMoney(
-                            labor
-                    ),
+                    formatMoney(labor),
 
-                    formatMoney(
-                            total
-                    )
-
+                    formatMoney(total)
             ));
-
         }
 
 
@@ -663,15 +656,14 @@ public class RequestPricingService {
         if (parts.isEmpty()) {
 
             rows.append("""
-            <tr class="empty-row">
+        <tr class="empty-row">
 
-                <td colspan="7">
-                    لا توجد قطع مسجلة
-                </td>
+            <td colspan="7">
+                لا توجد قطع مسجلة
+            </td>
 
-            </tr>
-            """);
-
+        </tr>
+        """);
         }
 
 
@@ -692,8 +684,6 @@ public class RequestPricingService {
                         ? 0
                         : request.getDiscount();
 
-
-        // لا نخلي الخصم أكبر من الإجمالي
 
         discount =
                 Math.min(
@@ -717,12 +707,6 @@ public class RequestPricingService {
         // VAT
         // =========================================
 
-        /*
-         * نستخدم VAT المخزن إذا كان موجود.
-         *
-         * إذا غير موجود نحسبه 15%.
-         */
-
         double vat =
                 request.getVatAmount() == null
                         ? afterDiscount * 0.15
@@ -733,25 +717,12 @@ public class RequestPricingService {
         // GRAND TOTAL
         // =========================================
 
-        /*
-         * مهم:
-         *
-         * نحسب الإجمالي النهائي من نفس الأرقام
-         * المعروضة في التقرير.
-         *
-         * حتى لا يظهر تقرير فيه:
-         *
-         * subtotal - discount + vat
-         *
-         * ويكون finalPrice مختلف.
-         */
-
         double grandTotal =
                 afterDiscount + vat;
 
 
         // =========================================
-        // TECHNICIAN NOTES
+        // TECHNICIAN NOTES SECTION
         // =========================================
 
         String technicianNotesSection =
@@ -764,14 +735,26 @@ public class RequestPricingService {
                 .getNote()
                 .isBlank()) {
 
-
             technicianNotesSection =
                     """
                     <div class="section">
     
-                        <div class="section-title">
-                            ملاحظات الفني
-                        </div>
+                        <table class="section-title-table">
+    
+                            <tr>
+    
+                                <td class="section-title-ar-cell">
+                                    ملاحظات الفني
+                                </td>
+    
+                                <td class="section-title-en-cell">
+                                    Technician Notes
+                                </td>
+    
+                            </tr>
+    
+                        </table>
+    
     
                         <div class="notes-box">
                             %s
@@ -784,9 +767,7 @@ public class RequestPricingService {
                                     notes.get(0)
                                             .getNote()
                             )
-
                     );
-
         }
 
 
@@ -807,7 +788,6 @@ public class RequestPricingService {
                                 logoResource
                                         .getInputStream()
                                         .readAllBytes()
-
                         );
 
 
@@ -829,7 +809,6 @@ public class RequestPricingService {
                                 .readAllBytes(),
 
                         StandardCharsets.UTF_8
-
                 );
 
 
@@ -844,7 +823,7 @@ public class RequestPricingService {
 
 
         // =========================================
-        // REPLACE CUSTOMER
+        // CUSTOMER
         // =========================================
 
         html = html.replace(
@@ -906,7 +885,6 @@ public class RequestPricingService {
                                 : request.getCar()
                                 .getModel()
                                 .getName()
-
                 )
         );
 
@@ -921,13 +899,9 @@ public class RequestPricingService {
                 escapeHtml(
 
                         request.getServiceOption() == null
-
                                 ? "-"
-
-                                : request
-                                .getServiceOption()
-                                .name()
-
+                                : request.getServiceOption()
+                                .getDisplayName()
                 )
         );
 
@@ -951,7 +925,6 @@ public class RequestPricingService {
                                 .getCustomer()
                                 .getUser()
                                 .getPhoneNumber()
-
                 )
         );
 
@@ -974,7 +947,6 @@ public class RequestPricingService {
 
                                 : request
                                 .getProblemDescription()
-
                 )
         );
 
@@ -995,62 +967,48 @@ public class RequestPricingService {
 
         html = html.replace(
                 "${partsTotal}",
-                formatMoney(
-                        totalPartsPrice
-                )
+                formatMoney(totalPartsPrice)
         );
 
 
         html = html.replace(
                 "${laborTotal}",
-                formatMoney(
-                        totalLabor
-                )
+                formatMoney(totalLabor)
         );
 
 
         html = html.replace(
                 "${subtotal}",
-                formatMoney(
-                        subtotal
-                )
+                formatMoney(subtotal)
         );
 
 
         html = html.replace(
                 "${discount}",
-                formatMoney(
-                        discount
-                )
+                formatMoney(discount)
         );
 
 
         html = html.replace(
                 "${afterDiscount}",
-                formatMoney(
-                        afterDiscount
-                )
+                formatMoney(afterDiscount)
         );
 
 
         html = html.replace(
                 "${vat}",
-                formatMoney(
-                        vat
-                )
+                formatMoney(vat)
         );
 
 
         html = html.replace(
                 "${grandTotal}",
-                formatMoney(
-                        grandTotal
-                )
+                formatMoney(grandTotal)
         );
 
 
         // =========================================
-        // TECHNICIAN NOTES SECTION
+        // TECHNICIAN NOTES
         // =========================================
 
         html = html.replace(
@@ -1097,26 +1055,24 @@ public class RequestPricingService {
         // CAIRO FONT
         // =========================================
 
-        ClassPathResource font =
+        ClassPathResource cairoFont =
                 new ClassPathResource(
                         "fonts/Cairo-Regular.ttf"
                 );
 
 
-        builder.useFont(
+        // Regular 400
 
+        builder.useFont(
                 () -> {
 
                     try {
 
-                        return font
-                                .getInputStream();
+                        return cairoFont.getInputStream();
 
                     } catch (IOException e) {
 
-                        throw new RuntimeException(
-                                e
-                        );
+                        throw new RuntimeException(e);
 
                     }
 
@@ -1126,12 +1082,38 @@ public class RequestPricingService {
 
                 400,
 
-                PdfRendererBuilder
-                        .FontStyle
-                        .NORMAL,
+                PdfRendererBuilder.FontStyle.NORMAL,
 
                 true
+        );
 
+
+        // Bold 700
+        // نستخدم نفس Cairo-Regular
+        // لأن Cairo-Bold غير موجود
+
+        builder.useFont(
+                () -> {
+
+                    try {
+
+                        return cairoFont.getInputStream();
+
+                    } catch (IOException e) {
+
+                        throw new RuntimeException(e);
+
+                    }
+
+                },
+
+                "Cairo",
+
+                700,
+
+                PdfRendererBuilder.FontStyle.NORMAL,
+
+                true
         );
 
 
@@ -1146,7 +1128,6 @@ public class RequestPricingService {
                 new ClassPathResource("")
                         .getURL()
                         .toExternalForm()
-
         );
 
 
@@ -1177,19 +1158,18 @@ public class RequestPricingService {
                         "attachment; filename=pricing-report-"
                                 + report.getReportNumber()
                                 + ".pdf"
-
                 )
 
                 .contentType(
-                        MediaType
-                                .APPLICATION_PDF
+                        MediaType.APPLICATION_PDF
                 )
 
                 .body(
                         output.toByteArray()
                 );
-
     }
+
+
 
     private String formatMoney(double value) {
         return String.format(
