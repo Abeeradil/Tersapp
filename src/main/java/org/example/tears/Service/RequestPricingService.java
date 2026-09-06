@@ -1055,64 +1055,41 @@ public class RequestPricingService {
         // CAIRO FONT
         // =========================================
 
-        ClassPathResource cairoFont =
+        ClassPathResource cairoRegular =
                 new ClassPathResource(
                         "fonts/Cairo-Regular.ttf"
                 );
 
-
-        // Regular 400
+        ClassPathResource cairoBold =
+                new ClassPathResource(
+                        "fonts/Cairo-Bold.ttf"
+                );
 
         builder.useFont(
                 () -> {
-
                     try {
-
-                        return cairoFont.getInputStream();
-
+                        return cairoRegular.getInputStream();
                     } catch (IOException e) {
-
                         throw new RuntimeException(e);
-
                     }
-
                 },
-
                 "Cairo",
-
                 400,
-
                 PdfRendererBuilder.FontStyle.NORMAL,
-
                 true
         );
 
-
-        // Bold 700
-        // نستخدم نفس Cairo-Regular
-        // لأن Cairo-Bold غير موجود
-
         builder.useFont(
                 () -> {
-
                     try {
-
-                        return cairoFont.getInputStream();
-
+                        return cairoBold.getInputStream();
                     } catch (IOException e) {
-
                         throw new RuntimeException(e);
-
                     }
-
                 },
-
                 "Cairo",
-
                 700,
-
                 PdfRendererBuilder.FontStyle.NORMAL,
-
                 true
         );
 
